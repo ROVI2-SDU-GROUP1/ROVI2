@@ -1,7 +1,12 @@
 # Install notes
 
 ## Stereo camera(Primesense)
-###sudo apt-get install ros-kinetic-openni2-launch
+### Install
+```sh
+sudo apt-get install ros-kinetic-openni2-launch
+```
 
 ### Usage:
+```h
 roslaunch openni2_launch openni2.launch	
+```
