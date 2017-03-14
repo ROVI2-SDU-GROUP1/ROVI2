@@ -37,6 +37,7 @@ In the case above, the IP address of my laptop is 192.168.100.10.
 # Networking
 The ip address of the PC in Cell3 is:
 192.168.10.53
+<<<<<<< HEAD
 
 
 ## Dependencies for UR sim
