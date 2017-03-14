@@ -1,0 +1,75 @@
+<WorkCell name="SceneUR">
+
+<Frame name="Foot" refframe="WORLD" type="Movable">  
+	<RPY> 0 0 0 </RPY> <Pos> 0 0 0 </Pos>
+	<Drawable name="EnvGeo" refframe="Env">
+          <Polytope file="Geometry/foot" />
+     </Drawable>
+ </Frame>
+
+ <Frame name="Robot" refframe="Foot">
+    <RPY> -90 0 0 </RPY> <Pos>0 0.0 0.780</Pos>
+ </Frame>
+ <Include file="UR/UR.wc.xml" />
+
+  <Frame name="WSG50" refframe="UR1.TCP">
+    <RPY> 180 0 -90 </RPY> <Pos> 0 0 0.005 </Pos>
+  </Frame>
+  <Include file="WSG50/WSG50.wc.xml"/>
+
+
+ <Frame name="WorkPiece" refframe="WORLD">  
+ <RPY>0 0 0.02 </RPY> <Pos> -0.09 -0.770 1.072 </Pos>
+ </Frame>
+
+  <Frame name="WPtable" refframe="WORLD" type="Movable">
+      <RPY> 0 0 0 </RPY> <Pos> -0.495 -0.180 1.060 </Pos>
+     <Drawable name="WPtablegeo" refframe="WPtable" >
+   <RPY> 0 0 0 </RPY> <Pos> -0.50 -0.64 -1.03</Pos>
+   <Polytope file="Geometry/WPtable" />
+  </Drawable>
+  </Frame>
+
+ <Frame name="Wall1" refframe="WORLD">
+      <RPY> 0 0 0 </RPY> <Pos> -1.90 0.875 0 </Pos>
+     <Drawable name="Fencegeo1" refframe="left" >
+   <RPY> 0 0 0 </RPY> <Pos> 0 0 0</Pos>
+   <Polytope file="Geometry/wall1" />
+  </Drawable>
+  </Frame>
+  
+   <Frame name="Wall2" refframe="WORLD">
+      <RPY> 0 0 0 </RPY> <Pos> -1.90 -0.875 0 </Pos>
+     <Drawable name="Fencegeo2" refframe="right" >
+   <RPY> 0 0 0 </RPY> <Pos> 0 0 0</Pos>
+   <Polytope file="Geometry/wall2" />
+  </Drawable>
+  </Frame>
+  
+   <Frame name="Wall3" refframe="WORLD">
+      <RPY> 90 0 0 </RPY> <Pos> 1.055 -0.85 0 </Pos>
+     <Drawable name="Fencegeo3" refframe="back" >
+   <RPY> 0 0 0 </RPY> <Pos> 0 0 0</Pos>
+   <Polytope file="Geometry/wall3" />
+  </Drawable>
+  </Frame>
+
+   <Frame name="VisionBox_near" refframe="Wall2" type="Movable">
+      <RPY> 0 0 0 </RPY> <Pos>1.605 0.057 1.5</Pos>
+     <Drawable name="visBox" refframe="back" >
+   <RPY> 0 0 0 </RPY> <Pos>0 0 0</Pos>
+   <Polytope file="Geometry/VisionBox.stl" />
+  </Drawable>
+  </Frame>
+
+   <Frame name="VisionBox_far" refframe="Wall3" type="Movable">
+      <RPY> 0 0 0 </RPY> <Pos>0.250 0.052 2.062</Pos>
+     <Drawable name="visBox" refframe="back" >
+   <RPY> 0 0 0 </RPY> <Pos>0 0 0</Pos>
+   <Polytope file="Geometry/VisionBox.stl" />
+  </Drawable>
+  </Frame>
+
+<CollisionSetup file="CollisionSetup.xml"/>
+
+</WorkCell>

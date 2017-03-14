@@ -1,0 +1,49 @@
+<WorkCell name="SceneUR">
+
+<Frame name="Foot" refframe="WORLD" type="Movable">  
+	<RPY> 0 0 0 </RPY> <Pos> 0 0 0 </Pos>
+	<Drawable name="EnvGeo" refframe="Env">
+          <Polytope file="Geometry/foot" />
+     </Drawable>
+ </Frame>
+
+ <Frame name="Robot" refframe="Foot">
+    <RPY> -90 0 0 </RPY> <Pos>0 0.0 0.780</Pos>
+ </Frame>
+ <Include file="UR/UR.wc.xml" />
+
+<Frame name="TCP_pointer" refframe="UR1.TCP">  
+	<RPY> 0 0 0 </RPY> <Pos> 0 0 0 </Pos>
+	<Drawable name="EnvGeo" refframe="Env">
+          <Polytope file="Geometry/TCP_Pointer_mod" />
+     </Drawable>
+ </Frame>
+
+
+ <Frame name="Wall1" refframe="WORLD">
+      <RPY> 0 0 0 </RPY> <Pos> -1.90 0.875 0 </Pos>
+     <Drawable name="Fencegeo1" refframe="left" >
+   <RPY> 0 0 0 </RPY> <Pos> 0 0 0</Pos>
+   <Polytope file="Geometry/wall1" />
+  </Drawable>
+  </Frame>
+  
+   <Frame name="Wall2" refframe="WORLD">
+      <RPY> 0 0 0 </RPY> <Pos> -1.90 -0.875 0 </Pos>
+     <Drawable name="Fencegeo2" refframe="right" >
+   <RPY> 0 0 0 </RPY> <Pos> 0 0 0</Pos>
+   <Polytope file="Geometry/wall2" />
+  </Drawable>
+  </Frame>
+  
+   <Frame name="Wall3" refframe="WORLD">
+      <RPY> 90 0 0 </RPY> <Pos> 1.055 -0.85 0 </Pos>
+     <Drawable name="Fencegeo3" refframe="back" >
+   <RPY> 0 0 0 </RPY> <Pos> 0 0 0</Pos>
+   <Polytope file="Geometry/wall3" />
+  </Drawable>
+  </Frame>
+
+<CollisionSetup file="CollisionSetup.xml"/>
+
+</WorkCell>

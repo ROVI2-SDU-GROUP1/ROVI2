@@ -1,0 +1,13 @@
+
+<CollisionSetup>
+    <Exclude>
+	 <FramePair first="Env" second="Foot"/>
+	 <FramePair first="Env" second="Table"/>
+     <FramePair first="Foot" second="WPtable"/>        	 
+     <FramePair first="Env" second="WPtable"/>
+    <FramePair first="Foot" second="UR.Base"/>     
+    <FramePair first="UR1.Joint6" second="TCP_pointer"/>  	
+
+		
+    </Exclude>
+</CollisionSetup>

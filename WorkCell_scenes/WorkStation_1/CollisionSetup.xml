@@ -1,0 +1,12 @@
+
+<CollisionSetup>
+    <Exclude>
+	 <FramePair first="Env" second="conveyorBelt"/>
+	 <FramePair first="Env" second="Foot"/>
+	 <FramePair first="Env" second="Table"/>
+	 <FramePair first="Foot" second="conveyorBelt"/>
+     <FramePair first="Foot" second="WPtable"/>        	 
+     <FramePair first="Env" second="WPtable"/>
+    <FramePair first="Foot" second="UR.Base"/>     	      
+    </Exclude>
+</CollisionSetup>

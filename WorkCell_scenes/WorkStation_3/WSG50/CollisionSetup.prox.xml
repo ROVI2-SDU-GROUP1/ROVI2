@@ -1,0 +1,29 @@
+<CollisionSetup>
+    <Exclude>
+        <!-- Here again we basically have an exclude all type of device. -->
+
+        <FramePair first="Base" second="LeftFinger"/>
+        <FramePair first="Base" second="RightFinger"/>
+        <FramePair first="Base" second="RightSensorFinger"/>
+        <FramePair first="Base" second="LeftSensorFinger"/>
+	<FramePair first="Base" second="TCPRight"/>
+	<FramePair first="Base" second="TCPLeft"/>
+
+        <!-- We say that the jaws can't collide. -->
+        <FramePair first="LeftFinger" second="RightFinger"/>
+        <FramePair first="RightFinger" second="RightSensorFinger"/>
+        <FramePair first="TCPRight" second="RightFinger"/>
+	<FramePair first="TCPRightSensor" second="RightSensorFinger"/>
+        <FramePair first="LeftFinger" second="LeftSensorFinger"/>
+        <FramePair first="TCPLeft" second="LeftFinger"/>
+	<FramePair first="TCPLeftSensor" second="LeftSensorFinger"/>
+	<FramePair first="LeftSensorFinger" second="RightSensorFinger"/>
+	<FramePair first="TCPRightSensor" second="TCPRight"/>
+	<FramePair first="TCPLeftSensor" second="TCPLeft"/>
+	<FramePair first="TCP" second="TCPRight"/>
+	<FramePair first="TCP" second="TCPLeft"/>
+
+	<FramePair first="LeftFinger" second="RightSensorFinger"/>
+	<FramePair first="RightFinger" second="LeftSensorFinger"/>
+    </Exclude>
+</CollisionSetup>

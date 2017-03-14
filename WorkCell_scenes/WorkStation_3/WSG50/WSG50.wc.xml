@@ -1,0 +1,69 @@
+<TreeDevice name="WSG50">
+ <Frame name="Base" />
+ 
+ <!-- We create this as a virtual joint, only used to control the two dependent joints -->
+
+ <Frame name="TCP" refframe="Base" type="EndEffector">
+ <RPY> 0 0 0 </RPY> <Pos> 0 0 0 </Pos>
+ </Frame>
+ 
+ <Joint name="RightFinger" refframe="Base" type="Prismatic">
+  <RPY> 0 90 0 </RPY> <Pos> 0 -0.0722 0 </Pos>
+ </Joint>
+ <Frame name="TCPRight" refframe="RightFinger" type="EndEffector">
+ </Frame>
+
+ <Joint name="RightSensorFinger" refframe="RightFinger" type="Prismatic">
+  <RPY> 0 0 0 </RPY> <Pos> 0 -0.035 0 </Pos>
+  <Depend on="RightFinger" gain="0" offset="0" />
+ </Joint>
+ <Frame name="TCPRightSensor" refframe="RightSensorFinger" type="EndEffector">
+ </Frame>
+
+ <Joint name="LeftFinger" refframe="Base" type="Prismatic">
+  <RPY> 0 90 0 </RPY> <Pos> 0 -0.0722 0</Pos> 
+  <Depend on="RightFinger" gain="-1" offset="0" />
+ </Joint>
+ <Frame name="TCPLeft" refframe="LeftFinger" type="EndEffector">
+ </Frame>
+
+ <Joint name="LeftSensorFinger" refframe="LeftFinger" type="Prismatic">
+  <RPY> 0 0 0 </RPY> <Pos> 0 -0.035 0 </Pos>
+  <Depend on="RightFinger" gain="0" offset="0" />
+ </Joint>
+ <Frame name="TCPLeftSensor" refframe="LeftSensorFinger" type="EndEffector">
+ </Frame>
+ 
+
+
+<!-- Define limits -->
+ <PosLimit refjoint="RightFinger" min="0" max="0.055" />
+
+<!-- And now we add the geometry -->
+ <Drawable name="BaseGeo" refframe="Base">
+  <Polytope file="Geometry/WSG-050-210-P" />
+ </Drawable>
+
+ <Drawable name="LeftGeo" refframe="LeftFinger">
+  <RPY> 0 90 0 </RPY> <Pos> 0 0 0</Pos>
+  <Polytope file="Geometry/WSG-050-Backe" />
+ </Drawable>
+
+ <Drawable name="RightGeo" refframe="RightFinger">
+  <RPY> 0 -90 0 </RPY> <Pos> 0 0 0</Pos>
+  <Polytope file="Geometry/WSG-050-Backe" />
+ </Drawable>
+
+ <Drawable name="RightSensorGeo" refframe="RightSensorFinger">
+  <RPY> 0 270 180 </RPY> <Pos> 0 0.0105 0.0002</Pos>
+  <Polytope file="Geometry/WSG-FMF-NO-CONN" />
+ </Drawable>
+
+ <Drawable name="LeftSensorGeo" refframe="LeftSensorFinger">
+  <RPY> 0 90 180 </RPY> <Pos> 0 0.0105 -0.0002 </Pos>
+  <Polytope file="Geometry/WSG-FMF-NO-CONN" />
+ </Drawable>
+
+ <CollisionSetup file="CollisionSetup.prox.xml" />
+
+</TreeDevice>

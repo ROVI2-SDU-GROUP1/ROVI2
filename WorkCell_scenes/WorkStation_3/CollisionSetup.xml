@@ -1,0 +1,15 @@
+
+<CollisionSetup>
+    <Exclude>
+	 <FramePair first="Env" second="Foot"/>
+	 <FramePair first="Env" second="Table"/>
+     <FramePair first="Foot" second="WPtable"/>        	 
+     <FramePair first="Env" second="WPtable"/>
+     <FramePair first="Foot" second="UR.Base"/>     	      
+     <FramePair first="UR1.Joint6" second="WSG50.Base"/>   
+     <FramePair first="UR1.Joint5" second="WSG50.RightSensorFinger"/>   
+     <FramePair first="UR1.Joint5" second="WSG50.LeftSensorFinger"/>  
+     <FramePair first="UR1.Joint6" second="WSG50.RightSensorFinger"/>   
+     <FramePair first="UR1.Joint6" second="WSG50.LeftSensorFinger"/> 
+    </Exclude>
+</CollisionSetup>
