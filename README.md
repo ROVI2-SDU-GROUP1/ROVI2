@@ -26,7 +26,7 @@ roslaunch pointgrey_camera_driver bumblebee.launch
 ## Connect to remote ROS core
 ```
 export ROS_MASTER_URI=http://192.168.100.53:11311
-
+```
 ## Listen on some interface
 ```
 export ROS_IP=192.168.100.10
