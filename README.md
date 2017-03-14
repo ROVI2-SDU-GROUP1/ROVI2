@@ -38,7 +38,7 @@ In the case above, the IP address of my laptop is 192.168.100.10.
 The ip address of the PC in Cell3 is:
 192.168.10.53
 
-## Dependencies for UR sim
+# Dependencies for UR sim
 ```sh
 sudo apt-get install libjava3d-java libbiojava3-java 
 sudo apt-get install libxmlrpc-c++8v5:i386 
