@@ -1,0 +1,6 @@
+# target servo
+geometry_msgs/Transform target
+
+---
+# If the service request was acknowledged
+bool success

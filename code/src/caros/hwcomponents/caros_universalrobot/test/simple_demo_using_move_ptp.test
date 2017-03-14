@@ -1,0 +1,24 @@
+<launch>
+  <!-- Hardcoded workcell path... This should not be hardcoded, else the test should be CARO/MARVIN specific - the hardcoded q-configuration is also sort of scene specific... -->
+  <param name="/caros/workcell" value="$(env RW_ROOT)/example/ModelData/XMLScenes/RobotOnTable/Scene.xml" />
+
+  <group>
+    <include file="$(find caros_universalrobot)/launch/caros_universalrobot_param.xml" ns="ur_simple_demo_node">
+      <arg name="device_name" value="UR-6-85-5-A" />
+    </include>
+    <!-- The 'name' parameter has to match the 'ns' parameter used in the include tag above -->
+    <node pkg="caros_universalrobot" type="caros_universalrobot_node" name="ur_simple_demo_node" required="true" output="screen">
+      <!-- Nothing -->
+    </node>
+  </group>
+
+  <group>
+    <!-- Including the caros_universalrobot ROS parameters, as they are used for collision detection within the demo -->
+    <include file="$(find caros_universalrobot)/launch/caros_universalrobot_param.xml" ns="simple_caros_universalrobot_demo_using_move_ptp">
+      <arg name="device_name" value="UR-6-85-5-A" />
+    </include>
+    <!-- The 'name' parameter has to match the 'ns' parameter used in the include tag above -->
+    <node pkg="caros_universalrobot" type="simple_caros_universalrobot_demo_using_move_ptp" name="simple_caros_universalrobot_demo_using_move_ptp" required="true" output="screen">
+    </node>
+  </group>
+</launch>

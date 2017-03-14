@@ -1,0 +1,7 @@
+<launch>
+  <include file="$(find caros_netft)/launch/caros_netft_param.xml" ns="caros_netft">
+    <!-- No parameters have to be set, as the defaults should be good enough for getting the device up and running -->
+  </include>
+  <node pkg="caros_netft" type="caros_netft_node" name="caros_netft">
+  </node>
+</launch>

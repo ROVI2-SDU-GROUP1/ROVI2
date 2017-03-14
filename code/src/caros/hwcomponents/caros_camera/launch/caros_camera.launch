@@ -1,0 +1,50 @@
+<launch>
+  <!-- Define the parameterisation of the ROS parameters -->
+  <arg name="camera_name" default="camera" />
+  <arg name="basler_serial" default="0" />
+  <arg name="stereo" default="0" />
+  <arg name="bumblebee_serial" default="0" />
+  <arg name="ensenso_serial" default="0" />
+  <arg name="calibrated" default="0" />
+  <arg name="namespace" default="left"/>
+
+  <!-- Set the ROS parameters -->
+  <group ns="$(arg camera_name)/caros_camera">
+      <param name="frame_id" value="$(arg camera_name)" />
+      <param name="namespace" value="$(arg namespace)" />
+      <param name="basler_serial" value="$(arg basler_serial)" />
+      <param name="bumblebee_serial" value="$(arg bumblebee_serial)" />
+      <param name="ensenso_serial" value="$(arg ensenso_serial)" />
+      <param name="stereo" value="$(arg stereo)" />
+      <param name="basler_info_url" if="$(arg calibrated)"
+  	  value="file://$(find caros_camera)/calibration_files/basler_$(arg basler_serial).yaml" />
+
+      <group if="$(arg stereo)">
+        <param name="bumblebee_info_url" if="$(arg calibrated)"
+  	  value="file://$(find caros_camera)/calibration_files/bumblebee_$(arg bumblebee_serial).yaml" />
+        <param name="bumblebee_right_info_url" if="$(arg calibrated)"
+          value="file://$(find caros_camera)/calibration_files/bumblebee_$(arg bumblebee_serial)_right.yaml" />
+        <param name="ensenso_info_url" if="$(arg calibrated)"
+  	  value="file://$(find caros_camera)/calibration_files/ensenso_$(arg ensenso_serial).yaml" />
+        <param name="ensenso_right_info_url" if="$(arg calibrated)"
+          value="file://$(find caros_camera)/calibration_files/ensenso_$(arg ensenso_serial)_right.yaml" />
+      </group>
+         
+  </group>
+
+  <group ns="$(arg camera_name)">
+  <node pkg="caros_camera" type="caros_camera_node" name="caros_camera" output="screen">
+  </node>
+    <group if="$(arg stereo)">
+      <node name="stereo_image_proc" pkg="stereo_image_proc" type="stereo_image_proc" ns="caros_camera" args="_approximate_sync:=True"/>
+    </group>
+    <group unless="$(arg stereo)">
+      <node name="image_proc" pkg="image_proc" type="image_proc" ns="caros_camera/$(arg namespace)" args="_approximate_sync:=True"/>
+    </group>
+  </group>
+
+  <!-- RViz -->
+  <group if="$(arg stereo)">
+    <node name="rviz_node" pkg="rviz" type="rviz" args="-d $(find caros_camera)/config/viewer_$(arg camera_name).rviz" />
+  </group>
+</launch>

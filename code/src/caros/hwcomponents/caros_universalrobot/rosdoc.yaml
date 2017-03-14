@@ -1,0 +1,6 @@
+- builder: doxygen
+  name: C++ API
+  output_dir: c++
+  file_patterns: '*.c *.cc *.cpp *.h *.hh *.hpp *.dox *.md'
+  exclude_patterns: '*/test/*'
+  tab_size: 2

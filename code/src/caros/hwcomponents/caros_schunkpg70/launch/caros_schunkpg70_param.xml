@@ -1,0 +1,8 @@
+<!-- Parameters for the caros_schunkpg70 node -->
+<launch>
+  <!-- Define the parameterisation of the ROS parameters -->
+  <arg name="serial_device" default="/dev/ttyUSB0" />
+
+  <!-- Set the ROS parameters -->
+  <param name="serial_device" type="str" value="$(arg serial_device)" />
+</launch>

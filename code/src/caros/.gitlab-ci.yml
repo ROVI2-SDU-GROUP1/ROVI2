@@ -1,0 +1,51 @@
+before_script:
+  - "[ -d ../catkin_workspace ] || mkdir ../catkin_workspace"
+  - source /opt/ros/indigo/setup.bash
+  - export ROS_PACKAGE_PATH="${ROS_PACKAGE_PATH}:$(pwd)"
+  - source /storage/robwork-environment-setup.bash
+
+stages:
+  - workaround
+  - build
+  - test
+  - cleanup
+
+build:
+  stage: workaround
+  script:
+    - cd ../catkin_workspace
+    - catkin_make --source ../caros
+
+test:
+  stage: workaround
+  script:
+    - cd ../catkin_workspace
+    - catkin_make --source ../caros run_tests
+
+roslint:
+  stage: workaround
+  script:
+    - cd ../catkin_workspace
+    - catkin_make --source ../caros roslint
+
+catkinlint:
+  stage: workaround
+  script:
+    - cd ../catkin_workspace
+    - rospack list-names | grep '^caros_' | xargs -L 1 catkin_lint --strict -W 2 --explain --ignore missing_install_include --ignore uninstalled_export_lib --ignore env_var --ignore missing_install_target --ignore plugin_missing_install --ignore critical_var_append --pkg
+
+# clangsca:
+#   stage: test
+#   script:
+#     - cd ../catkin_workspace
+# [ Make sure to remove the old build files before running the clang static code analyser ]
+# [ Also upload the results to a temporary webplace, so that they can be examined? ]
+# [ Maybe manually create a script that ignores known false positives, such that the automation becomes extremely valuable? ]
+# [ The return code is 0 eventhough there are warnings - so maybe wrap it inside a script that does error/warning/output diagnosis and return a sensible value / the to appropriate thing ]
+#     - scan-build -o csa-output catkin_make --source ../caros
+
+cleanup:
+  stage: cleanup
+  script:
+    - "[ -d ../catkin_workspace ] && rm -r ../catkin_workspace"
+  when: always

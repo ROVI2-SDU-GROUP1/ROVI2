@@ -1,0 +1,17 @@
+# Service for running the robot in force mode
+
+# Transformation between robot base and the reference frame in which the force is computed
+geometry_msgs/Transform base2forceFrame
+
+# Selection of which elements to force control in (x, y, z, rx, ry, rz)
+uint32[] selection
+
+# The desired wrench
+geometry_msgs/Wrench wrench
+
+# The limits of the speed the robot may attempt to generate the force
+float32[] limits
+
+---
+# If the service request was acknowledged
+bool success

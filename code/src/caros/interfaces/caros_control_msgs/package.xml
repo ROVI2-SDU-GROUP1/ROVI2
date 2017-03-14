@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>caros_control_msgs</name>
+  <version>0.0.1</version>
+  <description>CAROS control interface messages</description>
+  <maintainer email="mband@mmmi.sdu.dk">mband</maintainer>
+  <license>BSD</license>
+  <url type="website">https://gitlab.com/caro-sdu/caros/wikis/home</url>
+  <url type="repository">https://gitlab.com/caro-sdu/caros.git</url>
+  <url type="bugtracker">https://gitlab.com/caro-sdu/caros/issues</url>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>message_generation</build_depend>
+
+  <depend>std_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>caros_common_msgs</depend>
+
+  <exec_depend>message_runtime</exec_depend>
+
+  <doc_depend>doxygen</doc_depend>
+  <doc_depend>rosdoc_lite</doc_depend>
+
+  <export>
+    <rosdoc config="rosdoc.yaml" />
+  </export>
+
+</package>

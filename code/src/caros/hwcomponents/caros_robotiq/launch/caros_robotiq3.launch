@@ -1,0 +1,10 @@
+<launch>
+  <group>
+    <include file="$(find caros_robotiq)/launch/caros_robotiq3_param.xml" ns="caros_robotiq3">
+      <!-- no parameters have to be set - relying on default values -->
+    </include>
+    <!-- The 'name' parameter has to match the 'ns' parameter used in the include tag above -->
+    <node pkg="caros_robotiq" type="caros_robotiq3_node" name="caros_robotiq3">
+    </node>
+  </group>
+</launch>

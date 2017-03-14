@@ -1,0 +1,20 @@
+<!-- Parameters for the caros_teleoperation node -->
+<launch>
+  <!-- Define the parameterisation of the ROS parameters -->
+  <arg name="device_name" default="UR5" />
+  <arg name="PoseIdx" default="3"/>
+  <arg name="PoseArray" default="/caros_trakstar/caros_pose_sensor_service_interface/poses"/>
+  <arg name="PushSensor" default="/caros_trakstar/caros_button_sensor_service_interface/buttons"/>
+  <arg name="rate" default="100"/>
+  <arg name="zoffset_tcp" default="0.0"/>
+  <arg name="zoffset" default="0.0"/>
+
+  <!-- Set the ROS parameters -->
+  <param name="device_name" type="str" value="$(arg device_name)" />
+  <param name="rate" type="double" value="$(arg rate)"/>
+  <param name="PushSensor" type="str" value="$(arg PushSensor)"/>
+  <param name="PoseArray" type="str" value="$(arg PoseArray)"/>
+  <param name="PoseIdx" type="int" value="$(arg PoseIdx)"/>
+  <param name="zoffset_tcp" type="double" value="$(arg zoffset_tcp)"/>
+  <param name="zoffset" type="double" value="$(arg zoffset)"/>
+</launch>

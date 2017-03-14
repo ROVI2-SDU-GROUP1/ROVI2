@@ -1,0 +1,17 @@
+<launch>
+  <group>
+    <!-- Loading default parameters for hand ip and port. -->
+    <include file="$(find caros_robotiq)/launch/caros_robotiq2_param.xml" ns="caros_robotiq2">
+      <!-- no parameters have to be set - relying on default values -->
+    </include>
+    <!-- The 'name' parameter has to match the 'ns' parameter used in the include tag above -->
+    <node pkg="caros_robotiq" type="caros_robotiq2_node" name="caros_robotiq2" required="true" output="screen">
+      <!-- Nothing -->
+    </node>
+  </group>
+
+  <group>
+    <node pkg="caros_robotiq" type="simple_caros_robotiq2_demo" name="simple_caros_robotiq2_demo" required="true" output="screen">
+    </node>
+  </group>
+</launch>

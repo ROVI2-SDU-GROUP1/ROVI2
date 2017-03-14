@@ -1,0 +1,6 @@
+# Speed of the joints. Default units of speed are rad/s and m/s for revolute and prismatic joints. 
+caros_common_msgs/Q vel
+
+---
+# If the service request was acknowledged
+bool success

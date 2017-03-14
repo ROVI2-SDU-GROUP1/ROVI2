@@ -1,0 +1,4 @@
+# Signal the gripper to stop all its movements.
+---
+# Acknowledgement of the service request
+bool success

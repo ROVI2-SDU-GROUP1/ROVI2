@@ -1,0 +1,22 @@
+<!-- Parameters for the caros_sdh node -->
+<launch>
+  <!-- Define the parameterisation of the ROS parameters -->
+  <arg name="interface_type" default="CAN" />
+  <arg name="rs232_device" default="" />
+  <arg name="rs232_port" default="0" />
+  <arg name="rs232_baudrate" default="115200" />
+  <arg name="rs232_timeout" default="0.5" />
+  <arg name="can_device" default="/dev/pcan0" />
+  <arg name="can_baudrate" default="1000000" />
+  <arg name="can_timeout" default="0.5" />
+
+  <!-- Set the ROS parameters -->
+  <param name="interface_type" type="str" value="$(arg interface_type)" />
+  <param name="rs232_device" type="str" value="$(arg rs232_device)" />
+  <param name="rs232_port" type="int" value="$(arg rs232_port)" />
+  <param name="rs232_baudrate" type="int" value="$(arg rs232_baudrate)" />
+  <param name="rs232_timeout" type="double" value="$(arg rs232_timeout)" />
+  <param name="can_device" type="str" value="$(arg can_device)" />
+  <param name="can_baudrate" type="int" value="$(arg can_baudrate)" />
+  <param name="can_timeout" type="double" value="$(arg can_timeout)" />
+</launch>

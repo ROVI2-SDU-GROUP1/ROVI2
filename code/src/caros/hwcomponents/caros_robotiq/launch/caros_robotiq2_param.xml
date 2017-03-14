@@ -1,0 +1,10 @@
+<!-- Parameters for the caros_robotiq2 node -->
+<launch>
+  <!-- Define the parameterisation of the ROS parameters -->
+  <arg name="device_ip" default="192.168.100.22" />
+  <arg name="device_port" default="502" />
+
+  <!-- Set the ROS parameters -->
+  <param name="device_ip" type="str" value="$(arg device_ip)" />
+  <param name="device_port" type="str" value="$(arg device_port)"/>
+</launch>

@@ -1,0 +1,6 @@
+# target servo
+caros_common_msgs/Q target
+
+---
+# If the service request was acknowledged
+bool success

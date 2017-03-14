@@ -1,0 +1,4 @@
+# set a configuration value, the type of config is determined by implementation
+uint32 value
+---
+bool success

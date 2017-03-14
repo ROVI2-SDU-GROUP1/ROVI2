@@ -1,0 +1,8 @@
+<launch>
+  <include file="$(find caros_trakstar)/launch/caros_trakstar_param.xml" ns="caros_trakstar">
+    <!-- No parameters have to be set, as the defaults should be good enough for getting the device up and running -->
+  </include>
+  <node pkg="caros_trakstar" type="caros_trakstar_node" name="caros_trakstar" output="screen">
+  <!-- env name="ROSCONSOLE_CONFIG_FILE" value="$(find caros_trakstar)/launch/rosconsole.config" /-->
+  </node>
+</launch>

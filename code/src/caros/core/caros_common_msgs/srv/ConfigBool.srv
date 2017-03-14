@@ -1,0 +1,4 @@
+# Set a configuration value
+bool value
+---
+bool success

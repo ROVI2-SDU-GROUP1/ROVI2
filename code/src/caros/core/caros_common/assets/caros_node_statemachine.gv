@@ -1,0 +1,14 @@
+digraph G {
+	RUNNING [color=green];
+	ERROR [color=red];
+	FATALERROR [color=black];
+	PREINIT -> RUNNING [color=green,label="start()\n -> activateHook()"];
+	PREINIT -> ERROR [color=red,label="CAROS_ERROR(...)"];
+	PREINIT -> FATALERROR [color=black,label="CAROS_FATALERROR(...)"];
+	RUNNING -> ERROR [color=red,label="CAROS_ERROR(...)"];
+	RUNNING -> FATALERROR [color=black,label="CAROS_FATALERROR(...)"];
+	ERROR -> RUNNING [color=green,label="Service: recover\n -> recoverHook()"];
+	RUNNING -> RUNNING [style=dashed,label=" runLoopHook()"];
+	ERROR -> ERROR [style=dashed,label=" errorLoopHook()"];
+	FATALERROR -> FATALERROR [style=dashed,label=" fatalErrorLoopHook()"];
+}
