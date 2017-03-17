@@ -4,7 +4,7 @@
 ### Install
 #### Ubuntu/Debian
 ```sh
-sudo apt-get install ros-kinetic-openni2-launch
+sudo apt-get install ros-kinetic-openni2-launch ros-kinetic-cv-bridge
 ```
 #### Arch
 Ros-Kinetic is not available in the default repositories, but can instead be installed from AUR. Example using pacaur:
