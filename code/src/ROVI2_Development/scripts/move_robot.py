@@ -30,7 +30,7 @@ if __name__ == "__main__":
 #	for i in range(6):
 #		qs.data.append( Float64(0) )
 
-	data.append(Q([0,4*3.14,0,0,0,0]))
+	data.append(Q([0,-3.14/2,0,0,0,0]))
 
 
 	speeds = []
