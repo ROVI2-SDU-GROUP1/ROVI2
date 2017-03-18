@@ -37,8 +37,38 @@ class MoveRobot {
 public:
 
 	MoveRobot(){
-    toolPositions.push_back(rw::math::Vector3D<double>(0,-0.2, 0.858));
-    toolPositions.push_back(rw::math::Vector3D<double>(0,-0.191, 1.00));
+		// Up-don motion
+    //toolPositions.push_back(rw::math::Vector3D<double>(0,-0.2, 0.858));
+    //toolPositions.push_back(rw::math::Vector3D<double>(0,-0.191, 1.00));
+
+		// Square motion
+		/*
+		UL:
+			x: -0.201
+			y: -0.191
+			z:  0.933
+
+		UR:
+			x: 0.099
+			y: -0.191
+			z: 0.933
+
+		DR:
+			x: 0.099
+			y: -0.191
+			z:0.783
+
+		DL:
+			x: -0.201
+			y: -0.191
+			z: 0.783
+		*/
+
+		toolPositions.push_back(rw::math::Vector3D<double>(-0.191,-0.201, 0.933)); // y,x,z - totalt retarderet...
+		toolPositions.push_back(rw::math::Vector3D<double>(-0.191, 0.099, 0.933)); // y,x,z - totalt retarderet...
+		toolPositions.push_back(rw::math::Vector3D<double>(-0.191,0.099, 0.783)); // y,x,z - totalt retarderet...
+		toolPositions.push_back(rw::math::Vector3D<double>(-0.191,-0.201, 0.783)); // y,x,z - totalt retarderet...
+
 
 		Robot = nh_.serviceClient<caros_control_msgs::SerialDeviceMovePtp>("/ur_simple_demo_node/caros_serial_device_service_interface/move_ptp");
     sub_robotFeedback = nh_.subscribe("/ur_simple_demo_node/caros_serial_device_service_interface/robot_state", 1, &MoveRobot::RobotFeedbackCallback, this);
@@ -63,7 +93,7 @@ public:
     auto diff = (_device.get()->baseTend(_state).P() - toolPositions[i]).norm2(); // Difference between actual and desired state
 		std::cout << "i: " << i <<  " diff: " << diff << " current: " << _device.get()->baseTend(_state).P() << " , desired: " << toolPositions[i] << std::endl;
 
-		if(data->header.seq %6 == 0){
+		if(data->header.seq %10 == 0){
 
 			if(firstRun){
 					firstRun = false;
