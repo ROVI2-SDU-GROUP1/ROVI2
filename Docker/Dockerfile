@@ -2,16 +2,6 @@
 FROM stefanrvo/robworkstudio:latest
 
 USER root
-#install roslint
-RUN apt-get -y update
-RUN apt-get -y install ros-kinetic-roslint \
-	ros-kinetic-cv-bridge \
-	ros-kinetic-image-transport \
-	ros-kinetic-image-geometry \
-	ros-kinetic-desktop-full \
-	ros-kinetic-openni2-launch \
-	ros-kinetic-cv-bridge \
-	nano
 
 #Use bash..
 RUN ln -s -f  /bin/bash /bin/sh
