@@ -19,7 +19,7 @@ USER rw_user
 
 #clone ROVI2 repo
 
-RUN git clone https://github.com/Exchizz/ROVI2.git
+RUN git clone https://github.com/ROVI2-SDU-GROUP1/ROVI2.git
 
 RUN source /opt/ros/kinetic/setup.sh && cd ROVI2/code && catkin_make
 
