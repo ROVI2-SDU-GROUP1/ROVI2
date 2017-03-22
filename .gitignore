@@ -1,3 +1,5 @@
 *.bag
 **/devel/
 **/build/
+*.out
+**/robwork-release-*.cfg.xml
