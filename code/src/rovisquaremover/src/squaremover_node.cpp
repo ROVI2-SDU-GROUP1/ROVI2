@@ -1,9 +1,13 @@
 #include "squaremover_node.hpp"
 #include <rw/math/Transform3D.hpp>
 #include <chrono>         // std::chrono::seconds
+#include <cstdlib>
+#include <ctime>
 MoveRobot::MoveRobot()
-: q_desired(6, 0, -1.6, 0, -1.5708, 0, 0)
+: q_desired(6, 0, -1.6, 0, -1.5708, 0, 0) //Start in upright position
 {
+    //init randomness
+    srand(time(NULL));
     // Up-down motion
     //toolPositions.push_back(rw::math::Vector3D<double>(0,-0.2, 0.858));
     //toolPositions.push_back(rw::math::Vector3D<double>(0,-0.191, 1.00));
@@ -77,16 +81,31 @@ void MoveRobot::runner()
             this->state_position_lock.unlock();
             continue;
         }
-        rw::math::Transform3D<double> NewToolPosition(this->toolPositions[this->pos_counter], this->_device.get()->baseTend( this->_state).R());
-      	std::vector<rw::math::Q> solutions = this->ik_solver_->solve(NewToolPosition, this->_state);
-
-        std::cout << "Number of solutions found: " <<  solutions.size() << std::endl;
-      	if(solutions.size() > 0)
+        std::cout << "Finding a solution for position " << this->pos_counter << std::endl;
+        while(this->in_position == true)
         {
-            this->in_position = false;
-      		this->q_desired = solutions.front();
-      		SendQ(this->q_desired);
-      	}
+            rw::math::Transform3D<double> NewToolPosition(this->toolPositions[this->pos_counter], this->_device.get()->baseTend( this->_state).R());
+          	std::vector<rw::math::Q> solutions = this->ik_solver_->solve(NewToolPosition, this->_state);
+            std::cout << "Number of solutions found: " <<  solutions.size() << std::endl;
+          	if(solutions.size() > 0)
+            {
+                this->in_position = false;
+          		this->q_desired = solutions.front();
+          		SendQ(this->q_desired);
+          	}
+            else
+            { //if we can't find a solution, add a small random displacement to all joints.
+              //We don't output this on the robot, we just use it to solve the inverse kinematics.
+              //This is probably NOT a good way to fix this...
+              rw::math::Q cur_q  = this->_device->getQ(this->_state);
+              for(uint8_t i = 0; i < cur_q.size(); i++)
+              {
+                  cur_q[i] += (rand() % 1000) / 1000000.;
+              }
+              this->_device->setQ(cur_q, this->_state);
+
+            }
+        }
         this->state_position_lock.unlock();
     }
 }
@@ -95,13 +114,16 @@ void MoveRobot::RobotFeedbackCallback(const caros_control_msgs::RobotState::Cons
     //Try to obtain the lock.
     //If this is not possible, simply abort, as this means that the runner thread is not done calculating yet.
     if(this->state_position_lock.try_lock() == false) return;
+
     rw::math::Q qcurrent_(6, data->q.data[0], data->q.data[1],data->q.data[2], data->q.data[3],data->q.data[4], data->q.data[5]);
     auto diff = (qcurrent_ - this->q_desired).norm2(); // Difference between actual and desired state
-    if(diff < 0.05)
-    {   //pretty close...
-        this->_device->setQ(this->q_desired, this->_state);
+    if(diff < 0.005)
+    {   //pretty close..., maybe need to be moe liberal on the real robot
+        if(this->in_position == false) //Only increase counter if we were not in position beforehand.
+            this->pos_counter = (this->pos_counter + 1) % this->toolPositions.size();
+        this->_device->setQ(qcurrent_, this->_state);
+        std::cout << "current position: " << this->_device.get()->baseTend(this->_state).P() << std::endl;
         this->in_position = true;
-        this->pos_counter = (this->pos_counter + 1) % this->toolPositions.size();
     }
     this->state_position_lock.unlock(); //lose the lock.
 }
