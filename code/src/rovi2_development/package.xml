@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package>
-  <name>ROVI2_Development</name>
+  <name>rovi2_development</name>
   <version>0.0.0</version>
-  <description>The ROVI2_Development package</description>
+  <description>The rovi2_development package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag --> 
   <!-- Example:  -->
