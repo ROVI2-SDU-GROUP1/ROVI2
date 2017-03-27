@@ -106,7 +106,7 @@ find_package(OpenCV)
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
 #  INCLUDE_DIRS include
-#  LIBRARIES ROVI2_Development
+#  LIBRARIES rovi2_Development
 #  CATKIN_DEPENDS roscpp std_msgs
 #  DEPENDS system_lib
 )
@@ -124,7 +124,7 @@ include_directories(
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
-#   src/${PROJECT_NAME}/ROVI2_Development.cpp
+#   src/${PROJECT_NAME}/rovi2_Development.cpp
 # )
 
 ## Add cmake target dependencies of the library
@@ -149,6 +149,14 @@ set_target_properties(opencv_node PROPERTIES OUTPUT_NAME node PREFIX "")
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(opencv_node
+  ${OpenCV_LIBS}
+  ${catkin_LIBRARIES}
+)
+
+add_executable(image_detector src/image_detector_node.cpp)
+add_dependencies(image_detector ${catkin_EXPORTED_TARGETS})
+
+target_link_libraries(image_detector
   ${OpenCV_LIBS}
   ${catkin_LIBRARIES}
 )
@@ -193,7 +201,7 @@ target_link_libraries(opencv_node
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_ROVI2_Development.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_rovi2_Development.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()
