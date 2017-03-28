@@ -22,8 +22,8 @@ void find2DPose(const sensor_msgs::Image::ConstPtr& msg){
 
   cv::Mat image = cv_ptr->image.clone();
 
-  cv::imshow("test", image);
-  cv::waitKey(1);
+  //cv::imshow("test", image);
+  //cv::waitKey(1);
 
   // Do image detection // TODO
 
