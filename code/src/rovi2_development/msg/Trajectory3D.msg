@@ -1,4 +1,5 @@
 Header header
-geometry_msgs/Vector3 acc
-geometry_msgs/Vector3 vel
-geometry_msgs/Vector3 pos
+geometry_msgs/Point acc
+geometry_msgs/Point vel
+geometry_msgs/Point pos
+time t0

@@ -9,6 +9,8 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
   message_generation
 )
+find_package(cmake_modules REQUIRED)
+find_package(Eigen REQUIRED)
 
 find_package(OpenCV)
 
@@ -31,7 +33,9 @@ catkin_package(CATKIN_DEPENDS message_runtime)
 
 
 #We don't enable compilerwarnings in the headers, because some of the guys who wrote them are idiots...
-include_directories(SYSTEM ${catkin_INCLUDE_DIRS})
+include_directories(SYSTEM ${catkin_INCLUDE_DIRS} ${EIGEN3_INCLUDE_DIR})
+
+include_directories("headers")
 
 #Add NAZI compiler arguments..
 set(CMAKE_CXX_FLAGS "-std=c++11 \
@@ -66,4 +70,9 @@ target_link_libraries(stereo ${OpenCV_LIBS} ${catkin_LIBRARIES})
 # Kalman node
 add_executable(kalman_node src/kalman_estimator_node.cpp)
 add_dependencies(kalman_node ${catkin_EXPORTED_TARGETS})
-target_link_libraries(kalman_node ${OpenCV_LIBS} ${catkin_LIBRARIES})
+target_link_libraries(kalman_node ${OpenCV_LIBS} ${EIGEN3_LIBS} ${catkin_LIBRARIES})
+
+# Ball trajectory generator for testing kalman node
+add_executable(ball_traj_tester src/ball_traj_tester.cpp)
+add_dependencies(ball_traj_tester ${catkin_EXPORTED_TARGETS})
+target_link_libraries(ball_traj_tester ${OpenCV_LIBS} ${EIGEN3_LIBS} ${catkin_LIBRARIES})

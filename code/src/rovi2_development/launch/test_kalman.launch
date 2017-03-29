@@ -1,0 +1,5 @@
+<launch>
+  <node name="kalman_node" pkg="rovi2_development" type="kalman_node" />
+  <node name="ball_traj_tester" pkg="rovi2_development" type="ball_traj_tester" output="screen" />
+</launch>
+
