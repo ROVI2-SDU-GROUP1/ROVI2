@@ -1,6 +1,7 @@
 //Very simply node. Simply generates points in a balls trajectory
 #include <ros/ros.h>
 #include <geometry_msgs/PointStamped.h>
+#include <cstdlib>
 ros::Time start_time;
 
 double x_acc = 3.; double y_acc = -3.; double z_acc = -9.82;
@@ -24,9 +25,9 @@ int main(int argc, char  *argv[]) {
     {
       ros::Time t_now = ros::Time::now();
       geometry_msgs::PointStamped pos;
-      pos.point.x = calc_pos(x_acc, x_v0, x_0, (t_now - start_time).toSec());
-      pos.point.y = calc_pos(y_acc, y_v0, y_0,  (t_now - start_time).toSec());
-      pos.point.z = calc_pos(z_acc, z_v0, z_0,  (t_now - start_time).toSec());
+      pos.point.x = calc_pos(x_acc, x_v0, x_0, (t_now - start_time).toSec()) + random() % 1000 / 10000.;
+      pos.point.y = calc_pos(y_acc, y_v0, y_0,  (t_now - start_time).toSec()) + random() % 1000 / 10000.;;
+      pos.point.z = calc_pos(z_acc, z_v0, z_0,  (t_now - start_time).toSec()) + random() % 1000 / 10000.;;
       pos.header.stamp = t_now;
       pub.publish(pos);
       r.sleep();

@@ -11,7 +11,9 @@ class Kalman_Estimator
         void pose_callback(const geometry_msgs::PointStamped::ConstPtr &msg);
         ros::NodeHandle nh;
         ros::Subscriber sub;
-        ros::Publisher pub;
+        ros::Publisher pub_filtered;
+        ros::Publisher pub_raw;
+
         tf2::Stamped<Eigen::Vector3d> prev_points[3]; //The three previosly recieved points
         Eigen::VectorXd cur_state;
         Eigen::Matrix<double, 9, 9> cur_covariance;
