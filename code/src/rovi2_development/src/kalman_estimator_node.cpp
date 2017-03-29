@@ -32,9 +32,21 @@ void Kalman_Estimator::do_predict_step()
     this->cur_covariance = this->transition_matrix * this->cur_covariance;
 }
 
-void Kalman_Estimator::do_update_step(__attribute__((unused)) Eigen::VectorXd measured_state)
+void Kalman_Estimator::do_update_step(Eigen::VectorXd measured_state)
 {
-    //lulz, just skip for now.
+    //Get difference between measurement and estimate
+    Eigen::VectorXd y_k = measured_state - this->measurement_matrix * this->cur_state;
+    //"innovation" covariance step.
+    //Maybe we could get an estimate of R_k from the vision stuff by somehow evaluating how good our detection
+    //Of the balls position was last time. Just pick 0.1 in the diagonal for now. We could also try to use ALS??
+    Eigen::Matrix<double, 9, 9> R_k = Eigen::MatrixXd::Identity(this->transition_matrix.rows(), this->transition_matrix.cols()) * 0.1;
+    Eigen::Matrix<double, 9, 9> S_k = this->measurement_matrix * this->cur_covariance * this->measurement_matrix.transpose() + R_k;
+    //Compute the optimal kalman gain from the different covariance matrix'
+    Eigen::MatrixXd K_gain = this->cur_covariance * this->measurement_matrix.transpose() * S_k.inverse();
+    //Update state estimate.
+    this->cur_state = this->cur_state + K_gain * y_k;
+    this->cur_covariance = (Eigen::MatrixXd::Identity(this->transition_matrix.rows(), this->transition_matrix.cols()) - K_gain * this->measurement_matrix) *
+        this->cur_covariance;
 }
 
 void Kalman_Estimator::update_transition_matrix(double time_step)
@@ -87,24 +99,34 @@ void Kalman_Estimator::pose_callback( __attribute__((unused)) const geometry_msg
   measured_state(0) = pos(0);
   measured_state(1) = pos(1);
   measured_state(2) = pos(2);
-  measured_state(3) = acc(0);
-  measured_state(4) = acc(1);
-  measured_state(5) = acc(2);
-  measured_state(6) = cur_speed(0);
-  measured_state(7) = cur_speed(1);
-  measured_state(8) = cur_speed(2);
+  measured_state(3) = cur_speed(0);
+  measured_state(4) = cur_speed(1);
+  measured_state(5) = cur_speed(2);
+  measured_state(6) = acc(0);
+  measured_state(7) = acc(1);
+  measured_state(8) = acc(2);
 
 
   this->update_transition_matrix((this->prev_points[1].stamp_ - this->prev_points[0].stamp_).toSec());
   this->do_predict_step();
   this->do_update_step(measured_state);
-  //  Do the parameter estimation // TODO
+  //Set acc, pos and cur_speed to the new found values
+  pos(0)        = this->cur_state(0);
+  pos(1)        = this->cur_state(1);
+  pos(2)        = this->cur_state(2);
+  cur_speed(0)  = this->cur_state(3);
+  cur_speed(1)  = this->cur_state(4);
+  cur_speed(2)  = this->cur_state(5);
+  acc(0)        = this->cur_state(6);
+  acc(1)        = this->cur_state(7);
+  acc(2)        = this->cur_state(8);
+
   rovi2_development::Trajectory3D traj;
   traj.header.stamp = this_pt.header.stamp;
-  //traj.acc = vector3d_to_point(acc);
-  //traj.vel = vector3d_to_point(cur_speed);
-  //traj.pos = vector3d_to_point(pos);
-  //traj.t0 = this_pt.header.stamp;
+  traj.acc = vector3d_to_point(acc);
+  traj.vel = vector3d_to_point(cur_speed);
+  traj.pos = vector3d_to_point(pos);
+  traj.t0 = this_pt.header.stamp;
   this->pub.publish(traj);
 }
 
