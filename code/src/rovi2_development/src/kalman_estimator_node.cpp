@@ -1,6 +1,7 @@
 #include <iostream>
 #include <ros/ros.h>
 #include <geometry_msgs/PointStamped.h>
+#include <rovi2_development/Trajectory3D.h>
 
 ros::Subscriber sub;
 ros::Publisher pub;
@@ -9,11 +10,12 @@ std::vector<float> secondPoint;
 std::vector<float> firstPoint;
 
 
-void parameterEstimation(const geometry_msgs::PointStamped::ConstPtr &msg
+void parameterEstimation(__attribute__((unused)) const geometry_msgs::PointStamped::ConstPtr &msg)
+{
 
   //  Do the parameter estimation // TODO
-
-  pub.publish(parameters)
+  rovi2_development::Trajectory3D traj;
+  pub.publish(traj);
 
   secondPoint = firstPoint;
 }
@@ -24,7 +26,7 @@ int main(int argc, char **argv){
   ros::Rate rate(20);
 
   sub = nh.subscribe<geometry_msgs::PointStamped>("/pose/3d",1,parameterEstimation);
-  pub = nh.advertise<geometry_msgs::PointStamped>("/pose/parameter",1);
+  pub = nh.advertise<rovi2_development::Trajectory3D>("/pose/parameter",1);
 
   ros::Time last = ros::Time::now();
 

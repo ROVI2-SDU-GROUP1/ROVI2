@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.0.0)
 project(rovi2_development)
 
 find_package(catkin REQUIRED COMPONENTS
@@ -7,15 +7,45 @@ find_package(catkin REQUIRED COMPONENTS
   image_transport
   cv_bridge
   sensor_msgs
+  message_generation
 )
 
 find_package(OpenCV)
 
-catkin_package()
 
-include_directories(${catkin_INCLUDE_DIRS})
+ add_message_files(
+   FILES
+   Trajectory3D.msg
+)
 
-set(CMAKE_CXX_FLAGS -std=c++11)
+ generate_messages(
+   DEPENDENCIES
+   std_msgs
+   geometry_msgs
+ )
+
+
+
+
+catkin_package(CATKIN_DEPENDS message_runtime)
+
+
+#We don't enable compilerwarnings in the headers, because some of the guys who wrote them are idiots...
+include_directories(SYSTEM ${catkin_INCLUDE_DIRS})
+
+#Add NAZI compiler arguments..
+set(CMAKE_CXX_FLAGS "-std=c++11 \
+ -O2 \
+ -Wall \
+ -Wextra \
+ -Wshadow \
+ -Wcast-qual \
+ -Wpointer-arith \
+ -Wno-error=unused-function \
+ -Wno-error=unused-variable \
+ -ffunction-sections \
+ -fdata-sections \
+ -g" )
 
 # Bumblebee node
 add_executable(opencv_node src/opencv_node.cpp)
@@ -32,3 +62,8 @@ target_link_libraries(image_detector ${OpenCV_LIBS} ${catkin_LIBRARIES})
 add_executable(stereo src/stereo_node.cpp)
 add_dependencies(stereo ${catkin_EXPORTED_TARGETS})
 target_link_libraries(stereo ${OpenCV_LIBS} ${catkin_LIBRARIES})
+
+# Kalman node
+add_executable(kalman_node src/kalman_estimator_node.cpp)
+add_dependencies(kalman_node ${catkin_EXPORTED_TARGETS})
+target_link_libraries(kalman_node ${OpenCV_LIBS} ${catkin_LIBRARIES})
