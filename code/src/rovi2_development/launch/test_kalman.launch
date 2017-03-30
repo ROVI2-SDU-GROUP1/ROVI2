@@ -1,5 +1,6 @@
 <launch>
   <node name="kalman_node" pkg="rovi2_development" type="kalman_node" output="screen" />
   <node name="ball_traj_tester" pkg="rovi2_development" type="ball_traj_tester" output="screen" />
+  <node name="trajectory_plotter" pkg="rovi2_development" type="trajectory_plotter.py" output="screen" />
 </launch>
 

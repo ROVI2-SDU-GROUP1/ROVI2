@@ -3,12 +3,14 @@ project(rovi2_development)
 
 find_package(catkin REQUIRED COMPONENTS
   roscpp
+  rospy
   std_msgs
   image_transport
   cv_bridge
   sensor_msgs
   message_generation
 )
+catkin_python_setup()
 find_package(cmake_modules REQUIRED)
 find_package(Eigen REQUIRED)
 
@@ -76,3 +78,6 @@ target_link_libraries(kalman_node ${OpenCV_LIBS} ${EIGEN3_LIBS} ${catkin_LIBRARI
 add_executable(ball_traj_tester src/ball_traj_tester.cpp)
 add_dependencies(ball_traj_tester ${catkin_EXPORTED_TARGETS})
 target_link_libraries(ball_traj_tester ${OpenCV_LIBS} ${EIGEN3_LIBS} ${catkin_LIBRARIES})
+
+catkin_install_python(PROGRAMS scripts/trajectory_plotter.py
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})

@@ -40,10 +40,10 @@ void Kalman_Estimator::do_update_step(Eigen::VectorXd measured_state)
     //"innovation" covariance step.
     //Maybe we could get an estimate of R_k from the vision stuff by somehow evaluating how good our detection
     //Of the balls position was last time. Just pick 0.1 in the diagonal for now. We could also try to use ALS??
-    Eigen::Matrix<double, 9, 9> R_k = Eigen::MatrixXd::Identity(this->transition_matrix.rows(), this->transition_matrix.cols()) * 0.1;
+    Eigen::Matrix<double, 9, 9> R_k = Eigen::MatrixXd::Identity(this->transition_matrix.rows(), this->transition_matrix.cols()) * 1000;
     Eigen::Matrix<double, 9, 9> S_k = this->measurement_matrix * this->cur_covariance * this->measurement_matrix.transpose() + R_k;
     //Compute the optimal kalman gain from the different covariance matrix'
-    //std::cout << this->cur_covariance << " ... \n" << this->measurement_matrix << std::endl;
+    //std::cout << this->cur_covariance << " ... \n" << this->measurement_matrix <<  " ... \n" << R_k << std::endl;
 
     Eigen::MatrixXd K_gain = this->cur_covariance * this->measurement_matrix.transpose() * S_k.inverse();
     //Update state estimate.
@@ -78,7 +78,7 @@ void Kalman_Estimator::update_transition_matrix(double time_step)
     y = 0;
     for(uint8_t x = 6; x <  this->transition_matrix.cols(); x++, y++)
     {
-        this->transition_matrix(y, x) = this->cur_state(x) * 0.5 * time_step * time_step ;
+        this->transition_matrix(y, x) = 0.5 * time_step * time_step ;
     }
 
 }
