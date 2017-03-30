@@ -15,7 +15,7 @@ double calc_pos(double acc, double v0, double p0, double ti)
 }
 
 int main(int argc, char  *argv[]) {
-    ros::init(argc, argv, "ball trajectory generator");
+    ros::init(argc, argv, "ball_trajectory_generator");
     ros::NodeHandle nh;
     ros::Publisher pub = nh.advertise<geometry_msgs::PointStamped>("/pose/3d",1);
     ros::Publisher pub_raw = nh.advertise<geometry_msgs::PointStamped>("/pose/3d_true",1);
