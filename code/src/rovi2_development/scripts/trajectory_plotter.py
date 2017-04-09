@@ -27,7 +27,7 @@ class Trajectory_Plotter:
         last_plot = None
         last_points = None
 
-        while(True):
+        while(len(self.raw_points) < 100):
             with self.lock:
                 if(last_plot is not None): last_plot.remove()
                 if(last_points is not None):
@@ -40,7 +40,7 @@ class Trajectory_Plotter:
                     continue
 
                 last_traj = self.filtered_trajectories[-1]
-                t = np.linspace(- 5,  5, 1000)
+                t = np.linspace(- 3,  3, 1000)
                 x = 0.5 * last_traj.acc.x * t * t + \
                     last_traj.vel.x * t + last_traj.pos.x
                 y = 0.5 * last_traj.acc.y * t * t + \
@@ -69,6 +69,8 @@ class Trajectory_Plotter:
                     self.raw_points[-1].point.z + 20)"""
 
 
+            plt.pause(0.05)
+        while(True):
             plt.pause(0.05)
     def raw_points_callback(self, the_point):
         with self.lock:

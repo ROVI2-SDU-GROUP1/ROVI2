@@ -40,7 +40,17 @@ void Kalman_Estimator::do_update_step(Eigen::VectorXd measured_state)
     //"innovation" covariance step.
     //Maybe we could get an estimate of R_k from the vision stuff by somehow evaluating how good our detection
     //Of the balls position was last time. Just pick 0.1 in the diagonal for now. We could also try to use ALS??
-    Eigen::Matrix<double, 9, 9> R_k = Eigen::MatrixXd::Identity(this->transition_matrix.rows(), this->transition_matrix.cols()) * 1000;
+    Eigen::Matrix<double, 9, 9> R_k = Eigen::MatrixXd::Identity(this->transition_matrix.rows(), this->transition_matrix.cols());
+    R_k(0,0) = 10; //Ok sure about the actual points.
+    R_k(1,1) = 10; //Ok sure about the actual points.
+    R_k(2,2) = 10; //Ok sure about the actual points.
+    R_k(3,3) = 1000; //Not too sure about velocity.
+    R_k(4,4) = 1000; //Not too sure about velocity.
+    R_k(5,5) = 1000; //Not too sure about velocity.
+    R_k(6,6) = 10000; //Very unsure about acceleration.
+    R_k(7,7) = 10000; //Very unsure about acceleration.
+    R_k(8,8) = 10000; //Very unsure about acceleration.
+
     Eigen::Matrix<double, 9, 9> S_k = this->measurement_matrix * this->cur_covariance * this->measurement_matrix.transpose() + R_k;
     //Compute the optimal kalman gain from the different covariance matrix'
     //std::cout << this->cur_covariance << " ... \n" << this->measurement_matrix <<  " ... \n" << R_k << std::endl;
@@ -110,6 +120,10 @@ void Kalman_Estimator::pose_callback( __attribute__((unused)) const geometry_msg
   measured_state(6) = acc(0);
   measured_state(7) = acc(1);
   measured_state(8) = acc(2);
+
+  //measured_state(6) = 3;
+  //measured_state(7) = -3;
+  //measured_state(8) = -9.82;
   rovi2_development::Trajectory3D traj;
   traj.header.stamp = this_pt.header.stamp;
   traj.t0 = this_pt.header.stamp;
@@ -155,7 +169,7 @@ Kalman_Estimator::Kalman_Estimator()
 
     //We don't know where the ball is at all, so initialise extremly high)
     for(uint8_t i = 0; i < this->cur_covariance.rows(); i++)
-        this->cur_covariance(i, i) = 99999.;
+        this->cur_covariance(i, i) = 999999999.;
 
     //Set the measurement matrix. This is easy, it's just identity.
     this->measurement_matrix = Eigen::MatrixXd::Identity(this->measurement_matrix.rows(), this->measurement_matrix.cols());

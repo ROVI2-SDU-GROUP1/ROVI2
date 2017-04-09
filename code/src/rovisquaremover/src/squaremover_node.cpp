@@ -53,6 +53,7 @@ MoveRobot::MoveRobot(bool shape, bool _preprocess)
         }
         //Start with the bottom of the circle
     }
+
 	this->Robot = nh_.serviceClient<caros_control_msgs::SerialDeviceMovePtp>("/ur_simple_demo_node/caros_serial_device_service_interface/move_ptp");
     this->sub_robotFeedback = nh_.subscribe("/ur_simple_demo_node/caros_serial_device_service_interface/robot_state", 1, &MoveRobot::RobotFeedbackCallback, this);
 
