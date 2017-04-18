@@ -30,6 +30,20 @@ find_package(OpenCV)
 
 
 
+########## RobWork ############
+# Used to resolve absolute path names
+SET(ROOT ${CMAKE_CURRENT_SOURCE_DIR})
+
+# Set the RobWork root (edit in .bashrc if necessary)
+SET(RW_ROOT $ENV{RW_ROOT})
+
+
+# Use RobWork
+MESSAGE("-- RobWork root: " ${RW_ROOT})
+SET(RobWork_DIR ${RW_ROOT}/cmake)
+FIND_PACKAGE(RobWork REQUIRED)
+INCLUDE_DIRECTORIES( SYSTEM ${ROBWORK_INCLUDE_DIRS} )
+LINK_DIRECTORIES( ${ROBWORK_LIBRARY_DIRS} )
 
 catkin_package(CATKIN_DEPENDS message_runtime)
 
@@ -51,6 +65,7 @@ set(CMAKE_CXX_FLAGS "-std=c++11 \
  -Wno-error=unused-variable \
  -ffunction-sections \
  -fdata-sections \
+ -Werror \
  -g" )
 
 # Bumblebee node
@@ -78,6 +93,11 @@ target_link_libraries(kalman_node ${OpenCV_LIBS} ${EIGEN3_LIBS} ${catkin_LIBRARI
 add_executable(ball_traj_tester src/ball_traj_tester.cpp)
 add_dependencies(ball_traj_tester ${catkin_EXPORTED_TARGETS})
 target_link_libraries(ball_traj_tester ${OpenCV_LIBS} ${EIGEN3_LIBS} ${catkin_LIBRARIES})
+
+# Anytime RRT tests
+add_executable(anytime_test src/AnytimeRRT.cpp)
+add_dependencies(anytime_test ${catkin_EXPORTED_TARGETS})
+target_link_libraries(anytime_test ${OpenCV_LIBS} ${EIGEN3_LIBS} ${catkin_LIBRARIES} ${ROBWORK_LIBRARIES})
 
 catkin_install_python(PROGRAMS scripts/trajectory_plotter.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
