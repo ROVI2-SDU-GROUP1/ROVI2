@@ -56,16 +56,6 @@ include_directories("headers")
 #Add NAZI compiler arguments..
 set(CMAKE_CXX_FLAGS "-std=c++11 \
  -O2 \
- -Wall \
- -Wextra \
- -Wshadow \
- -Wcast-qual \
- -Wpointer-arith \
- -Wno-error=unused-function \
- -Wno-error=unused-variable \
- -ffunction-sections \
- -fdata-sections \
- -Werror \
  -g" )
 
 # Bumblebee node
@@ -95,9 +85,9 @@ add_dependencies(ball_traj_tester ${catkin_EXPORTED_TARGETS})
 target_link_libraries(ball_traj_tester ${OpenCV_LIBS} ${EIGEN3_LIBS} ${catkin_LIBRARIES})
 
 # Anytime RRT tests
-add_executable(anytime_test src/AnytimeRRT.cpp)
-add_dependencies(anytime_test ${catkin_EXPORTED_TARGETS})
-target_link_libraries(anytime_test ${OpenCV_LIBS} ${EIGEN3_LIBS} ${catkin_LIBRARIES} ${ROBWORK_LIBRARIES})
+#add_executable(anytime_test src/AnytimeRRT.cpp)
+#add_dependencies(anytime_test ${catkin_EXPORTED_TARGETS})
+#target_link_libraries(anytime_test ${OpenCV_LIBS} ${EIGEN3_LIBS} ${catkin_LIBRARIES} ${ROBWORK_LIBRARIES})
 
 catkin_install_python(PROGRAMS scripts/trajectory_plotter.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})

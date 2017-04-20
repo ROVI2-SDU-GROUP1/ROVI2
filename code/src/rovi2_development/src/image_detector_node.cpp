@@ -10,13 +10,8 @@
 int mx = 0;
 int my = 0;
 
-void mouseCallback(int event, int x, int y, int flags, void* userdata){
-  std::cout << x << "," << y << std::endl;
-}
-
-ros::Subscriber sub;
-ros::Publisher pub;
-ros::Publisher pub1;
+ros::Subscriber image_sub;
+ros::Publisher point_pub;
 
 void closing(cv::Mat &src){
   cv::Mat dst;
@@ -126,7 +121,7 @@ void find2DPose(const sensor_msgs::Image::ConstPtr& msg){
   if (!cont.size()){
     //cv::imshow("t2", imageBGR);
     //cv::waitKey(1);
-    pub.publish(point);
+    point_pub.publish(point);
     return;
   }
 
@@ -150,20 +145,23 @@ void find2DPose(const sensor_msgs::Image::ConstPtr& msg){
 
 
   //
-  pub.publish(point);
-  point.point.x = point.point.x - 100;
-  pub1.publish(point);
+  point_pub.publish(point);
 }
 
 int main(int argc, char **argv){
 
+  std::string image_sub_name;
+  std::string point_pub_name;
+
   ros::init(argc, argv, "image_detection");
-	ros::NodeHandle nh;
+	ros::NodeHandle nh("~");
 	ros::Rate rate(20);
 
-  sub = nh.subscribe<sensor_msgs::Image>("/camera/left/image_raw", 1, find2DPose);
-  pub = nh.advertise<geometry_msgs::PointStamped>("/pose/2d_left", 1);
-  pub1 = nh.advertise<geometry_msgs::PointStamped>("/pose/2d_right", 1);
+  nh.param<std::string>("image_sub", image_sub_name, "/camera/left/image_raw");
+  nh.param<std::string>("point_pub", point_pub_name, "/pose/2d_left");
+
+  image_sub = nh.subscribe<sensor_msgs::Image>(image_sub_name, 1, find2DPose);
+  point_pub = nh.advertise<geometry_msgs::PointStamped>(point_pub_name, 1);
 
   ros::Time last = ros::Time::now();
 
