@@ -1,0 +1,27 @@
+<launch>
+
+	<machine name = "Cell3" address = "10.125.93.168" user = "mneerup" env-loader = "
+/home/mneerup/SDU/Skole/8.Semester/ROVI/code/devel/env.sh" />
+
+	<!-- Left image detector node -->
+	<node pkg = "rovi2_development" type="image_detector" name="image_detector_left" output="screen" machine = "Cell3" >
+		<param name = "image_sub" value="/camera/left/image_raw" />
+		<param name = "point_pub" value="/pose/2d_left" />
+	</node>
+
+	<!-- Right image detector node -->
+	<node pkg = "rovi2_development" type="image_detector" name="image_detector_right" output="screen" >
+		<param name = "image_sub" value="/camera/right/image_raw" />
+		<param name = "point_pub" value="/pose/2d_right" /> 
+	</node>
+
+	<!-- Stereo node -->
+	<node pkg = "rovi2_development" type="stereo" name = "stereo_node" output = "screen" machine = "Cell3">
+		<param name = "point_sub_left" value = "/pose/2d_left" />
+		<param name = "point_sub_right" value = "/pose/2d_right" />
+		<param name = "point_pub" value = "/pose/3d" />
+	</node>
+
+	<!-- Kalman filter -->
+	
+</launch>
