@@ -5,6 +5,7 @@
 #include <eigen3/Eigen/Dense>
 #include <eigen3/Eigen/Core>
 #include <eigen3/Eigen/SVD>
+#include <cassert>
 
 ros::Time leftTime;
 ros::Time rightTime;
@@ -47,7 +48,7 @@ Intrinsic calR;
 Intrinsic loadCalibration(std::string fileName, int index){
   Intrinsic cal;
   std::ifstream file(fileName);
-  if (!file.is_open());
+  assert(file.is_open());
   std::string line;
   while (getline(file, line)){
     std::cout << line << std::endl;

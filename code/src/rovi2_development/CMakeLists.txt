@@ -56,7 +56,19 @@ include_directories("headers")
 #Add NAZI compiler arguments..
 set(CMAKE_CXX_FLAGS "-std=c++11 \
  -O2 \
+ -Wall \
+ -Wextra \
+ -Wshadow \
+ -Wcast-qual \
+ -Wpointer-arith \
+ -Wno-error=unused-function \
+ -Wno-error=unused-variable \
+ -Wno-error=unused-parameter \
+ -ffunction-sections \
+ -fdata-sections \
  -g" )
+
+add_definitions(-DSCENE_FILE="${CMAKE_BINARY_DIR}/../../WorkCell_scenes/WorkStation_3/WC3_Scene.wc.xml")
 
 # Bumblebee node
 add_executable(opencv_node src/opencv_node.cpp)
@@ -85,9 +97,9 @@ add_dependencies(ball_traj_tester ${catkin_EXPORTED_TARGETS})
 target_link_libraries(ball_traj_tester ${OpenCV_LIBS} ${EIGEN3_LIBS} ${catkin_LIBRARIES})
 
 # Anytime RRT tests
-#add_executable(anytime_test src/AnytimeRRT.cpp)
-#add_dependencies(anytime_test ${catkin_EXPORTED_TARGETS})
-#target_link_libraries(anytime_test ${OpenCV_LIBS} ${EIGEN3_LIBS} ${catkin_LIBRARIES} ${ROBWORK_LIBRARIES})
+add_executable(rt_rrt_star src/RT_RRT_Star.cpp src/LineSampler.cpp)
+add_dependencies(rt_rrt_star ${catkin_EXPORTED_TARGETS})
+target_link_libraries(rt_rrt_star ${OpenCV_LIBS} ${EIGEN3_LIBS} ${catkin_LIBRARIES} ${ROBWORK_LIBRARIES})
 
 catkin_install_python(PROGRAMS scripts/trajectory_plotter.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
