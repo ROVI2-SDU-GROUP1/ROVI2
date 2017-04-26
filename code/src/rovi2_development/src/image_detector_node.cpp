@@ -6,6 +6,7 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <sensor_msgs/Image.h>
 #include <geometry_msgs/PointStamped.h>
+#include <cassert>
 
 int mx = 0;
 int my = 0;
@@ -133,13 +134,12 @@ void find2DPose(const sensor_msgs::Image::ConstPtr& msg){
   point.header.stamp = msg->header.stamp;
 
   cv::circle(imageBGR, imgCoord, 10, cv::Scalar(0, 255, 0), 2);
-
   /*
   cv::imshow("t2", imageBGR);
   cv::waitKey(1);
   cv::imshow("t1", threshold);
   cv::waitKey(1);
-  */
+*/
 
   //cv::setMouseCallback("t2", mouseCallback, NULL);
 
