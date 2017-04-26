@@ -6,6 +6,7 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <sensor_msgs/Image.h>
 #include <geometry_msgs/PointStamped.h>
+#include <cassert>
 
 int mx = 0;
 int my = 0;

@@ -1,0 +1,8 @@
+prefix=/usr/local
+
+Name: ROVI2_Development
+Description: Description of ROVI2_Development
+Version: 0.0.0
+Cflags: 
+Libs: -L/usr/local/lib 
+Requires: 
