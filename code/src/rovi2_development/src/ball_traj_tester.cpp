@@ -2,6 +2,7 @@
 #include <ros/ros.h>
 #include <geometry_msgs/PointStamped.h>
 #include <random>
+
 ros::Time start_time;
 
 double x_acc = 3.; double y_acc = -3.; double z_acc = -9.82;
