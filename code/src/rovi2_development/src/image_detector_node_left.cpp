@@ -154,7 +154,7 @@ int main(int argc, char **argv){
   std::string image_sub_name;
   std::string point_pub_name;
 
-  ros::init(argc, argv, "image_detection");
+  ros::init(argc, argv, "image_detection_left");
 	ros::NodeHandle nh("~");
 	ros::Rate rate(20);
 

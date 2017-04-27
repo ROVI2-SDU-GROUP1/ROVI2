@@ -1,3 +1,11 @@
+/*
+  New terminal > bash > roscore
+  New terminal > bash > rosbag play -l ...
+  New terminal > bash > rosrun rovi2_development image_detector_left
+  New terminal > bash > rosrun rovi2_development image_detector_right
+  New terminal > bash > cd workspace/ROVI2/code > catkin_make && rosrun rovi2_development stereo
+*/
+
 #include <mutex>
 #include <geometry_msgs/PointStamped.h>
 #include <ros/ros.h>
@@ -49,44 +57,39 @@ Intrinsic calR;
 Intrinsic loadCalibration(std::string fileName, int index){
   Intrinsic cal;
   std::ifstream file(fileName);
-  assert(file.is_open());
+  //assert(file.is_open());
   std::string line;
   while (getline(file, line)){
     std::cout << line << std::endl;
   }
 
-  /*
   cal.intrinsic.resize(3, 3);
   cal.intrinsic.row(0) << 1280, 0, 512;
   cal.intrinsic.row(1) << 0, 1280, 384;
   cal.intrinsic.row(2) << 0, 0, 1;
 
-  cal.rotation.resize(3, 3);
-  if (!index) cal.rotation.row(0) << 0.087155804038, 0.996194720268, 0.0;
-  else        cal.rotation.row(0) << -0.0871557667851, 0.996194720268, 0.0;
-  if (!index) cal.rotation.row(1) << 0.172987341881, -0.0151344416663, -0.984807729721;
-  else        cal.rotation.row(1) << 0.172987341881, 0.0151344360784, -0.984807729721;
-  if (!index) cal.rotation.row(2) << -0.981060266495, 0.0858317092061, -0.173648133874;
-  else        cal.rotation.row(2) << -0.981060266495, -0.0858316794038, -0.173648133874;
+  if(true){
+    cal.rotation.resize(3, 3);
+    if (!index) cal.rotation.row(0) << 0.087155804038, 0.996194720268, 0.0;
+    else        cal.rotation.row(0) << -0.0871557667851, 0.996194720268, 0.0;
+    if (!index) cal.rotation.row(1) << 0.172987341881, -0.0151344416663, -0.984807729721;
+    else        cal.rotation.row(1) << 0.172987341881, 0.0151344360784, -0.984807729721;
+    if (!index) cal.rotation.row(2) << -0.981060266495, 0.0858317092061, -0.173648133874;
+    else        cal.rotation.row(2) << -0.981060266495, -0.0858316794038, -0.173648133874;
 
-  cal.translation.resize(3, 1);
-  if (!index) cal.translation.col(0) << -0.373460680246, 0.724578678608, 10.2876386642;
-  else        cal.translation.col(0) << 0.373460680246, 0.724578678608, 10.2876386642;
-  */
+    cal.translation.resize(3, 1);
+    if (!index) cal.translation.col(0) << -0.373460680246, 0.724578678608, 10.2876386642;
+    else        cal.translation.col(0) << 0.373460680246, 0.724578678608, 10.2876386642;
+  }else{
+    cal.rotation.resize(3, 3);
+    cal.rotation.row(0) << 0, 1, 0;
+    cal.rotation.row(1) << 0, 0, 1;
+    cal.rotation.row(2) << 1, 0, 0;
 
-  cal.intrinsic.resize(3, 3);
-  cal.intrinsic.row(0) << 1280, 0, 512;
-  cal.intrinsic.row(1) << 0, 1280, 384;
-  cal.intrinsic.row(2) << 0, 0, 1;
-
-  cal.rotation.resize(3, 3);
-  cal.rotation.row(0) << 0, 1, 0;
-  cal.rotation.row(1) << 0, 0, 1;
-  cal.rotation.row(2) << 1, 0, 0;
-
-  cal.translation.resize(3, 1);
-  if (!index) cal.translation.col(0) << -5, 0, 0;
-  else        cal.translation.col(0) << 5, 0, 0;
+    cal.translation.resize(3, 1);
+    if (!index) cal.translation.col(0) << -5, 0, 0;
+    else        cal.translation.col(0) << 5, 0, 0;
+  }
 
   Eigen::MatrixXd temp1;
   Eigen::MatrixXd temp2;
@@ -130,34 +133,23 @@ void linearSolv(){
   A.row(2) = -pose2DRight.point.x * calR.PX.row(2) + calR.PX.row(0);
   A.row(3) = -pose2DRight.point.y * calR.PX.row(2) + calR.PX.row(1);
 
+  Eigen::MatrixXd invA(3, 4);
+  invA = pseudoInverse(A);
+
   Eigen::MatrixXd B(4, 1);
   B.row(0) = pose2DLeft.point.x * calL.px.row(2) - calL.px.row(0);
   B.row(1) = pose2DLeft.point.y * calL.px.row(2) - calL.px.row(1);
   B.row(2) = pose2DRight.point.x * calR.px.row(2) - calR.px.row(0);
   B.row(3) = pose2DRight.point.y * calR.px.row(2) - calR.px.row(1);
 
-  std::cout << "P left:" << std::endl;
-  std::cout << calL.P << std::endl;
-  std::cout << "PX left:" << std::endl;
-  std::cout << calL.PX << std::endl;
-  std::cout << "px left:" << std::endl;
-  std::cout << calL.px << std::endl;
-  std::cout << "P right:" << std::endl;
-  std::cout << calR.P << std::endl;
-  std::cout << "PX right:" << std::endl;
-  std::cout << calR.PX << std::endl;
-  std::cout << "px right:" << std::endl;
-  std::cout << calR.px << std::endl;
-  std::cout << "A:" << std::endl;
-  std::cout << A << std::endl;
-  std::cout << "B:" << std::endl;
-  std::cout << B << std::endl;
-
   Eigen::MatrixXd x(3, 1);
-  x = ((pseudoInverse(A) * A).inverse() * pseudoInverse(A)) * B;
+  x = (invA * A).inverse() * (invA * B);
 
   std::cout << "x:" << std::endl;
   std::cout << x << std::endl;
+
+  std::cout << "x_norm:" << std::endl;
+  std::cout << x.norm() << std::endl;
 
   pose3D.point.x = x(0, 0);
   pose3D.point.y = x(1, 0);
@@ -208,14 +200,6 @@ void epiSolv(){
   Eigen::Vector3d nu2 = tmp2 / tmp2.norm();
 
   //  M1 and M2
-  //M1 = ( (nu1 * cross(nu2,mu2)'' - (nu1 * nu2'') * nu1 * cross(nu2,mu1)'') / (norm(cross(nu1,nu2))^2)) * nu1 + cross(nu1,mu1);
-  //M2 = ( (nu2 * cross(nu1,mu1)'' - (nu2 * nu1'') * nu2 * cross(nu1,mu2)'') / (norm(cross(nu2,nu1))^2)) * nu2 + cross(nu2,mu2);
-
-  //Eigen::MatrixXd M1 = ( nu1 * (nu2.cross(mu2)).transpose() - (nu1 * nu2.transpose()) * nu1 * (nu2.cross(mu1)).transpose() );// / ( pow(((nu1.cross(nu2)).norm()),2) ) ) * nu1 + nu1.cross(mu1);
-  //  M1 Num:   nu1 * nu2.cross(mu2).transpose() - (nu1 * nu2.transpose()) * nu1 * (nu2.cross(mu1)).transpose()
-  //  M1 Denum: ( (nu1.cross(nu2)).norm() * (nu1.cross(nu2)).norm() ) * nu1;
-  //  M1 and the rest:
-
   Eigen::Vector3d M1 = ( nu1 * nu2.cross(mu2).transpose() - (nu1 * nu2.transpose()) * nu1 * (nu2.cross(mu1)).transpose() ) / ( (nu1.cross(nu2)).norm() * (nu1.cross(nu2)).norm() ) * nu1 + nu1.cross(mu1);
   Eigen::Vector3d M2 = ( nu2 * nu1.cross(mu1).transpose() - (nu2 * nu1.transpose()) * nu2 * (nu1.cross(mu2)).transpose() ) / ( (nu2.cross(nu1)).norm() * (nu2.cross(nu1)).norm() ) * nu2 + nu2.cross(mu2);
   Eigen::Vector3d M = M1 + (M2 - M1)/2;
@@ -226,30 +210,26 @@ void epiSolv(){
   std::cout << M2 << std::endl;
   std::cout << "M:" << std::endl;
   std::cout << M << std::endl;
+  std::cout << "M_norm:" << std::endl;
+  std::cout << M.norm() << std::endl;
 
+  pose3D.point.x = M(0, 0);
+  pose3D.point.y = M(1, 0);
+  pose3D.point.z = M(2, 0);
+
+  pose3D.header.stamp = pose2DLeft.header.stamp;
+
+  pub3D.publish(pose3D);
 }
 
 void calc3DPose(){
-  //  Take new rosbag, on topics: left/image_rect_color
-  //                              right/image_rect_color
   // Stereo proc        - http://wiki.ros.org/stereo_image_proc
   // Dense stereo ros
   // Q matrix
   std::cout << std::endl << std::endl << "----Calc 3d pos!" << std::endl;
 
-
-//w=1280
-//h=768
-
-  pose2DLeft.point.x = 1240;
-  pose2DLeft.point.y = 384;
-  pose2DRight.point.x = 40;
-  pose2DRight.point.y = 384;
-
-  //linearSolv();
-  epiSolv();
-
-  pub3D.publish(pose3D);
+  linearSolv();
+  //epiSolv();
 }
 
 void receiveLeftImage(const geometry_msgs::PointStamped::ConstPtr &msg){
@@ -287,8 +267,27 @@ int main(int argc, char **argv){
       last = ros::Time::now();
       ros::spinOnce();
   		rate.sleep();
-      calc3DPose();
+      //calc3DPose();
     }
 
     return 0;
 }
+
+/*
+std::cout << "P left:" << std::endl;
+std::cout << calL.P << std::endl;
+std::cout << "PX left:" << std::endl;
+std::cout << calL.PX << std::endl;
+std::cout << "px left:" << std::endl;
+std::cout << calL.px << std::endl;
+std::cout << "P right:" << std::endl;
+std::cout << calR.P << std::endl;
+std::cout << "PX right:" << std::endl;
+std::cout << calR.PX << std::endl;
+std::cout << "px right:" << std::endl;
+std::cout << calR.px << std::endl;
+std::cout << "A:" << std::endl;
+std::cout << A << std::endl;
+std::cout << "B:" << std::endl;
+std::cout << B << std::endl;
+*/
