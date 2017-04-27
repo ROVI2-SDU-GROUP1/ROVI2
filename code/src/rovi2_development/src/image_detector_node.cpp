@@ -104,8 +104,8 @@ void find2DPose(const sensor_msgs::Image::ConstPtr& msg){
   */
   cv::Mat thresholdLow;
   cv::Mat thresholdHigh;
-  cv::inRange(imageHSV, cv::Scalar(0, 100, 50), cv::Scalar(10, 255, 255), thresholdLow);
-  cv::inRange(imageHSV, cv::Scalar(215, 100, 50), cv::Scalar(255, 255, 255), thresholdHigh);
+  cv::inRange(imageHSV, cv::Scalar(0, 220, 50), cv::Scalar(10, 255, 255), thresholdLow);
+  cv::inRange(imageHSV, cv::Scalar(215, 220, 50), cv::Scalar(255, 255, 255), thresholdHigh);
 
   cv::Mat threshold = thresholdLow + thresholdHigh;
 
@@ -134,12 +134,12 @@ void find2DPose(const sensor_msgs::Image::ConstPtr& msg){
   point.header.stamp = msg->header.stamp;
 
   cv::circle(imageBGR, imgCoord, 10, cv::Scalar(0, 255, 0), 2);
-  /*
+
   cv::imshow("t2", imageBGR);
   cv::waitKey(1);
   cv::imshow("t1", threshold);
   cv::waitKey(1);
-*/
+
 
   //cv::setMouseCallback("t2", mouseCallback, NULL);
 
