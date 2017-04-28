@@ -68,7 +68,17 @@ Intrinsic loadCalibration(std::string fileName, int index){
   cal.intrinsic.row(1) << 0, 1280, 384;
   cal.intrinsic.row(2) << 0, 0, 1;
 
-  if(true){
+  if(false){  //  Calibration file from the ex.2 in vision (rectified)
+    cal.rotation.resize(3, 3);
+    cal.rotation.row(0) << -4.37113882867e-08, 1.0, 0.0;
+    cal.rotation.row(1) << 0.173648133874, 7.59040119647e-09, -0.984807729721;
+    cal.rotation.row(2) << -0.984807729721, -4.30473150459e-08, -0.173648133874;
+
+    cal.translation.resize(3, 1);
+    if (!index) cal.translation.col(0) << -0.499999552965, 0.725537955761, 10.2821979523;
+    else        cal.translation.col(0) << 0.500000417233, 0.725538015366, 10.2821979523;
+  }
+  else if(true){  //  Our calibration
     cal.rotation.resize(3, 3);
     if (!index) cal.rotation.row(0) << 0.087155804038, 0.996194720268, 0.0;
     else        cal.rotation.row(0) << -0.0871557667851, 0.996194720268, 0.0;
@@ -125,7 +135,7 @@ Intrinsic loadCalibration(std::string fileName, int index){
 }
 
 void linearSolv(){
-  std::cout << "--Linear method" << std::endl << std::endl;
+  std::cout << "\tLinear method" << std::endl << std::endl;
 
   Eigen::MatrixXd A(4, 3);
   A.row(0) = -pose2DLeft.point.x * calL.PX.row(2) + calL.PX.row(0);
@@ -133,18 +143,25 @@ void linearSolv(){
   A.row(2) = -pose2DRight.point.x * calR.PX.row(2) + calR.PX.row(0);
   A.row(3) = -pose2DRight.point.y * calR.PX.row(2) + calR.PX.row(1);
 
-  Eigen::MatrixXd invA(3, 4);
-  invA = pseudoInverse(A);
-
   Eigen::MatrixXd B(4, 1);
   B.row(0) = pose2DLeft.point.x * calL.px.row(2) - calL.px.row(0);
   B.row(1) = pose2DLeft.point.y * calL.px.row(2) - calL.px.row(1);
   B.row(2) = pose2DRight.point.x * calR.px.row(2) - calR.px.row(0);
   B.row(3) = pose2DRight.point.y * calR.px.row(2) - calR.px.row(1);
 
+
+  Eigen::MatrixXd invA(3, 4);
+  invA = pseudoInverse(A);
+
   Eigen::MatrixXd x(3, 1);
   x = (invA * A).inverse() * (invA * B);
 
+  std::cout << "A:" << std::endl;
+  std::cout << A << std::endl;
+  std::cout << "invA:" << std::endl;
+  std::cout << invA << std::endl;
+  std::cout << "B:" << std::endl;
+  std::cout << B << std::endl;
   std::cout << "x:" << std::endl;
   std::cout << x << std::endl;
 
@@ -161,30 +178,18 @@ void linearSolv(){
 }
 
 void epiSolv(){
-  std::cout << "--epi method" << std::endl << std::endl;
+  std::cout << "\tEpi method" << std::endl << std::endl;
 
   //  Compute infinity points
   Eigen::MatrixXd ml(3,1);
-  ml.col(0) << pose2DLeft.point.x, pose2DLeft.point.y, 1;
-  std::cout << "ml:" << std::endl;
-  std::cout << ml << std::endl;
-
+  //ml.col(0) << pose2DLeft.point.x, pose2DLeft.point.y, 1;
+  ml.col(0) << 700, 300, 1;
   Eigen::MatrixXd Minfl = calL.PX.inverse() * ml;
-  Minfl.resize(4,1);
-  Minfl.row(3) << 0;
-  std::cout << "Minfl:" << std::endl;
-  std::cout << Minfl << std::endl;
 
   Eigen::MatrixXd mr(3,1);
-  mr.col(0) << pose2DRight.point.x, pose2DRight.point.y, 1;
-  std::cout << "mr:" << std::endl;
-  std::cout << mr << std::endl;
-
+  //mr.col(0) << pose2DRight.point.x, pose2DRight.point.y, 1;
+  mr.col(0) << 300, 300, 1;
   Eigen::MatrixXd Minfr = calR.PX.inverse() * mr;
-  Minfr.resize(4,1);
-  Minfr.row(3) << 0;
-  std::cout << "Minfr:" << std::endl;
-  std::cout << Minfr << std::endl;
 
   //  Compute plucker lines
   //    mu1 and nu1
@@ -272,22 +277,3 @@ int main(int argc, char **argv){
 
     return 0;
 }
-
-/*
-std::cout << "P left:" << std::endl;
-std::cout << calL.P << std::endl;
-std::cout << "PX left:" << std::endl;
-std::cout << calL.PX << std::endl;
-std::cout << "px left:" << std::endl;
-std::cout << calL.px << std::endl;
-std::cout << "P right:" << std::endl;
-std::cout << calR.P << std::endl;
-std::cout << "PX right:" << std::endl;
-std::cout << calR.PX << std::endl;
-std::cout << "px right:" << std::endl;
-std::cout << calR.px << std::endl;
-std::cout << "A:" << std::endl;
-std::cout << A << std::endl;
-std::cout << "B:" << std::endl;
-std::cout << B << std::endl;
-*/

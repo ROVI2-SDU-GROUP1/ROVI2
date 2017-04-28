@@ -158,7 +158,7 @@ int main(int argc, char **argv){
 	ros::NodeHandle nh("~");
 	ros::Rate rate(20);
 
-  nh.param<std::string>("image_sub", image_sub_name, "/camera/left/image_raw");
+  nh.param<std::string>("image_sub", image_sub_name, "/camera/left/image_color");
   nh.param<std::string>("point_pub", point_pub_name, "/pose/2d_left");
 
   image_sub = nh.subscribe<sensor_msgs::Image>(image_sub_name, 1, find2DPose);
