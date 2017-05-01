@@ -81,6 +81,16 @@ add_executable(image_detector src/image_detector_node.cpp)
 add_dependencies(image_detector ${catkin_EXPORTED_TARGETS})
 target_link_libraries(image_detector ${OpenCV_LIBS} ${catkin_LIBRARIES})
 
+# Image detector node - left
+add_executable(image_detector_left src/image_detector_node_left.cpp)
+add_dependencies(image_detector_left ${catkin_EXPORTED_TARGETS})
+target_link_libraries(image_detector_left ${OpenCV_LIBS} ${catkin_LIBRARIES})
+
+# Image detector node right
+add_executable(image_detector_right src/image_detector_node_right.cpp)
+add_dependencies(image_detector_right ${catkin_EXPORTED_TARGETS})
+target_link_libraries(image_detector_right ${OpenCV_LIBS} ${catkin_LIBRARIES})
+
 # Stereo node
 add_executable(stereo src/stereo_node.cpp)
 add_dependencies(stereo ${catkin_EXPORTED_TARGETS})
