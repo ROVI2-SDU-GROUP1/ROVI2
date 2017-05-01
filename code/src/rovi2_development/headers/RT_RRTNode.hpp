@@ -8,7 +8,7 @@
 #include <rw/math/Metric.hpp>
 #include <chrono>
 #include <queue>
-
+#include <iostream>
 
 
 
@@ -37,49 +37,118 @@ template <class T>
 class RT_RRTNode;
 
 
-template <class X>
-class RRTNode
-{
-public:
-    typedef RRTNode<X> node_type;
-    typedef X value_type;
-
-    node_type* getParent() const { return _parent; }
-    const value_type& getValue() const { return _value; }
-
-private:
-    friend class RT_RRT_Tree<X>;
-    friend class RT_RRTNode<X>;
-
-    RRTNode(const value_type& value, node_type* parent) :
-        _value(value),
-        _parent(parent)
-    {}
-
-    value_type _value;
-    node_type* _parent;
-
-};
 
 
 
 
 template <class T>
-class RT_RRTNode : public RRTNode<T>
+class RT_RRTNode
 {
     friend class RT_RRT_Tree<T>;
     public:
+        typedef RT_RRTNode<T> node_type;
+        typedef T value_type;
+
+        const value_type& getValue() const { return _value; }
+
+        RT_RRTNode<T> *getParent() const { return this->_parent; }
+        void setParent(RT_RRTNode<T> *p)
+        {
+            if(this->_parent)
+            {
+                this->_parent->remove_child(this);
+            }
+            this->_parent = p;
+            if(this->_parent)
+            {
+                this->_parent->add_child(this);
+            }
+
+        }
+
         RT_RRTNode(const T& value, RT_RRTNode<T>* parent)
-            : RRTNode<T>(value, parent) {}
-            
+            : _value(value), _parent(parent), rewired(false)
+            {
+                if(this->_parent)
+                {
+                    this->_parent->add_child(this);
+                }
+             }
+        RT_RRTNode<T>(int i)
+        : _value(T(6,i,i,i,i,i,i)), _parent(nullptr) {}
+
         RT_RRTNode()
-            : RRTNode<T>(rw::math::Q(6,0,0,0,0,0,0), nullptr) {}
+            : _value(rw::math::Q(6,0,0,0,0,0,0)), _parent(nullptr)
+            {}
 
         double get_cost()               { return cost; }
-        double get_heuristic(rw::math::Q) { return 0; }
-        void set_cost(double &_cost)    { this->cost = _cost; }
+        double get_heuristic(RT_RRTNode<T> *goal) { return (this->getValue() - goal->getValue()).norm2(); }
         void set_cost(double _cost)    { this->cost = _cost; }
+        void set_rewired(bool _rewired) { this->rewired = _rewired; }
+        bool get_rewired() { return this->rewired; }
+        void add_child(RT_RRTNode<T> *child)
+        {
+            childs.push_back(child);
+        }
+
+        void remove_child(RT_RRTNode<T> *child)
+        {
+            size_t i = 0;
+            bool found = false;
+            for(RT_RRTNode<T> *c : this->childs)
+            {
+                if(c == child)
+                {
+                    found = true;
+                    break;
+                }
+                i++;
+            }
+            if(found)
+            {
+                this->childs.erase(this->childs.begin() + i);
+            }
+        }
+        int get_child_count()
+        {
+            return this->childs.size();
+        }
+        bool operator()( const RT_RRTNode<T> *lhs, const RT_RRTNode<T> *rhs  )
+        {
+            //printf("comparing distance to %p from %p and %p\n", this, lhs, rhs );
+            //std::cout << "this value: " << this->_value << " lhs value: " << lhs->_value << " rhs value: " <<  rhs->_value << std::endl;
+            auto comp1 = lhs->_value - this->_value;
+            auto comp2 = rhs->_value - this->_value;
+            return comp1.norm2() < comp2.norm2();
+            //printf("Exited compare\n");
+        }
+        /*explicit operator double() const
+        {
+            return this->_value.norm2();
+        }*/
+        std::vector<RT_RRTNode<T> *> &get_childs()
+        {
+            return this->childs;
+        }
+
         void recompute_cost();
     private:
         double cost;
+        std::vector<RT_RRTNode<T> *> childs;
+        value_type _value;
+        node_type* _parent;
+        bool rewired = false;
+
 };
+
+template <class T>
+bool operator>(const double &lhs, const RT_RRTNode<T> &rhs)
+{
+    return lhs > rhs.getValue().norm2();
+}
+
+template <class T>
+bool operator<(const double &lhs, const RT_RRTNode<T> &rhs)
+{
+    return lhs < rhs.getValue().norm2();
+}

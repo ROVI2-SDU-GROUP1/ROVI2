@@ -21,6 +21,7 @@
 
 #include "RT_RRTNode.hpp"
 #include <vector>
+#include <algorithm>
 #include <boost/foreach.hpp>
 
 bool operator>(const rw::math::Q &lhs, const rw::math::Q &rhs)
@@ -41,7 +42,7 @@ template <class X>
 struct RT_RRTNode_Flann
 {
     typedef RT_RRTNode<X> ElementType;
-    //typedef bool is_kdtree_distance;
+    typedef bool is_kdtree_distance;
     typedef typename flann::Accumulator<double>::Type ResultType;
     template <typename Iterator1, typename Iterator2>
     ResultType operator() (Iterator1 a, Iterator2 b, size_t size,
@@ -60,6 +61,7 @@ struct RT_RRTNode_Flann
     template <typename U, typename V>
     inline ResultType accum_dist(const U& a, const V& b, int) const
     {
+        //a.rgesdbrtvfed();
         return (a-b)*(a-b);
     }
 };
@@ -80,19 +82,23 @@ namespace rwlibs { namespace pathplanners {
         typedef RT_RRTNode<X> node_type;
 
         RT_RRT_Tree(const value_type& value)
-        : index(indexParams)
+        //: indexParams(), index(this->indexParams, RT_RRTNode_Flann<X>() )
         {
+            //index.buildIndex();
             add(value, 0);
         }
 
         node_type& getRoot() const { return *_nodes[0]; }
         node_type& getLast() const { return *_nodes.back(); }
+        node_type *getLastPtr() const { return _nodes.back(); }
 
         void add(const value_type& value, node_type* parent)
         {
-            _nodes.push_back(new node_type(value, parent));
-            flann::Matrix< RT_RRTNode<X> > new_points(_nodes.back(), 1, 1);
-            this->index.addPoints(new_points);
+            auto tmp_node = new node_type(value, parent);
+            //printf("Adding node with address %p and parent address %p to the tree..!\n", tmp_node, tmp_node->getParent());
+            _nodes.push_back(tmp_node);
+            //flann::Matrix< RT_RRTNode<X> > new_points(_nodes.back(), 1, 1);
+            //this->index.addPoints(new_points);
         }
 
         typedef typename std::vector<node_type*>::const_iterator const_iterator;
@@ -122,10 +128,54 @@ namespace rwlibs { namespace pathplanners {
             }
         }
 
+        std::vector<node_type *> get_n_nearest(rw::math::Q q, size_t n)
+        {
+            //std::cout << "test" << std::endl;
+            node_type q_n(q, nullptr);
+            std::sort(this->_nodes.begin(), this->_nodes.end(), q_n);
+            if(n >= this->_nodes.size()) return this->_nodes;
+            std::vector<node_type *> nearest;
+            for(size_t i = 0; i < n; i++)
+            {
+                nearest.push_back(this->_nodes[i]);
+            }
+            return nearest;
+        }
+
+        std::vector<node_type *> get_nodes_within(rw::math::Q q, double dist)
+        {
+            node_type q_n(q, nullptr);
+            std::sort(this->_nodes.begin(), this->_nodes.end(), q_n);
+            //printf("sort in get_nodes_within done\n");
+            std::vector<node_type *> nearest;
+            while(nearest.size() < this->_nodes.size() )
+            {
+                if( (q - this->_nodes[nearest.size()]->getValue() ).norm2() > dist)
+                {
+                    break;
+                }
+                nearest.push_back(this->_nodes[nearest.size()]);
+            }
+            return nearest;
+        }
+
+        node_type *get_nearest(rw::math::Q q)
+        {
+            node_type n(q, nullptr);
+            std::sort(this->_nodes.begin(), this->_nodes.end(), n);
+            return this->_nodes[0];
+        }
+
+
+        /*flann::Index<RT_RRTNode_Flann<X> > *getFlannIndex()
+        {   //We cheat a but, just return the index..
+            return &this->index;
+        }*/
+
     public:
         std::vector<node_type*> _nodes;
-        flann::Index<RT_RRTNode_Flann<X> > index;
-        flann::KDTreeIndexParams indexParams;
+        //flann::KDTreeIndexParams indexParams;
+        //flann::Index<RT_RRTNode_Flann<X> > index;
 
     private:
         RT_RRT_Tree(const RT_RRT_Tree&);
