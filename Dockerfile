@@ -10,6 +10,8 @@ RUN 	chown rw_user:rw_user ROVI2 -R && \
 	chmod +x ./run.sh
 USER rw_user
 
+RUN apt-get update && sudo apt-get install -y libyaml-cpp-dev
+
 #Compile it
 RUN source /opt/ros/kinetic/setup.sh && cd ROVI2/code && catkin_make
 
