@@ -8,6 +8,8 @@
 
 #include <mutex>
 #include <geometry_msgs/PointStamped.h>
+#include <message_filters/time_synchronizer.h>
+#include <message_filters/subscriber.h>
 #include <ros/ros.h>
 #include <fstream>
 #include <eigen3/Eigen/Dense>
@@ -21,6 +23,8 @@
 
 ros::Time leftTime;
 ros::Time rightTime;
+
+//using namespace message_filters;
 
 ros::Subscriber sub2DLeft;
 ros::Subscriber sub2DRight;
@@ -160,17 +164,19 @@ void linearSolv(){
   Eigen::MatrixXd x(3, 1);
   x = (invA * A).inverse() * (invA * B);
 
-  std::cout << "A:" << std::endl;
-  std::cout << A << std::endl;
-  std::cout << "invA:" << std::endl;
-  std::cout << invA << std::endl;
-  std::cout << "B:" << std::endl;
-  std::cout << B << std::endl;
+  // std::cout << "A:" << std::endl;
+  // std::cout << A << std::endl;
+  // std::cout << "invA:" << std::endl;
+  // std::cout << invA << std::endl;
+  // std::cout << "B:" << std::endl;
+  // std::cout << B << std::endl;
   std::cout << "x:" << std::endl;
   std::cout << x << std::endl;
 
   std::cout << "x_norm:" << std::endl;
   std::cout << x.norm() << std::endl;
+
+
 
   pose3D.point.x = x(0, 0);
   pose3D.point.y = x(1, 0);
@@ -213,14 +219,14 @@ void epiSolv(){
   Eigen::Vector3d M2 = ( nu2 * nu1.cross(mu1).transpose() - (nu2 * nu1.transpose()) * nu2 * (nu1.cross(mu2)).transpose() ) / ( (nu2.cross(nu1)).norm() * (nu2.cross(nu1)).norm() ) * nu2 + nu2.cross(mu2);
   Eigen::Vector3d M = M1 + (M2 - M1)/2;
 
-  std::cout << "M1:" << std::endl;
-  std::cout << M1 << std::endl;
-  std::cout << "M2:" << std::endl;
-  std::cout << M2 << std::endl;
-  std::cout << "M:" << std::endl;
-  std::cout << M << std::endl;
-  std::cout << "M_norm:" << std::endl;
-  std::cout << M.norm() << std::endl;
+  // std::cout << "M1:" << std::endl;
+  // std::cout << M1 << std::endl;
+  // std::cout << "M2:" << std::endl;
+  // std::cout << M2 << std::endl;
+  // std::cout << "M:" << std::endl;
+  // std::cout << M << std::endl;
+  // std::cout << "M_norm:" << std::endl;
+  // std::cout << M.norm() << std::endl;
 
   pose3D.point.x = M(0, 0);
   pose3D.point.y = M(1, 0);
@@ -238,7 +244,6 @@ cv2eigen(a,b);
 */
 
 void eig2mat( Eigen::MatrixXd &src, cv::Mat &dst ){
-
 }
 
 void openCvTriangulation(){
@@ -291,7 +296,11 @@ void receiveLeftImage(const geometry_msgs::PointStamped::ConstPtr &msg){
   mutex.lock();
   pose2DLeft = *msg;
   leftTime = msg->header.stamp;
-  if (leftTime == rightTime) calc3DPose();
+  if (leftTime == rightTime)
+    calc3DPose();
+  else {
+    std::cout << "Left - times not equal left: " << leftTime << " right: " << rightTime << std::endl;
+  }
   mutex.unlock();
 }
 
@@ -299,8 +308,18 @@ void receiveRightImage(const geometry_msgs::PointStamped::ConstPtr &msg){
   mutex.lock();
   pose2DRight = *msg;
   rightTime = msg->header.stamp;
-  if (leftTime == rightTime) calc3DPose();
+  if (leftTime == rightTime)
+      calc3DPose();
+    else {
+      std::cout << "Right - times not equal left: " << leftTime << " right: " << rightTime << std::endl;
+    }
   mutex.unlock();
+}
+
+void image_sync_callback(const geometry_msgs::PointStamped::ConstPtr &image_left, const geometry_msgs::PointStamped::ConstPtr &image_right){
+  pose2DLeft = *image_left;
+  pose2DRight = *image_right;
+  calc3DPose();
 }
 
 int main(int argc, char **argv){
@@ -312,9 +331,14 @@ int main(int argc, char **argv){
     calL = loadCalibration("calibration.txt", 1);
     calR = loadCalibration("calibration.txt", 0);
 
-    sub2DLeft = nh.subscribe<geometry_msgs::PointStamped>("/pose/2d_left", 1, receiveLeftImage);
-    sub2DRight = nh.subscribe<geometry_msgs::PointStamped>("/pose/2d_right", 1, receiveRightImage);
+    // sub2DLeft = nh.subscribe<geometry_msgs::PointStamped>("/pose/2d_left", 1, receiveLeftImage);
+    // sub2DRight = nh.subscribe<geometry_msgs::PointStamped>("/pose/2d_right", 1, receiveRightImage);
     pub3D = nh.advertise<geometry_msgs::PointStamped>("/pose/3d", 1);
+
+    message_filters::Subscriber<geometry_msgs::PointStamped> image_left(nh, "/pose/2d_left", 1);
+    message_filters::Subscriber<geometry_msgs::PointStamped> image_right(nh,"/pose/2d_right", 1);
+    message_filters::TimeSynchronizer<geometry_msgs::PointStamped, geometry_msgs::PointStamped> sync(image_left, image_right, 10);
+    sync.registerCallback(boost::bind(&image_sync_callback, _1, _2));
 
     ros::Time last = ros::Time::now();
 
