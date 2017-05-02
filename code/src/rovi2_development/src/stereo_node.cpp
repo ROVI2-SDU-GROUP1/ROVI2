@@ -6,12 +6,10 @@
   New terminal > bash > cd workspace/ROVI2/code > catkin_make && rosrun rovi2_development stereo
 */
 
-//#include <mutex>
 #include <geometry_msgs/PointStamped.h>
 #include <message_filters/time_synchronizer.h>
 #include <message_filters/subscriber.h>
 #include <ros/ros.h>
-//#include <fstream>
 #include <eigen3/Eigen/Dense>
 #include <eigen3/Eigen/Core>
 #include <eigen3/Eigen/SVD>
@@ -26,7 +24,6 @@
 ros::Time leftTime;
 ros::Time rightTime;
 
-//using namespace message_filters;
 
 ros::Subscriber sub2DLeft;
 ros::Subscriber sub2DRight;
@@ -67,51 +64,19 @@ Intrinsic calR;
 Intrinsic loadCalibration(std::string fileName){
   YAML::Node calibration_yaml = YAML::LoadFile(fileName);
 
-  //std::cout << calibration_front_left["projection_matrix"].as<std::string>() << std::endl;
-  // for(YAML::const_iterator it=tmp["data"].begin();it!=tmp["data"].end();++it) {
-  //   // std::cout << "key " << it->first.as<std::string>() << " value " << it->second.as<std::string>() << "\n";
-  //   std::cout << " value " << it->as<double>() <<"\n";
-  // }
-
   Intrinsic cal;
-
   cal.intrinsic.resize(3, 3);
-  // std::cout << tmp["data"][0] << std::endl;
-  // double num = tmp["data"][0].as<double>();
-  // std::cout << "num: " << num << std::endl;
-  //cal.intrinsic.row(0) <<num, num, num;
   YAML::Node tmp = calibration_yaml["camera_matrix"];
   for(unsigned int i = 0; i < tmp["data"].size();i+=3){
     cal.intrinsic.row(i/3) << tmp["data"][i].as<double>(), tmp["data"][i+1].as<double>(),tmp["data"][i+2].as<double>();
   }
 
-
-  // cal.intrinsic.row(0) << 1348.764942, 0.000000, 533.749161;
-  // cal.intrinsic.row(1) << 0.000000, 1349.118163, 354.434678;
-  // cal.intrinsic.row(2) << 0.000000, 0.000000, 1.000000;
-
-
-  // else        cal.intrinsic.row(0) << 1355.395640, 0.000000, 540.084150;
-  // else        cal.intrinsic.row(1) << 0.000000, 1354.485656, 437.144524;
-  // else        cal.intrinsic.row(2) << 0.000000, 0.000000, 1.000000;
-
-  // // P
+  // P
   cal.P.resize(3,4);
   tmp = calibration_yaml["projection_matrix"];
   for(unsigned int i = 0; i < tmp["data"].size();i+=4){
     cal.P.row(i/4) << tmp["data"][i].as<double>(), tmp["data"][i+1].as<double>(),tmp["data"][i+2].as<double>(),tmp["data"][i+3].as<double>();
   }
-
-  // if (!index) cal.P.row(0) << 2030.399737, 0.000000, 382.195145, 0.000000;
-  // if (!index) cal.P.row(1) << 0.000000, 2030.399737, 408.654493, 0.000000;
-  // if (!index) cal.P.row(2) << 0.000000, 0.000000, 1.000000, 0.000000;
-
-
-  // else        cal.P.row(0) << 2030.399737, 0.000000, 382.195145, -246.187430;
-  // else        cal.P.row(1) << 0.000000, 2030.399737, 408.654493, 0.000000;
-  // else        cal.P.row(2) << 0.000000, 0.000000, 1.000000, 0.000000;
-  std::cout << cal.P << std::endl;
-
   // PX
   cal.PX = cal.P.block(0, 0, 3, 3);
 
@@ -212,30 +177,6 @@ void calc3DPose(){
   linearSolv();
   //openCvTriangulation();
 }
-
-// void receiveLeftImage(const geometry_msgs::PointStamped::ConstPtr &msg){
-//   mutex.lock();
-//   pose2DLeft = *msg;
-//   leftTime = msg->header.stamp;
-//   if (leftTime == rightTime)
-//     calc3DPose();
-//   else {
-//     std::cout << "Left - times not equal left: " << leftTime << " right: " << rightTime << std::endl;
-//   }
-//   mutex.unlock();
-// }
-//
-// void receiveRightImage(const geometry_msgs::PointStamped::ConstPtr &msg){
-//   mutex.lock();
-//   pose2DRight = *msg;
-//   rightTime = msg->header.stamp;
-//   if (leftTime == rightTime)
-//       calc3DPose();
-//     else {
-//       std::cout << "Right - times not equal left: " << leftTime << " right: " << rightTime << std::endl;
-//     }
-//   mutex.unlock();
-// }
 
 void image_sync_callback(const geometry_msgs::PointStamped::ConstPtr &image_left, const geometry_msgs::PointStamped::ConstPtr &image_right){
   pose2DLeft = *image_left;
