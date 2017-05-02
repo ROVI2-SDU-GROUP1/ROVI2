@@ -49,10 +49,7 @@ struct Intrinsic{
   int height;
   Eigen::MatrixXd intrinsic;
   Eigen::MatrixXd distortion;
-  Eigen::MatrixXd rotation;
-  Eigen::MatrixXd translation;
 
-  Eigen::MatrixXd transformation;
   Eigen::MatrixXd P;
   Eigen::MatrixXd PX;
   Eigen::MatrixXd px;
@@ -72,60 +69,24 @@ Intrinsic loadCalibration(std::string fileName, int index){
   }
 
   cal.intrinsic.resize(3, 3);
-  cal.intrinsic.row(0) << 1280, 0, 512;
-  cal.intrinsic.row(1) << 0, 1280, 384;
-  cal.intrinsic.row(2) << 0, 0, 1;
-
-  if(false){  //  Calibration file from the ex.2 in vision (rectified)
-    cal.rotation.resize(3, 3);
-    cal.rotation.row(0) << -4.37113882867e-08, 1.0, 0.0;
-    cal.rotation.row(1) << 0.173648133874, 7.59040119647e-09, -0.984807729721;
-    cal.rotation.row(2) << -0.984807729721, -4.30473150459e-08, -0.173648133874;
-
-    cal.translation.resize(3, 1);
-    if (!index) cal.translation.col(0) << -0.499999552965, 0.725537955761, 10.2821979523;
-    else        cal.translation.col(0) << 0.500000417233, 0.725538015366, 10.2821979523;
-  }
-  else if(true){  //  Our calibration
-    cal.rotation.resize(3, 3);
-    if (!index) cal.rotation.row(0) << 0.087155804038, 0.996194720268, 0.0;
-    else        cal.rotation.row(0) << -0.0871557667851, 0.996194720268, 0.0;
-    if (!index) cal.rotation.row(1) << 0.172987341881, -0.0151344416663, -0.984807729721;
-    else        cal.rotation.row(1) << 0.172987341881, 0.0151344360784, -0.984807729721;
-    if (!index) cal.rotation.row(2) << -0.981060266495, 0.0858317092061, -0.173648133874;
-    else        cal.rotation.row(2) << -0.981060266495, -0.0858316794038, -0.173648133874;
-
-    cal.translation.resize(3, 1);
-    if (!index) cal.translation.col(0) << -0.373460680246, 0.724578678608, 10.2876386642;
-    else        cal.translation.col(0) << 0.373460680246, 0.724578678608, 10.2876386642;
-  }else{
-    cal.rotation.resize(3, 3);
-    cal.rotation.row(0) << 0, 1, 0;
-    cal.rotation.row(1) << 0, 0, 1;
-    cal.rotation.row(2) << 1, 0, 0;
-
-    cal.translation.resize(3, 1);
-    if (!index) cal.translation.col(0) << -5, 0, 0;
-    else        cal.translation.col(0) << 5, 0, 0;
-  }
+  if (!index) cal.intrinsic.row(0) << 1348.764942, 0.000000, 533.749161;
+  else        cal.intrinsic.row(0) << 1355.395640, 0.000000, 540.084150;
+  if (!index) cal.intrinsic.row(1) << 0.000000, 1349.118163, 354.434678;
+  else        cal.intrinsic.row(1) << 0.000000, 1354.485656, 437.144524;
+  if (!index) cal.intrinsic.row(2) << 0.000000, 0.000000, 1.000000;
+  else        cal.intrinsic.row(2) << 0.000000, 0.000000, 1.000000;
 
   Eigen::MatrixXd temp1;
   Eigen::MatrixXd temp2;
 
-  // Transformation
-  temp1.resize(3, 4);
-  temp2.resize(1, 4);
-  temp1 << cal.rotation, cal.translation;
-  temp2.row(0) << 0, 0, 0, 1;
-  cal.transformation.resize(4, 4);
-  cal.transformation << temp1, temp2;
-
   // P
-  temp1.resize(3, 4);
-  temp2.resize(3, 1);
-  temp2.col(0) << 0, 0, 0;
-  temp1 << cal.intrinsic, temp2;
-  cal.P = temp1 * cal.transformation;
+  cal.P.resize(3,4);
+  if (!index) cal.P.row(0) << 2030.399737, 0.000000, 382.195145, 0.000000;
+  else        cal.P.row(0) << 2030.399737, 0.000000, 382.195145, -246.187430;
+  if (!index) cal.P.row(1) << 0.000000, 2030.399737, 408.654493, 0.000000;
+  else        cal.P.row(1) << 0.000000, 2030.399737, 408.654493, 0.000000;
+  if (!index) cal.P.row(2) << 0.000000, 0.000000, 1.000000, 0.000000;
+  else        cal.P.row(2) << 0.000000, 0.000000, 1.000000, 0.000000;
 
   // PX
   cal.PX = cal.P.block(0, 0, 3, 3);
@@ -133,17 +94,16 @@ Intrinsic loadCalibration(std::string fileName, int index){
   // px
   cal.px = cal.P.block(0, 3, 3, 1);
 
-  // center
-  temp1.resize(3, 1);
-  temp1 = -cal.rotation.inverse() * cal.translation;
-  cal.center.resize(4, 1);
-  cal.center << temp1, 1;
-
   return cal;
 }
 
 void linearSolv(){
   std::cout << "\tLinear method" << std::endl << std::endl;
+
+  std::cout << "Left:" << std::endl;
+  std::cout << pose2DLeft.point.x << "\n" << pose2DLeft.point.y << std::endl;
+  std::cout << "Right:" << std::endl;
+  std::cout << pose2DRight.point.x << "\n" << pose2DRight.point.y << std::endl;
 
   Eigen::MatrixXd A(4, 3);
   A.row(0) = -pose2DLeft.point.x * calL.PX.row(2) + calL.PX.row(0);
@@ -156,7 +116,6 @@ void linearSolv(){
   B.row(1) = pose2DLeft.point.y * calL.px.row(2) - calL.px.row(1);
   B.row(2) = pose2DRight.point.x * calR.px.row(2) - calR.px.row(0);
   B.row(3) = pose2DRight.point.y * calR.px.row(2) - calR.px.row(1);
-
 
   Eigen::MatrixXd invA(3, 4);
   invA = pseudoInverse(A);
@@ -176,8 +135,6 @@ void linearSolv(){
   std::cout << "x_norm:" << std::endl;
   std::cout << x.norm() << std::endl;
 
-
-
   pose3D.point.x = x(0, 0);
   pose3D.point.y = x(1, 0);
   pose3D.point.z = x(2, 0);
@@ -185,65 +142,6 @@ void linearSolv(){
   pose3D.header.stamp = pose2DLeft.header.stamp;
 
   pub3D.publish(pose3D);
-}
-
-void epiSolv(){
-  std::cout << "\tEpi method" << std::endl << std::endl;
-
-  //  Compute infinity points
-  Eigen::MatrixXd ml(3,1);
-  //ml.col(0) << pose2DLeft.point.x, pose2DLeft.point.y, 1;
-  ml.col(0) << 700, 300, 1;
-  Eigen::MatrixXd Minfl = calL.PX.inverse() * ml;
-
-  Eigen::MatrixXd mr(3,1);
-  //mr.col(0) << pose2DRight.point.x, pose2DRight.point.y, 1;
-  mr.col(0) << 300, 300, 1;
-  Eigen::MatrixXd Minfr = calR.PX.inverse() * mr;
-
-  //  Compute plucker lines
-  //    mu1 and nu1
-  Eigen::Vector3d tmp1 = calL.center.block(0, 0, 3, 1);
-  Eigen::Vector3d tmp2 = Minfl.block(0, 0, 3, 1);
-  Eigen::Vector3d mu1 = tmp1.cross(tmp2) / tmp2.norm();
-  Eigen::Vector3d nu1 = tmp2 / tmp2.norm();
-
-  //    mu1 and nu1
-  tmp1 = calR.center.block(0, 0, 3, 1);
-  tmp2 = Minfr.block(0, 0, 3, 1);
-  Eigen::Vector3d mu2 = tmp1.cross(tmp2) / tmp2.norm();
-  Eigen::Vector3d nu2 = tmp2 / tmp2.norm();
-
-  //  M1 and M2
-  Eigen::Vector3d M1 = ( nu1 * nu2.cross(mu2).transpose() - (nu1 * nu2.transpose()) * nu1 * (nu2.cross(mu1)).transpose() ) / ( (nu1.cross(nu2)).norm() * (nu1.cross(nu2)).norm() ) * nu1 + nu1.cross(mu1);
-  Eigen::Vector3d M2 = ( nu2 * nu1.cross(mu1).transpose() - (nu2 * nu1.transpose()) * nu2 * (nu1.cross(mu2)).transpose() ) / ( (nu2.cross(nu1)).norm() * (nu2.cross(nu1)).norm() ) * nu2 + nu2.cross(mu2);
-  Eigen::Vector3d M = M1 + (M2 - M1)/2;
-
-  // std::cout << "M1:" << std::endl;
-  // std::cout << M1 << std::endl;
-  // std::cout << "M2:" << std::endl;
-  // std::cout << M2 << std::endl;
-  // std::cout << "M:" << std::endl;
-  // std::cout << M << std::endl;
-  // std::cout << "M_norm:" << std::endl;
-  // std::cout << M.norm() << std::endl;
-
-  pose3D.point.x = M(0, 0);
-  pose3D.point.y = M(1, 0);
-  pose3D.point.z = M(2, 0);
-
-  pose3D.header.stamp = pose2DLeft.header.stamp;
-
-  pub3D.publish(pose3D);
-}
-/*
-#include <opencv2/core/eigen.hpp>
-cv::Mat_<float> a = Mat_<float>::ones(2,2);
-Eigen::Matrix<float,Dynamic,Dynamic> b;
-cv2eigen(a,b);
-*/
-
-void eig2mat( Eigen::MatrixXd &src, cv::Mat &dst ){
 }
 
 void openCvTriangulation(){
@@ -288,7 +186,6 @@ void calc3DPose(){
   std::cout << std::endl << std::endl << "----Calc 3d pos!" << std::endl;
 
   linearSolv();
-  //epiSolv();
   //openCvTriangulation();
 }
 
@@ -328,8 +225,8 @@ int main(int argc, char **argv){
   	ros::NodeHandle nh;
   	ros::Rate rate(20);
 
-    calL = loadCalibration("calibration.txt", 1);
-    calR = loadCalibration("calibration.txt", 0);
+    calL = loadCalibration("left.yaml", 0);
+    calR = loadCalibration("right.yaml", 1);
 
     // sub2DLeft = nh.subscribe<geometry_msgs::PointStamped>("/pose/2d_left", 1, receiveLeftImage);
     // sub2DRight = nh.subscribe<geometry_msgs::PointStamped>("/pose/2d_right", 1, receiveRightImage);
