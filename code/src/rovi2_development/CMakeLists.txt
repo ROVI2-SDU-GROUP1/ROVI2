@@ -101,7 +101,7 @@ target_link_libraries(image_detector_right ${OpenCV_LIBS} ${catkin_LIBRARIES})
 
 # Stereo node
 add_executable(stereo src/stereo_node.cpp)
-add_dependencies(stereo ${catkin_EXPORTED_TARGETS})
+add_dependencies(stereo ${catkin_EXPORTED_TARGETS} yaml-cpp)
 target_link_libraries(stereo ${OpenCV_LIBS} ${catkin_LIBRARIES} yaml-cpp)
 
 # Kalman node
