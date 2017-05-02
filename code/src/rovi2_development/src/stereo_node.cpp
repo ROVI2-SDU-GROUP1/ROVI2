@@ -15,6 +15,10 @@
 #include <eigen3/Eigen/SVD>
 #include <cassert>
 
+#include <opencv2/core/eigen.hpp>
+#include <opencv2/core/mat.hpp>
+#include <opencv2/calib3d.hpp>
+
 ros::Time leftTime;
 ros::Time rightTime;
 
@@ -226,6 +230,51 @@ void epiSolv(){
 
   pub3D.publish(pose3D);
 }
+/*
+#include <opencv2/core/eigen.hpp>
+cv::Mat_<float> a = Mat_<float>::ones(2,2);
+Eigen::Matrix<float,Dynamic,Dynamic> b;
+cv2eigen(a,b);
+*/
+
+void eig2mat( Eigen::MatrixXd &src, cv::Mat &dst ){
+
+}
+
+void openCvTriangulation(){
+  //  OpenCV triangulation - http://docs.opencv.org/2.4/modules/calib3d/doc/camera_calibration_and_3d_reconstruction.html
+  cv::Mat Pl = cv::Mat::ones(3,4,CV_32F);
+  cv::Mat Pr = cv::Mat::ones(3,4,CV_32F);
+
+  for(int i = 0; i < 3; i++){
+    for(int j = 0; j < 4; j++){
+      Pl.at<float>(i,j) = calL.P(i,j);
+      Pr.at<float>(i,j) = calR.P(i,j);
+    }
+  }
+
+  cv::Mat pointL = cv::Mat::ones(2,1,CV_32F);
+  cv::Mat pointR = cv::Mat::ones(2,1,CV_32F);
+  pointL.at<float>(1,1) = pose2DLeft.point.x;
+  pointL.at<float>(2,1) = pose2DLeft.point.y;
+
+  pointR.at<float>(1,1) = pose2DRight.point.x;
+  pointR.at<float>(2,1) = pose2DRight.point.y;
+
+  //cv::sfm::triangulatePoints(Pl, Pr, pointL, pointR, OutputArray points4D)
+
+  /*
+  std::cout << Pl << std::endl;
+  std::cout << Pr << std::endl;
+  std::cout << pointL << std::endl;
+  std::cout << pointR << std::endl;
+  */
+
+  cv::Mat point3D;
+  std::cout << point3D << std::endl;
+  //triangulatePoints(Pl, Pr, pointL, pointR, point3D);
+  std::cout << point3D << std::endl;
+}
 
 void calc3DPose(){
   // Stereo proc        - http://wiki.ros.org/stereo_image_proc
@@ -235,6 +284,7 @@ void calc3DPose(){
 
   linearSolv();
   //epiSolv();
+  //openCvTriangulation();
 }
 
 void receiveLeftImage(const geometry_msgs::PointStamped::ConstPtr &msg){
