@@ -81,7 +81,12 @@ class RT_RRTNode
             : _value(rw::math::Q(6,0,0,0,0,0,0)), _parent(nullptr)
             {}
 
-        double get_cost()               { return cost; }
+        double get_cost()
+        {
+            if(this->getParent() == nullptr)
+                return 0;
+            return this->_parent->get_cost() + (this->_parent->_value - this->_value).norm2();
+        }
         double get_heuristic(RT_RRTNode<T> *goal) { return (this->getValue() - goal->getValue()).norm2(); }
         void set_cost(double _cost)    { this->cost = _cost; }
         void set_rewired(bool _rewired) { this->rewired = _rewired; }
