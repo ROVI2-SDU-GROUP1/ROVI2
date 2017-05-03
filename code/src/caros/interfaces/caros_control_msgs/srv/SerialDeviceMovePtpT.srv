@@ -1,0 +1,12 @@
+# List with targets
+geometry_msgs/Transform[] targets
+
+# Speed defined the speed of the leading axis in percentage of max speed, 0=no speed, 100=full speed
+float32[] speeds
+
+# Blends of individual targets in percentage, 0=no blend, 100=full blend
+float32[] blends
+
+---
+# if the service request was acknowledged
+bool success

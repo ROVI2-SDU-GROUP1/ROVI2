@@ -1,0 +1,8 @@
+<launch>
+  <include file="$(find caros_sdh)/launch/caros_sdh_param.xml" ns="caros_sdh">
+    <!-- No parameters have to be set, as the defaults should be good enough for getting the device up and running -->
+  </include>
+  <!-- The 'name' parameter has to match the 'ns' parameter used in the include tag above -->
+  <node pkg="caros_sdh" type="caros_sdh_node" name="caros_sdh">
+  </node>
+</launch>

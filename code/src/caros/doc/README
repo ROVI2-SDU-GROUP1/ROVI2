@@ -1,0 +1,7 @@
+The documentation generator
+
+Requires:
+ROS setup scripts that works for the catkin workspace where this checked out repository is located.
+GraphViz's dot engine in the PATH (e.g. '$ dot' or '$ which dot' should point to the version that should be used).
+The package(s):
+- ros-indigo-rosdoc-lite

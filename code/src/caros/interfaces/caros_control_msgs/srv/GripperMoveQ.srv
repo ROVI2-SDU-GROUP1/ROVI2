@@ -1,0 +1,6 @@
+# Signal the gripper to move to the target configuration q
+# This will most likely be an asynchronous call, meaning that it will return before the gripper has moved to the target configuration.
+caros_common_msgs/Q q
+---
+# Acknowledgement of the service request
+bool success

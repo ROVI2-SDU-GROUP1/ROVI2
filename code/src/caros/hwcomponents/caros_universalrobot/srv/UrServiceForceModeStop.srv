@@ -1,0 +1,5 @@
+# Service for asking the robot to stop the force mode
+
+---
+# If the service request was acknowledged
+bool success

@@ -1,0 +1,8 @@
+<launch>
+  <include file="$(find caros_schunkpg70)/launch/caros_schunkpg70_param.xml" ns="caros_schunkpg70">
+    <!-- No parameters have to be set, as the defaults should be good enough for getting the device up and running -->
+  </include>
+  <!-- The 'name' parameter has to match the 'ns' parameter used in the include tag above -->
+  <node pkg="caros_schunkpg70" type="caros_schunkpg70_node" name="caros_schunkpg70">
+  </node>
+</launch>

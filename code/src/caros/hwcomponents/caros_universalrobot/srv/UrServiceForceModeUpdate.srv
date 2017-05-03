@@ -1,0 +1,8 @@
+# Service for updating the robot in force mode. This update only provides a new target wrench.
+
+# The desired wrench
+geometry_msgs/Wrench wrench
+
+---
+# If the service request was acknowledged
+bool success

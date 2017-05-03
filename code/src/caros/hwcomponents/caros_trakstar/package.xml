@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>caros_trakstar</name>
+  <version>0.0.1</version>
+  <description>Hardware driver for 6D pose sensor Trakstar. </description>
+  <maintainer email="trs@mmmi.sdu.dk">trs</maintainer>
+  <license>BSD</license>
+  <url type="website">https://gitlab.com/caro-sdu/caros/wikis/home</url>
+  <url type="repository">https://gitlab.com/caro-sdu/caros.git</url>
+  <url type="bugtracker">https://gitlab.com/caro-sdu/caros/issues</url>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>message_generation</build_depend>
+  <build_depend>roslint</build_depend>
+
+  <depend>std_msgs</depend>
+  <depend>caros_common</depend>
+  <depend>nodelet</depend>
+  <depend>caros_sensor</depend>
+  <depend>rosconsole</depend>
+  <depend>roscpp</depend>
+    
+  <exec_depend>message_runtime</exec_depend>
+  
+  <doc_depend>doxygen</doc_depend>
+  <doc_depend>rosdoc_lite</doc_depend>
+
+
+  <export> 
+  	<rosdoc config="rosdoc.yaml" />
+  	<nodelet plugin="${prefix}/plugins/nodelet_plugins.xml"/> 
+  </export>
+  
+</package>

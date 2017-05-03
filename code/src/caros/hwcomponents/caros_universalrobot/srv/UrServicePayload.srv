@@ -1,0 +1,9 @@
+# payload mass in kg
+float64 mass
+
+# center of mass from tcp in meters
+float64[3] com
+
+---
+# If the service request was acknowledged
+bool success

@@ -1,0 +1,5 @@
+# There are currently only a get method for robwork state
+
+---
+
+caros_common_robwork_msgs/RwState state

@@ -1,0 +1,12 @@
+<!-- Parameters for the caros_netft node -->
+<launch>
+  <!-- Define the parameterisation of the ROS parameters -->
+  <arg name="ip" default="192.168.100.2" />
+  <arg name="port" default="49152" />
+  <arg name="rate" default="100" />
+
+  <!-- Set the ROS parameters -->
+  <param name="ip" type="str" value="$(arg ip)" />
+  <param name="port" type="int" value="$(arg port)"/>
+  <param name="rate" type="int" value="$(arg rate)"/>
+</launch>

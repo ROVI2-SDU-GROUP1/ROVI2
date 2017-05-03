@@ -1,0 +1,5 @@
+# Signal the gripper to use the velocity configuration q
+caros_common_msgs/Q velocity
+---
+# Acknowledgement of the service request
+bool success

@@ -1,0 +1,5 @@
+# Signal the gripper to use the force configuration q
+caros_common_msgs/Q force
+---
+# Acknowledgement of the service request
+bool success

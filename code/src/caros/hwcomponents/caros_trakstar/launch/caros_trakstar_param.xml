@@ -1,0 +1,10 @@
+<!-- Parameters for the caros_trakstar node -->
+<launch>
+  <!-- Define the parameterisation of the ROS parameters -->
+  <arg name="rate" default="100" />
+  <arg name="frame" default="TrakstarBase" />
+
+  <!-- Set the ROS parameters -->
+  <param name="rate" type="int" value="$(arg rate)" />
+  <param name="frame" type="str" value="$(arg frame)" />
+</launch>
