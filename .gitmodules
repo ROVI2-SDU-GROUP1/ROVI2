@@ -1,6 +1,3 @@
-[submodule "code/src/caros"]
-	path = code/src/caros
-	url = https://gitlab.com/caro-sdu/caros.git
 [submodule "code/src/rovi2_development/deps/yaml-cpp"]
 	path = code/src/rovi2_development/deps/yaml-cpp
 	url = https://github.com/jbeder/yaml-cpp.git
