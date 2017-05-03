@@ -51,7 +51,8 @@ catkin_package(CATKIN_DEPENDS message_runtime)
 add_definitions(-DCALIBRATION_DIR="${CMAKE_SOURCE_DIR}/rovi2_development/calibrations/")
 
 
-include_directories(SYSTEM "deps")
+#add_subdirectory("deps/yaml-cpp/")
+#include_directories(SYSTEM "deps/yaml-cpp/include/")
 
 #We don't enable compilerwarnings in the headers, because some of the guys who wrote them are idiots...
 include_directories(SYSTEM ${catkin_INCLUDE_DIRS} ${EIGEN3_INCLUDE_DIR})
@@ -76,7 +77,6 @@ set(CMAKE_CXX_FLAGS "-std=c++11 \
 add_definitions(-DSCENE_FILE="${CMAKE_BINARY_DIR}/../../WorkCell_scenes/WorkStation_3/WC3_Scene.wc.xml")
 
 option(YAML_CPP_BUILD_TOOLS "Enable testing and parse tools" OFF)
-add_subdirectory("deps/yaml-cpp/")
 
 # Bumblebee node
 add_executable(opencv_node src/opencv_node.cpp)
@@ -96,7 +96,7 @@ target_link_libraries(hand_to_eye ${OpenCV_LIBS} ${catkin_LIBRARIES})
 
 # Stereo node
 add_executable(stereo src/stereo_node.cpp)
-add_dependencies(stereo ${catkin_EXPORTED_TARGETS} yaml-cpp)
+add_dependencies(stereo ${catkin_EXPORTED_TARGETS})
 target_link_libraries(stereo ${OpenCV_LIBS} ${catkin_LIBRARIES} yaml-cpp)
 
 # Kalman node
