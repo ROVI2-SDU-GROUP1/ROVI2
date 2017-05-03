@@ -1,11 +1,3 @@
-/*
-  New terminal > bash > roscore
-  New terminal > bash > rosbag play -l ...
-  New terminal > bash > rosrun rovi2_development image_detector_left
-  New terminal > bash > rosrun rovi2_development image_detector_right
-  New terminal > bash > cd workspace/ROVI2/code > catkin_make && rosrun rovi2_development stereo
-*/
-
 #include <mutex>
 #include <geometry_msgs/PointStamped.h>
 #include <message_filters/time_synchronizer.h>
@@ -23,11 +15,6 @@
 
 ros::Time leftTime;
 ros::Time rightTime;
-
-//using namespace message_filters;
-
-ros::Subscriber sub2DLeft;
-ros::Subscriber sub2DRight;
 
 ros::Publisher pub3D;
 
@@ -228,8 +215,6 @@ int main(int argc, char **argv){
     calL = loadCalibration("left.yaml", 0);
     calR = loadCalibration("right.yaml", 1);
 
-    // sub2DLeft = nh.subscribe<geometry_msgs::PointStamped>("/pose/2d_left", 1, receiveLeftImage);
-    // sub2DRight = nh.subscribe<geometry_msgs::PointStamped>("/pose/2d_right", 1, receiveRightImage);
     pub3D = nh.advertise<geometry_msgs::PointStamped>("/pose/3d", 1);
 
     message_filters::Subscriber<geometry_msgs::PointStamped> image_left(nh, "/pose/2d_left", 1);

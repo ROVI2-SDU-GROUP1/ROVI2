@@ -98,10 +98,9 @@ void find2DPose(const sensor_msgs::Image::ConstPtr& msg){
   cv::Mat threshold;
   adaptive(imageHSV, threshold, cv::Scalar(0, 255, 255), 10);
 
-
   std::cout << imageHSV.at<cv::Vec3b>(my, mx) << std::endl;
 
-  */
+*/
   cv::Mat thresholdLow;
   cv::Mat thresholdHigh;
   cv::inRange(imageHSV, cv::Scalar(0, 220, 50), cv::Scalar(10, 255, 255), thresholdLow);

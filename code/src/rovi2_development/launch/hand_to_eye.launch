@@ -1,0 +1,8 @@
+<launch>
+	<!-- Hand to eye calibration node -->
+	<node pkg="rovi2_development" type="hand_to_eye" name="hand_to_eye_calibration" output="screen">
+		<param name="image_left" value="/camera/left/image_raw" />
+		<param name="image_right" value="/camera/right/image_raw" />
+		<param name="q_state" value="/ur_simple_demo_node/caros_serial_device_service_interface/robot_state" />
+	</node>
+</launch>

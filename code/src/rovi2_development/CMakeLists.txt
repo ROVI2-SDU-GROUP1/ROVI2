@@ -81,15 +81,10 @@ add_executable(image_detector src/image_detector_node.cpp)
 add_dependencies(image_detector ${catkin_EXPORTED_TARGETS})
 target_link_libraries(image_detector ${OpenCV_LIBS} ${catkin_LIBRARIES})
 
-# Image detector node - left
-add_executable(image_detector_left src/image_detector_node_left.cpp)
-add_dependencies(image_detector_left ${catkin_EXPORTED_TARGETS})
-target_link_libraries(image_detector_left ${OpenCV_LIBS} ${catkin_LIBRARIES})
-
-# Image detector node right
-add_executable(image_detector_right src/image_detector_node_right.cpp)
-add_dependencies(image_detector_right ${catkin_EXPORTED_TARGETS})
-target_link_libraries(image_detector_right ${OpenCV_LIBS} ${catkin_LIBRARIES})
+# Image detector node
+add_executable(hand_to_eye src/hand_to_eye_calibration_node.cpp)
+add_dependencies(hand_to_eye ${catkin_EXPORTED_TARGETS})
+target_link_libraries(hand_to_eye ${OpenCV_LIBS} ${catkin_LIBRARIES})
 
 # Stereo node
 add_executable(stereo src/stereo_node.cpp)
