@@ -7,7 +7,7 @@
 #include <eigen3/Eigen/SVD>
 #include <cassert>
 
-#include "yaml-cpp/include/yaml-cpp/yaml.h"
+#include "yaml-cpp/yaml.h"
 
 #include <opencv2/core/eigen.hpp>
 #include <opencv2/core/mat.hpp>
