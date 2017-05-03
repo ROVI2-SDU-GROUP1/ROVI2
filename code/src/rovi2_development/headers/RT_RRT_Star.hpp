@@ -18,6 +18,7 @@
 #include "LineSampler.hpp"
 
 
+uint64_t fac(uint64_t n);
 typedef RT_RRTNode<rw::math::Q> RT_Node;
 typedef rwlibs::pathplanners::RT_RRT_Tree<rw::math::Q> Tree;
 typedef rw::trajectory::QPath Path;
@@ -50,7 +51,7 @@ class RT_RRT_Star
 {
     public:
         RT_RRT_Star(rw::math::Q _q_start, rw::math::Q _q_goal, const rw::pathplanning::PlannerConstraint& constraint,
-        	rw::pathplanning::QSampler::Ptr sampler, rw::math::QMetric::Ptr metric);
+        	rw::pathplanning::QSampler::Ptr sampler, rw::math::QMetric::Ptr metric, double cloeseness = 0.05);
 
         //Change the goal position to a new one
         void set_new_goal(rw::math::Q q_newgoal);
@@ -60,19 +61,22 @@ class RT_RRT_Star
         rw::math::Q create_random_node();
         void rewire_random_nodes(double epsilon);
         void rewire_from_tree_root(double epsilon);
-        void add_nodes_to_tree(rw::math::Q &x_new, RT_Node * x_closest, std::vector<RT_Node *> &X_near);
+        bool add_nodes_to_tree(rw::math::Q &x_new, std::vector<RT_Node *> &X_near);
         std::vector<RT_Node *> find_next_path(std::chrono::milliseconds rrt_time);
         std::vector<RT_Node *> plan_path();
         RT_Node *find_nearest_node(RT_Node &node) { return this->find_nearest_node(node.getValue()); };
         RT_Node *find_nearest_node(const rw::math::Q &x);
         size_t get_size();
         bool found_solution();
+        double getEpsilon();
+        uint64_t nodes_without_parents();
+        void validate_tree_structure();
 
     private:
         double alpha = 0.1;
-        double beta = 0.5;
-        double k_max = 90;
-        double r_s = 90;
+        double beta = 3;
+        double k_max = 10000;
+        double r_s = 1;
         std::queue<RT_Node *> Q_r;
         std::queue<RT_Node *> Q_s;
         RRTStruct _rrt;
@@ -81,8 +85,10 @@ class RT_RRT_Star
         Tree RT_Tree;
         std::chrono::steady_clock::time_point rewire_expand_deadline;
         std::chrono::steady_clock::time_point rewire_from_root_deadline;
+        double closeness;
 
         std::default_random_engine generator;
         std::uniform_real_distribution<double> unit_distribution;
         RT_Node *closest = nullptr;
+        double u_X;
 };

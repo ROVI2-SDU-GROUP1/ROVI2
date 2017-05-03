@@ -47,6 +47,11 @@ LINK_DIRECTORIES( ${ROBWORK_LIBRARY_DIRS} )
 
 catkin_package(CATKIN_DEPENDS message_runtime)
 
+# Define path to calibration files used in stereo node
+add_definitions(-DCALIBRATION_DIR="${CMAKE_SOURCE_DIR}/rovi2_development/calibrations/")
+
+
+include_directories(SYSTEM "deps")
 
 #We don't enable compilerwarnings in the headers, because some of the guys who wrote them are idiots...
 include_directories(SYSTEM ${catkin_INCLUDE_DIRS} ${EIGEN3_INCLUDE_DIR})
@@ -70,6 +75,9 @@ set(CMAKE_CXX_FLAGS "-std=c++11 \
 
 add_definitions(-DSCENE_FILE="${CMAKE_BINARY_DIR}/../../WorkCell_scenes/WorkStation_3/WC3_Scene.wc.xml")
 
+option(YAML_CPP_BUILD_TOOLS "Enable testing and parse tools" OFF)
+add_subdirectory("deps/yaml-cpp/")
+
 # Bumblebee node
 add_executable(opencv_node src/opencv_node.cpp)
 set_target_properties(opencv_node PROPERTIES OUTPUT_NAME node PREFIX "")
@@ -88,8 +96,8 @@ target_link_libraries(hand_to_eye ${OpenCV_LIBS} ${catkin_LIBRARIES})
 
 # Stereo node
 add_executable(stereo src/stereo_node.cpp)
-add_dependencies(stereo ${catkin_EXPORTED_TARGETS})
-target_link_libraries(stereo ${OpenCV_LIBS} ${catkin_LIBRARIES})
+add_dependencies(stereo ${catkin_EXPORTED_TARGETS} yaml-cpp)
+target_link_libraries(stereo ${OpenCV_LIBS} ${catkin_LIBRARIES} yaml-cpp)
 
 # Kalman node
 add_executable(kalman_node src/kalman_estimator_node.cpp)
@@ -108,3 +116,4 @@ target_link_libraries(rt_rrt_star ${OpenCV_LIBS} ${EIGEN3_LIBS} ${catkin_LIBRARI
 
 catkin_install_python(PROGRAMS scripts/trajectory_plotter.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+

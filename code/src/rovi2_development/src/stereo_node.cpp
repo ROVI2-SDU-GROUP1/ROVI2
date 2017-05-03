@@ -1,24 +1,22 @@
-#include <mutex>
 #include <geometry_msgs/PointStamped.h>
 #include <message_filters/time_synchronizer.h>
 #include <message_filters/subscriber.h>
 #include <ros/ros.h>
-#include <fstream>
 #include <eigen3/Eigen/Dense>
 #include <eigen3/Eigen/Core>
 #include <eigen3/Eigen/SVD>
 #include <cassert>
 
+#include "yaml-cpp/include/yaml-cpp/yaml.h"
+
 #include <opencv2/core/eigen.hpp>
 #include <opencv2/core/mat.hpp>
-#include <opencv2/calib3d.hpp>
+//#include <opencv2/calib3d.hpp>
 
 ros::Time leftTime;
 ros::Time rightTime;
 
 ros::Publisher pub3D;
-
-std::mutex mutex;
 
 geometry_msgs::PointStamped pose2DLeft;
 geometry_msgs::PointStamped pose2DRight;
@@ -46,35 +44,25 @@ struct Intrinsic{
 Intrinsic calL;
 Intrinsic calR;
 
-Intrinsic loadCalibration(std::string fileName, int index){
+#define CALIB_RIGHT_FRONT CALIBRATION_DIR"right_front.yaml"
+#define CALIB_LEFT_FRONT CALIBRATION_DIR"left_front.yaml"
+
+Intrinsic loadCalibration(std::string fileName){
+  YAML::Node calibration_yaml = YAML::LoadFile(fileName);
+
   Intrinsic cal;
-  std::ifstream file(fileName);
-  //assert(file.is_open());
-  std::string line;
-  while (getline(file, line)){
-    std::cout << line << std::endl;
-  }
-
   cal.intrinsic.resize(3, 3);
-  if (!index) cal.intrinsic.row(0) << 1348.764942, 0.000000, 533.749161;
-  else        cal.intrinsic.row(0) << 1355.395640, 0.000000, 540.084150;
-  if (!index) cal.intrinsic.row(1) << 0.000000, 1349.118163, 354.434678;
-  else        cal.intrinsic.row(1) << 0.000000, 1354.485656, 437.144524;
-  if (!index) cal.intrinsic.row(2) << 0.000000, 0.000000, 1.000000;
-  else        cal.intrinsic.row(2) << 0.000000, 0.000000, 1.000000;
-
-  Eigen::MatrixXd temp1;
-  Eigen::MatrixXd temp2;
+  YAML::Node tmp = calibration_yaml["camera_matrix"];
+  for(unsigned int i = 0; i < tmp["data"].size();i+=3){
+    cal.intrinsic.row(i/3) << tmp["data"][i].as<double>(), tmp["data"][i+1].as<double>(),tmp["data"][i+2].as<double>();
+  }
 
   // P
   cal.P.resize(3,4);
-  if (!index) cal.P.row(0) << 2030.399737, 0.000000, 382.195145, 0.000000;
-  else        cal.P.row(0) << 2030.399737, 0.000000, 382.195145, -246.187430;
-  if (!index) cal.P.row(1) << 0.000000, 2030.399737, 408.654493, 0.000000;
-  else        cal.P.row(1) << 0.000000, 2030.399737, 408.654493, 0.000000;
-  if (!index) cal.P.row(2) << 0.000000, 0.000000, 1.000000, 0.000000;
-  else        cal.P.row(2) << 0.000000, 0.000000, 1.000000, 0.000000;
-
+  tmp = calibration_yaml["projection_matrix"];
+  for(unsigned int i = 0; i < tmp["data"].size();i+=4){
+    cal.P.row(i/4) << tmp["data"][i].as<double>(), tmp["data"][i+1].as<double>(),tmp["data"][i+2].as<double>(),tmp["data"][i+3].as<double>();
+  }
   // PX
   cal.PX = cal.P.block(0, 0, 3, 3);
 
@@ -131,41 +119,6 @@ void linearSolv(){
   pub3D.publish(pose3D);
 }
 
-void openCvTriangulation(){
-  //  OpenCV triangulation - http://docs.opencv.org/2.4/modules/calib3d/doc/camera_calibration_and_3d_reconstruction.html
-  cv::Mat Pl = cv::Mat::ones(3,4,CV_32F);
-  cv::Mat Pr = cv::Mat::ones(3,4,CV_32F);
-
-  for(int i = 0; i < 3; i++){
-    for(int j = 0; j < 4; j++){
-      Pl.at<float>(i,j) = calL.P(i,j);
-      Pr.at<float>(i,j) = calR.P(i,j);
-    }
-  }
-
-  cv::Mat pointL = cv::Mat::ones(2,1,CV_32F);
-  cv::Mat pointR = cv::Mat::ones(2,1,CV_32F);
-  pointL.at<float>(1,1) = pose2DLeft.point.x;
-  pointL.at<float>(2,1) = pose2DLeft.point.y;
-
-  pointR.at<float>(1,1) = pose2DRight.point.x;
-  pointR.at<float>(2,1) = pose2DRight.point.y;
-
-  //cv::sfm::triangulatePoints(Pl, Pr, pointL, pointR, OutputArray points4D)
-
-  /*
-  std::cout << Pl << std::endl;
-  std::cout << Pr << std::endl;
-  std::cout << pointL << std::endl;
-  std::cout << pointR << std::endl;
-  */
-
-  cv::Mat point3D;
-  std::cout << point3D << std::endl;
-  //triangulatePoints(Pl, Pr, pointL, pointR, point3D);
-  std::cout << point3D << std::endl;
-}
-
 void calc3DPose(){
   // Stereo proc        - http://wiki.ros.org/stereo_image_proc
   // Dense stereo ros
@@ -173,31 +126,6 @@ void calc3DPose(){
   std::cout << std::endl << std::endl << "----Calc 3d pos!" << std::endl;
 
   linearSolv();
-  //openCvTriangulation();
-}
-
-void receiveLeftImage(const geometry_msgs::PointStamped::ConstPtr &msg){
-  mutex.lock();
-  pose2DLeft = *msg;
-  leftTime = msg->header.stamp;
-  if (leftTime == rightTime)
-    calc3DPose();
-  else {
-    std::cout << "Left - times not equal left: " << leftTime << " right: " << rightTime << std::endl;
-  }
-  mutex.unlock();
-}
-
-void receiveRightImage(const geometry_msgs::PointStamped::ConstPtr &msg){
-  mutex.lock();
-  pose2DRight = *msg;
-  rightTime = msg->header.stamp;
-  if (leftTime == rightTime)
-      calc3DPose();
-    else {
-      std::cout << "Right - times not equal left: " << leftTime << " right: " << rightTime << std::endl;
-    }
-  mutex.unlock();
 }
 
 void image_sync_callback(const geometry_msgs::PointStamped::ConstPtr &image_left, const geometry_msgs::PointStamped::ConstPtr &image_right){
@@ -212,8 +140,8 @@ int main(int argc, char **argv){
   	ros::NodeHandle nh;
   	ros::Rate rate(20);
 
-    calL = loadCalibration("left.yaml", 0);
-    calR = loadCalibration("right.yaml", 1);
+    calL = loadCalibration(CALIB_RIGHT_FRONT);
+    calR = loadCalibration(CALIB_LEFT_FRONT);
 
     pub3D = nh.advertise<geometry_msgs::PointStamped>("/pose/3d", 1);
 
@@ -228,7 +156,6 @@ int main(int argc, char **argv){
       last = ros::Time::now();
       ros::spinOnce();
   		rate.sleep();
-      //calc3DPose();
     }
 
     return 0;

@@ -8,6 +8,7 @@ ADD ./ ROVI2
 RUN 	chown rw_user:rw_user ROVI2 -R && \
 	cp ROVI2/Docker/run.sh ./run.sh && \
 	chmod +x ./run.sh
+RUN apt-get update && apt-get install -y libyaml-cpp-dev
 USER rw_user
 
 #Compile it
