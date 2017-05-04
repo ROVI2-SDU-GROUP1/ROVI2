@@ -3,12 +3,14 @@
 	<node pkg="rovi2_development" type="image_detector" name="image_detector_left" output="screen">
 		<param name="image_sub" value="/camera/left/image_raw" />
 		<param name="point_pub" value="/pose/2d_left" />
+		<param name="calibration_yaml_path" value="left_front.yaml" />
 	</node>
 
 	<!-- Right image detector node -->
 	<node pkg="rovi2_development" type="image_detector" name="image_detector_right" output="screen" >
 		<param name="image_sub" value="/camera/right/image_raw" />
 		<param name="point_pub" value="/pose/2d_right" />
+		<param name="calibration_yaml_path" value="right_front.yaml" />
 	</node>
 
 	<!-- Stereo node -->

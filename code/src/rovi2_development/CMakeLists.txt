@@ -87,9 +87,9 @@ target_link_libraries(opencv_node ${OpenCV_LIBS} ${catkin_LIBRARIES})
 # Image detector node
 add_executable(image_detector src/image_detector_node.cpp)
 add_dependencies(image_detector ${catkin_EXPORTED_TARGETS})
-target_link_libraries(image_detector ${OpenCV_LIBS} ${catkin_LIBRARIES})
+target_link_libraries(image_detector ${OpenCV_LIBS} ${catkin_LIBRARIES} yaml-cpp)
 
-# Image detector node
+# Hand to eye
 add_executable(hand_to_eye src/hand_to_eye_calibration_node.cpp)
 add_dependencies(hand_to_eye ${catkin_EXPORTED_TARGETS})
 target_link_libraries(hand_to_eye ${OpenCV_LIBS} ${catkin_LIBRARIES})
