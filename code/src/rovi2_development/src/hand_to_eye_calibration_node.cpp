@@ -18,10 +18,10 @@ geometry_msgs::PointStamped pose2DLeft;
 geometry_msgs::PointStamped pose2DRight;
 caros_control_msgs::RobotState qState;
 
-cv::Mat *cameraMatrixLeft;
-cv::Mat *cameraMatrixRight;
-cv::Mat *distCoeffsLeft;
-cv::Mat *distCoeffsRight;
+static cv::Mat *cameraMatrixLeft;
+static cv::Mat *cameraMatrixRight;
+static cv::Mat *distCoeffsLeft;
+static cv::Mat *distCoeffsRight;
 
 cv::Mat imageLeft;
 cv::Mat imageRight;
@@ -35,7 +35,7 @@ bool rightPressed = false;
 
 void CallBackFuncLeft(int event, int x, int y, int flags, void* userdata){
   if ( flags == cv::EVENT_FLAG_LBUTTON ){
-    pose2DLeft.point.x = x;
+      pose2DLeft.point.x = x;
     pose2DLeft.point.y = y;
     std::cout << "Left mouse button is clicked - position (" << x << ", " << y << ")" << std::endl;
     leftPressed = true;
@@ -56,12 +56,11 @@ cv::Mat Undistored(cv::Mat input, cv::Mat *cameraMatrix, cv::Mat *distCoeffs){
   cv::undistort(input, undistorted, *cameraMatrix, *distCoeffs);
   return undistorted;
 }
-
-void image_sync_callback(const sensor_msgs::Image::ConstPtr &image_left, const sensor_msgs::Image::ConstPtr &image_right, const caros_control_msgs::RobotState::ConstPtr &q){
+// , const caros_control_msgs::RobotState::ConstPtr &q
+void image_sync_callback(const sensor_msgs::Image::ConstPtr &image_left, const sensor_msgs::Image::ConstPtr &image_right){
+  std::cout << "image_sync_callback invoked" << std::endl;
   pose2DLeft.header.stamp = image_left->header.stamp;
   pose2DRight.header.stamp = image_left->header.stamp;
-  qState = *q;
-  qState.header.stamp = image_left->header.stamp;
 
   cv_bridge::CvImagePtr cv_ptr_left;
   cv_bridge::CvImagePtr cv_ptr_right;
@@ -74,24 +73,29 @@ void image_sync_callback(const sensor_msgs::Image::ConstPtr &image_left, const s
     ROS_ERROR("cv_bridge exception: %s", e.what());
     return;
   }
+  cv::Mat tmp_l = cv_ptr_left->image.clone();
+  cv::Mat tmp_r = cv_ptr_right->image.clone();
 
-  imageLeft = Undistored(cv_ptr_left->image.clone(), cameraMatrixLeft, distCoeffsLeft);
-  imageRight = Undistored(cv_ptr_right->image.clone(), cameraMatrixRight, distCoeffsRight);
+  imageLeft = Undistored(tmp_l, cameraMatrixLeft, distCoeffsLeft);
+  imageRight = Undistored(tmp_r, cameraMatrixRight, distCoeffsRight);
 
-  cv::imshow("Left image", imageLeft);
-  cv::imshow("Right image", imageRight);
+  cv::imshow("Leftimage", imageLeft);
+  cv::imshow("Rightimage", imageRight);
   cv::waitKey(1);
 
-  while(!(leftPressed && rightPressed)){
+  // while(!(leftPressed && rightPressed));
+  //
 
+  if (leftPressed and rightPressed) {
+    qState.header.stamp = image_left->header.stamp;
+    pub_point_left.publish(pose2DLeft);
+    pub_point_right.publish(pose2DRight);
+    pub_q.publish(qState);
+
+    leftPressed = false;
+    rightPressed = false;
   }
 
-  pub_point_left.publish(pose2DLeft);
-  pub_point_right.publish(pose2DRight);
-  pub_q.publish(qState);
-
-  leftPressed = false;
-  rightPressed = false;
 }
 
 bool is_file_exist(std::string fileName){
@@ -99,7 +103,7 @@ bool is_file_exist(std::string fileName){
     return infile.good();
 }
 
-void loadYAMLparameters( std::string yaml_path, cv::Mat *cameraMatrix, cv::Mat *distCoeffs ){
+void loadYAMLparameters( std::string yaml_path, cv::Mat *&cameraMatrix, cv::Mat *&distCoeffs ){
   std::string abs_yaml_path = std::string(CALIBRATION_DIR) + yaml_path;
   std::cout << "Loading calib: " << abs_yaml_path << std::endl;
   if(!is_file_exist(abs_yaml_path)){
@@ -117,6 +121,7 @@ void loadYAMLparameters( std::string yaml_path, cv::Mat *cameraMatrix, cv::Mat *
   for(unsigned int i = 0; i < 3; i++){
     for(unsigned int j = 0; j < 3; j++){
       cameraMatrix->at<double>(i,j) = camera_matrix["data"][i*3+j].as<double>();
+      std::cout << cameraMatrix->at<double>(i,j) << std::endl;
     }
   }
 
@@ -125,16 +130,21 @@ void loadYAMLparameters( std::string yaml_path, cv::Mat *cameraMatrix, cv::Mat *
   }
 }
 
+
+void robot_state_q_callback(const caros_control_msgs::RobotState::ConstPtr &q){
+  std::cout << "Got q" << std::endl;
+  qState = *q;
+}
 int main(int argc, char **argv){
   ros::init(argc, argv, "hand_to_eye_calibration");
-	ros::NodeHandle nh;
+	ros::NodeHandle nh("~");
 	ros::Rate rate(20);
 
-  cv::namedWindow("Left image", 1);
-  cv::namedWindow("Right image", 1);
+  cv::namedWindow("Leftimage", 1);
+  cv::namedWindow("Rightimage", 1);
 
-  cv::setMouseCallback("Left image", CallBackFuncLeft, NULL);
-  cv::setMouseCallback("Right image", CallBackFuncRight, NULL);
+  cv::setMouseCallback("Leftimage", CallBackFuncLeft, NULL);
+  cv::setMouseCallback("Rightimage", CallBackFuncRight, NULL);
 
   std::string param_yaml_path_left;
   std::string param_yaml_path_right;
@@ -161,12 +171,15 @@ int main(int argc, char **argv){
   pub_point_right = nh.advertise<geometry_msgs::PointStamped>(param_point_right, 1);
   pub_q = nh.advertise<caros_control_msgs::RobotState>(param_robot_state_pub, 1);
 
-  message_filters::Subscriber<sensor_msgs::Image> sub_image_left(nh, param_image_left, 0);
-  message_filters::Subscriber<sensor_msgs::Image> sub_image_right(nh, param_image_right, 0);
-  message_filters::Subscriber<caros_control_msgs::RobotState> sub_q_state(nh, param_robot_state_sub, 0);
-  message_filters::TimeSynchronizer<sensor_msgs::Image, sensor_msgs::Image, caros_control_msgs::RobotState> sync(sub_image_left, sub_image_right, sub_q_state, 10);
-  sync.registerCallback(boost::bind(&image_sync_callback, _1, _2, _3));
+  message_filters::Subscriber<sensor_msgs::Image> sub_image_left(nh, param_image_left, 1);
+  message_filters::Subscriber<sensor_msgs::Image> sub_image_right(nh, param_image_right, 1);
+  //message_filters::Subscriber<caros_control_msgs::RobotState> sub_q_state(nh, param_robot_state_sub, 0);
 
+  ros::Subscriber sub = nh.subscribe(param_robot_state_sub, 1, robot_state_q_callback);
+  
+//, caros_control_msgs::RobotState
+  message_filters::TimeSynchronizer<sensor_msgs::Image, sensor_msgs::Image> sync(sub_image_left, sub_image_right, 20);
+  sync.registerCallback(boost::bind(&image_sync_callback, _1, _2));
   ros::Time last = ros::Time::now();
 
   while (ros::ok()){
