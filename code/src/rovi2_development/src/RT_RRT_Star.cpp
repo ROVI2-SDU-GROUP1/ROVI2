@@ -14,7 +14,39 @@
 //TODO: This pathplanning strategy is very slow apperently...
 //Try to combine this aproach of rewiring and heurisitcs with RRT_Connect
 
+double get_dist(rw::math::Q &q1, rw::math::Q &q2)
+{
+    auto diff = q1 - q2;
+    double dist = 0;
+    for(uint8_t i = 0; i < 6; i++)
+    {
+        dist += pow(diff[i], 2);
+    }
+    return sqrt(dist);
+}
 
+double get_path_length(rw::trajectory::QPath &path)
+{
+    double length = 0;
+    for(size_t i = 1; i < path.size(); i++)
+    {   double tmp = get_dist(path[i - 1], path[i]);
+        length += tmp;
+    }
+    return length;
+}
+
+
+
+double get_dist(const rw::math::Q &q1, const rw::math::Q &q2)
+{
+    auto diff = q1 - q2;
+    double dist = 0;
+    for(uint8_t i = 0; i < 6; i++)
+    {
+        dist += pow(diff[i], 2);
+    }
+    return sqrt(dist);
+}
 
 uint64_t fac(uint64_t n)
 {
@@ -22,6 +54,20 @@ uint64_t fac(uint64_t n)
         return 1;
     return n * fac(n - 1);
 }
+
+
+double get_path_length(std::vector<RT_Node *> &path)
+{
+    double length = 0;
+    for(size_t i = 1; i < path.size(); i++)
+    {   double tmp = get_dist( path[i - 1]->getValue() , path[i]->getValue() );
+        length += tmp;
+    }
+    return length;
+}
+
+
+
 
 RT_RRT_Star::RT_RRT_Star(rw::math::Q _q_start, rw::math::Q _q_goal, const rw::pathplanning::PlannerConstraint& constraint,
     rw::pathplanning::QSampler::Ptr sampler, rw::math::QMetric::Ptr metric, double _closeness)
@@ -31,12 +77,20 @@ RT_RRT_Star::RT_RRT_Star(rw::math::Q _q_start, rw::math::Q _q_goal, const rw::pa
     assert(!this->_rrt.constraint.getQConstraint().inCollision(_q_start));
     assert(!this->_rrt.constraint.getQConstraint().inCollision(_q_goal));
 
+
+
     this->agent = this->RT_Tree.getLastPtr();
     this->agent->set_cost(0.);
     //this->RT_Tree.add(_q_goal, nullptr);
     this->goal = new RT_RRTNode<rw::math::Q>(_q_goal, nullptr);
     this->goal->set_cost(std::numeric_limits<double>::max());
     this->closest = this->agent;
+
+    if (!_rrt.constraint.getQEdgeConstraint().inCollision(_q_start, _q_goal)) {
+        this->RT_Tree.add(this->goal->getValue(), this->agent);
+        this->closest = this->RT_Tree.getLastPtr();
+    }
+
 }
 
 std::vector<RT_Node *> RT_RRT_Star::find_next_path(std::chrono::milliseconds rrt_time)
@@ -86,9 +140,9 @@ void RT_RRT_Star::expand_and_rewire()
         {
             this->Q_r.push(nodes_near[0]);
         }
-        //if(added)
-            //this->rewire_random_nodes(epsilon);
-        //this->rewire_from_tree_root(epsilon);
+        if(added)
+            this->rewire_random_nodes(epsilon);
+        this->rewire_from_tree_root(epsilon);
     }
     return;
 }
@@ -350,7 +404,7 @@ int main(__attribute__((unused)) int argc, __attribute__((unused)) char const *a
     rw::kinematics::State state = wc->getDefaultState();;
 
     rw::math::Q q_1(6, 0, -1.5, -0.298, -0.341, 0, 0);
-    rw::math::Q q_2(6, -1.032, -3.186, -0.298, -0.341, 0, 0);
+    rw::math::Q q_2(6, -0.091, -1.817, -1.454, -3.410, 0, 0);
     device->setQ(q_1, state);
     rw::pathplanning::PlannerConstraint constraint = rw::pathplanning::PlannerConstraint::make(detector,device,state);
     rw::pathplanning::QSampler::Ptr sampler = rw::pathplanning::QSampler::makeConstrained(rw::pathplanning::QSampler::QSampler::makeUniform(device),constraint.getQConstraintPtr());
@@ -368,16 +422,18 @@ int main(__attribute__((unused)) int argc, __attribute__((unused)) char const *a
     }
     //return 0;
     RT_RRT_Star rt_rrt_star(q_1, q_2, constraint, sampler, metric);
-    std::chrono::milliseconds time_to_solve{1000};
+    std::chrono::milliseconds time_to_solve{100};
     for(uint64_t itterations = 0; rt_rrt_star.found_solution() == false || itterations < 200; itterations++)
     {
-        for(auto node : rt_rrt_star.find_next_path(time_to_solve))
+        auto new_path = rt_rrt_star.find_next_path(time_to_solve);
+        for(auto node : new_path)
         {
             std::cout << node->getValue() << std::endl;
         }
         std::cout << "End of itteration " << itterations << " Tree size: " << rt_rrt_star.get_size() << std::endl;
         rt_rrt_star.nodes_without_parents();
         rt_rrt_star.validate_tree_structure();
+        std::cout << get_path_length(new_path) << std::endl;
     }
     std::cout << "Tree size at exit: " << rt_rrt_star.get_size() << std::endl;
     return 0;

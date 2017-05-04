@@ -51,7 +51,7 @@ class RT_RRT_Star
 {
     public:
         RT_RRT_Star(rw::math::Q _q_start, rw::math::Q _q_goal, const rw::pathplanning::PlannerConstraint& constraint,
-        	rw::pathplanning::QSampler::Ptr sampler, rw::math::QMetric::Ptr metric, double cloeseness = 0.05);
+        	rw::pathplanning::QSampler::Ptr sampler, rw::math::QMetric::Ptr metric, double cloeseness = 0.005);
 
         //Change the goal position to a new one
         void set_new_goal(rw::math::Q q_newgoal);
