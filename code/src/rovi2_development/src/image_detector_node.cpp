@@ -44,12 +44,6 @@ void opening(cv::Mat &src){
   cv::dilate(dst, src, elementDilate);
 }
 
-int abs(int x){
-  if (x < 0) return -x;
-  return x;
-}
-
-
 cv::Mat Undistored(cv::Mat input){
   cv::Mat undistorted;
   cv::undistort(input, undistorted, *cameraMatrix, *distCoeffs);
@@ -69,22 +63,12 @@ void find2DPose(const sensor_msgs::Image::ConstPtr& msg){
     return;
   }
 
-
   cv::Mat imageBGR = cv_ptr->image.clone();
   cv::Mat imageUndistorted = Undistored(imageBGR);
-
 
   cv::Mat imageHSV;
   cv::cvtColor(imageUndistorted, imageHSV, CV_BGR2HSV);
 
-
-/*
-  cv::Mat threshold;
-  adaptive(imageHSV, threshold, cv::Scalar(0, 255, 255), 10);
-
-  std::cout << imageHSV.at<cv::Vec3b>(my, mx) << std::endl;
-
-*/
   cv::Mat thresholdLow;
   cv::Mat thresholdHigh;
   cv::inRange(imageHSV, cv::Scalar(0, 150, 50), cv::Scalar(10, 255, 255), thresholdLow);
@@ -94,7 +78,6 @@ void find2DPose(const sensor_msgs::Image::ConstPtr& msg){
 
   opening(threshold);
   closing(threshold);
-
 
 	std::vector<std::vector<cv::Point> > cont;
 	std::vector<cv::Vec4i> hier;
@@ -118,13 +101,11 @@ void find2DPose(const sensor_msgs::Image::ConstPtr& msg){
 
   cv::circle(imageUndistorted, imgCoord, 10, cv::Scalar(0, 255, 0), 2);
 
-
 //  cv::imshow("Distorted", imageBGR);
 //  cv::imshow("Undistorted", imageUndistorted);
 //  cv::imshow("t1", threshold);
 
   cv::waitKey(1);
-
 
   point_pub.publish(point);
 }
@@ -173,8 +154,6 @@ int main(int argc, char **argv){
   for(unsigned int i = 0; i < distortion_coefficients["data"].size();i++){
     distCoeffs->at<double>(i) = distortion_coefficients["data"][i].as<double>();
   }
-
-
 
   image_sub = nh.subscribe<sensor_msgs::Image>(image_sub_name, 1, find2DPose);
   point_pub = nh.advertise<geometry_msgs::PointStamped>(point_pub_name, 1);

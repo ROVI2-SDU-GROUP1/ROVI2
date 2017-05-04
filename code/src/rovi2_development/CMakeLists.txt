@@ -92,7 +92,7 @@ target_link_libraries(image_detector ${OpenCV_LIBS} ${catkin_LIBRARIES} yaml-cpp
 # Hand to eye
 add_executable(hand_to_eye src/hand_to_eye_calibration_node.cpp)
 add_dependencies(hand_to_eye ${catkin_EXPORTED_TARGETS})
-target_link_libraries(hand_to_eye ${OpenCV_LIBS} ${catkin_LIBRARIES})
+target_link_libraries(hand_to_eye ${OpenCV_LIBS} ${catkin_LIBRARIES} yaml-cpp)
 
 # Stereo node
 add_executable(stereo src/stereo_node.cpp)
@@ -116,4 +116,3 @@ target_link_libraries(rt_rrt_star ${OpenCV_LIBS} ${EIGEN3_LIBS} ${catkin_LIBRARI
 
 catkin_install_python(PROGRAMS scripts/trajectory_plotter.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
-
