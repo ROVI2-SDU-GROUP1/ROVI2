@@ -9,7 +9,6 @@
 
 #include "yaml-cpp/yaml.h"
 
-#include <opencv2/core/eigen.hpp>
 #include <opencv2/core/mat.hpp>
 //#include <opencv2/calib3d.hpp>
 
