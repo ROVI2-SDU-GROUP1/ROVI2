@@ -71,18 +71,28 @@ class RT_RRT_Star
         double getEpsilon();
         uint64_t nodes_without_parents();
         void validate_tree_structure();
-
+        void connect_trees();
+        ExtendResult growTree(Tree *tree, const rw::math::Q& q);
+        ExtendResult extend(Tree *tree, const rw::math::Q& q, RT_Node* qNearNode);
+        ExtendResult connect(Tree *tree, const rw::math::Q& q);
+        void mergeTrees();
     private:
         double alpha = 0.1;
         double beta = 3;
         double k_max = 10000;
         double r_s = 1;
+        double rrt_connect_epsilon = 1;
         std::queue<RT_Node *> Q_r;
         std::queue<RT_Node *> Q_s;
         RRTStruct _rrt;
         RT_Node *goal;
         RT_Node *agent;
-        Tree RT_Tree;
+        Tree startTree;
+        Tree goalTree;
+        Tree *TreeA;
+        Tree *TreeB;
+
+        uint64_t connect_count = 0;
         std::chrono::steady_clock::time_point rewire_expand_deadline;
         std::chrono::steady_clock::time_point rewire_from_root_deadline;
         double closeness;
