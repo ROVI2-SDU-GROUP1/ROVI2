@@ -130,7 +130,7 @@ void image_sync_callback(const sensor_msgs::Image::ConstPtr &image_left, const s
     pub_point_left.publish(pose2DLeft);
     pub_point_right.publish(pose2DRight);
     //pub_q.publish(qState);
-    //QToTransform(qState);
+    QToTransform(qState);
 
     leftPressed = false;
     rightPressed = false;
@@ -176,12 +176,29 @@ void robot_state_q_callback(const caros_control_msgs::RobotState::ConstPtr &q){
 }
 
 int main(int argc, char **argv){
-  ros::init(argc, argv, "hand_to_eye_calibration");
-	ros::NodeHandle nh("~");
-	ros::Rate rate(20);
+  std::cout << __LINE__ << std::endl;
 
-   _wc = rw::loaders::WorkCellLoader::Factory::load(SCENE_FILE);
-   _device = _wc->findDevice("UR1");
+    ros::init(argc, argv, "hand_to_eye_calibration");
+    ros::NodeHandle nh("~");
+    ros::Rate rate(20);
+
+    std::cout << __LINE__ << std::endl;
+    std::cout << SCENE_FILE << std::endl;
+    rw::models::WorkCell::Ptr tmp = rw::loaders::WorkCellLoader::Factory::load(SCENE_FILE);
+    return 0;
+    std::cout << __LINE__ << std::endl;
+    if (_wc == NULL){
+     ROS_WARN("Unable to load workcell: %s", SCENE_FILE);
+    } else {
+     ROS_WARN("Loading file");
+    }
+    _device = _wc->findDevice("UR1");
+
+   if (_device == NULL){
+     ROS_WARN("Unable to load device");
+   }else {
+     ROS_WARN("Loading device");
+   }
    _state = _wc->getDefaultState();
 
   cv::namedWindow("Leftimage", 1);
@@ -222,10 +239,8 @@ int main(int argc, char **argv){
 
   message_filters::TimeSynchronizer<sensor_msgs::Image, sensor_msgs::Image> sync(sub_image_left, sub_image_right, 20);
   sync.registerCallback(boost::bind(&image_sync_callback, _1, _2));
-  ros::Time last = ros::Time::now();
 
   while (ros::ok()){
-    last = ros::Time::now();
     ros::spinOnce();
 		rate.sleep();
   }
