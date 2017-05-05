@@ -10,12 +10,12 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
   message_generation
 )
+add_definitions(-DSCENE_FILE="${CMAKE_BINARY_DIR}/../../WorkCell_scenes/WorkStation_3/WC3_Scene.wc.xml")
+
 catkin_python_setup()
 find_package(cmake_modules REQUIRED)
 find_package(Eigen REQUIRED)
-
 find_package(OpenCV)
-
 
  add_message_files(
    FILES

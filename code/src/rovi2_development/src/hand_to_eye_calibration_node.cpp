@@ -22,17 +22,20 @@
 #include <rw/kinematics/Frame.hpp>
 #include <rw/math/Quaternion.hpp>
 
+//  Sub
+cv::Mat imageLeft;
+cv::Mat imageRight;
+caros_control_msgs::RobotState qState;
+
+//  Pub
 geometry_msgs::PointStamped pose2DLeft;
 geometry_msgs::PointStamped pose2DRight;
-caros_control_msgs::RobotState qState;
+geometry_msgs::TransformStamped qStateTransformed;
 
 static cv::Mat *cameraMatrixLeft;
 static cv::Mat *cameraMatrixRight;
 static cv::Mat *distCoeffsLeft;
 static cv::Mat *distCoeffsRight;
-
-cv::Mat imageLeft;
-cv::Mat imageRight;
 
 ros::Publisher pub_point_left;
 ros::Publisher pub_point_right;
@@ -54,25 +57,24 @@ void QToTransform(caros_control_msgs::RobotState &Q_state){
   //_device->baseTframe(Frame, _state).R()
 
   rw::math::Quaternion<double> TmpQuaternion = rw::math::Quaternion<double>(_device->baseTframe(Frame, _state).R());
-  geometry_msgs::TransformStamped msg_out  = geometry_msgs::TransformStamped();
 
-  msg_out.transform.translation.x = tool_pos[0];
-  msg_out.transform.translation.y = tool_pos[1];
-  msg_out.transform.translation.z = tool_pos[2];
+  qStateTransformed.transform.translation.x = tool_pos[0];
+  qStateTransformed.transform.translation.y = tool_pos[1];
+  qStateTransformed.transform.translation.z = tool_pos[2];
 
-  msg_out.transform.rotation.x = TmpQuaternion.getQx();
-  msg_out.transform.rotation.y = TmpQuaternion.getQy();
-  msg_out.transform.rotation.z = TmpQuaternion.getQz();
-  msg_out.transform.rotation.w = TmpQuaternion.getQw();
+  qStateTransformed.transform.rotation.x = TmpQuaternion.getQx();
+  qStateTransformed.transform.rotation.y = TmpQuaternion.getQy();
+  qStateTransformed.transform.rotation.z = TmpQuaternion.getQz();
+  qStateTransformed.transform.rotation.w = TmpQuaternion.getQw();
 
-  msg_out.header.stamp = pose2DLeft.header.stamp;
+  qStateTransformed.header.stamp = pose2DLeft.header.stamp;
 
-  pub_transform.publish(msg_out);
+  pub_transform.publish(qStateTransformed);
 }
 
 void CallBackFuncLeft(int event, int x, int y, int flags, void* userdata){
   if ( flags == cv::EVENT_FLAG_LBUTTON ){
-      pose2DLeft.point.x = x;
+    pose2DLeft.point.x = x;
     pose2DLeft.point.y = y;
     std::cout << "Left mouse button is clicked - position (" << x << ", " << y << ")" << std::endl;
     leftPressed = true;
@@ -124,11 +126,11 @@ void image_sync_callback(const sensor_msgs::Image::ConstPtr &image_left, const s
   //
 
   if (leftPressed and rightPressed) {
-    qState.header.stamp = image_left->header.stamp;
+    qStateTransformed.header.stamp = image_left->header.stamp;
     pub_point_left.publish(pose2DLeft);
     pub_point_right.publish(pose2DRight);
     //pub_q.publish(qState);
-    QToTransform(qState);
+    //QToTransform(qState);
 
     leftPressed = false;
     rightPressed = false;
@@ -168,18 +170,18 @@ void loadYAMLparameters( std::string yaml_path, cv::Mat *&cameraMatrix, cv::Mat 
   }
 }
 
-
 void robot_state_q_callback(const caros_control_msgs::RobotState::ConstPtr &q){
   std::cout << "Got q" << std::endl;
   qState = *q;
 }
+
 int main(int argc, char **argv){
   ros::init(argc, argv, "hand_to_eye_calibration");
 	ros::NodeHandle nh("~");
 	ros::Rate rate(20);
 
-   _wc = rw::loaders::WorkCellLoader::Factory::load("/home/student/Downloads/PA10WorkCell/ScenePA10RoVi1.wc.xml");
-   _device = _wc->findDevice("UR5");
+   _wc = rw::loaders::WorkCellLoader::Factory::load(SCENE_FILE);
+   _device = _wc->findDevice("UR1");
    _state = _wc->getDefaultState();
 
   cv::namedWindow("Leftimage", 1);
@@ -216,10 +218,8 @@ int main(int argc, char **argv){
   message_filters::Subscriber<sensor_msgs::Image> sub_image_left(nh, param_image_left, 1);
   message_filters::Subscriber<sensor_msgs::Image> sub_image_right(nh, param_image_right, 1);
   //message_filters::Subscriber<caros_control_msgs::RobotState> sub_q_state(nh, param_robot_state_sub, 0);
-
   ros::Subscriber sub = nh.subscribe(param_robot_state_sub, 1, robot_state_q_callback);
 
-//, caros_control_msgs::RobotState
   message_filters::TimeSynchronizer<sensor_msgs::Image, sensor_msgs::Image> sync(sub_image_left, sub_image_right, 20);
   sync.registerCallback(boost::bind(&image_sync_callback, _1, _2));
   ros::Time last = ros::Time::now();
