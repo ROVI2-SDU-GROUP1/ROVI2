@@ -2,9 +2,10 @@
 #include <geometry_msgs/PointStamped.h>
 #include <sensor_msgs/Image.h>
 #include <caros_control_msgs/RobotState.h>
+#include <geometry_msgs/TransformStamped.h>
 #include <message_filters/time_synchronizer.h>
 #include <message_filters/subscriber.h>
-
+//#include <
 #include <opencv2/highgui/highgui.hpp>
 #include <image_transport/image_transport.h>
 #include <cv_bridge/cv_bridge.h>
@@ -13,6 +14,13 @@
 #include "yaml-cpp/yaml.h"
 
 #include <fstream>
+
+
+#include <rw/kinematics/State.hpp>
+#include <rw/math/Q.hpp>
+#include <rw/loaders/WorkCellFactory.hpp>
+#include <rw/kinematics/Frame.hpp>
+#include <rw/math/Quaternion.hpp>
 
 geometry_msgs::PointStamped pose2DLeft;
 geometry_msgs::PointStamped pose2DRight;
@@ -28,10 +36,39 @@ cv::Mat imageRight;
 
 ros::Publisher pub_point_left;
 ros::Publisher pub_point_right;
-ros::Publisher pub_q;
+ros::Publisher pub_transform;
 
 bool leftPressed = false;
 bool rightPressed = false;
+
+rw::models::WorkCell::Ptr _wc;
+rw::models::Device::Ptr _device;
+rw::kinematics::State _state;
+
+void QToTransform(caros_control_msgs::RobotState &Q_state){
+  rw::math::Q RW_Q_state(6, Q_state.q.data[0],Q_state.q.data[1],Q_state.q.data[2],Q_state.q.data[3],Q_state.q.data[4],Q_state.q.data[5] );
+  _device->setQ(RW_Q_state, _state);
+
+  rw::kinematics::Frame* Frame = _wc->findFrame("TCP");
+  auto tool_pos = _device->baseTframe(Frame, _state).P();
+  //_device->baseTframe(Frame, _state).R()
+
+  rw::math::Quaternion<double> TmpQuaternion = rw::math::Quaternion<double>(_device->baseTframe(Frame, _state).R());
+  geometry_msgs::TransformStamped msg_out  = geometry_msgs::TransformStamped();
+
+  msg_out.transform.translation.x = tool_pos.x;
+  msg_out.transform.translation.y = tool_pos.y;
+  msg_out.transform.translation.z = tool_pos.z;
+
+  msg_out.transform.rotation.x = TmpQuaternion.getQx();
+  msg_out.transform.rotation.y = TmpQuaternion.getQy();
+  msg_out.transform.rotation.z = TmpQuaternion.getQz();
+  msg_out.transform.rotation.w = TmpQuaternion.getQw();
+
+  msg_out.header.stamp = pose2DLeft.header.stamp;
+
+  pub_transform.publish(msg_out);
+}
 
 void CallBackFuncLeft(int event, int x, int y, int flags, void* userdata){
   if ( flags == cv::EVENT_FLAG_LBUTTON ){
@@ -90,7 +127,8 @@ void image_sync_callback(const sensor_msgs::Image::ConstPtr &image_left, const s
     qState.header.stamp = image_left->header.stamp;
     pub_point_left.publish(pose2DLeft);
     pub_point_right.publish(pose2DRight);
-    pub_q.publish(qState);
+    //pub_q.publish(qState);
+    QToTransform(qState);
 
     leftPressed = false;
     rightPressed = false;
@@ -140,6 +178,10 @@ int main(int argc, char **argv){
 	ros::NodeHandle nh("~");
 	ros::Rate rate(20);
 
+   _wc = WorkCellLoader::Factory::load("/home/student/Downloads/PA10WorkCell/ScenePA10RoVi1.wc.xml");
+   _device = _wc->findDevice("UR5");
+   _state = _wc->getDefaultState();
+
   cv::namedWindow("Leftimage", 1);
   cv::namedWindow("Rightimage", 1);
 
@@ -152,7 +194,7 @@ int main(int argc, char **argv){
   std::string param_image_right;
   std::string param_point_left;
   std::string param_point_right;
-  std::string param_robot_state_pub;
+  std::string param_robot_transform;
   std::string param_robot_state_sub;
 
   nh.param<std::string>("calibration_yaml_path_left", param_yaml_path_left, "default.yaml");
@@ -162,21 +204,21 @@ int main(int argc, char **argv){
   nh.param<std::string>("sub_robot_state", param_robot_state_sub, "/ur_simple_demo_node/caros_serial_device_service_interface/robot_state");
   nh.param<std::string>("pub_point_left", param_point_left, "/pose/2d_left");
   nh.param<std::string>("pub_point_right", param_point_right, "/pose/2d_right");
-  nh.param<std::string>("pub_robot_state", param_robot_state_pub, "/q_state_processed");
+  nh.param<std::string>("pub_robot_transform", param_robot_transform, "/robot_transform");
 
   loadYAMLparameters(param_yaml_path_left, cameraMatrixLeft, distCoeffsLeft);
   loadYAMLparameters(param_yaml_path_right, cameraMatrixRight, distCoeffsRight);
 
   pub_point_left = nh.advertise<geometry_msgs::PointStamped>(param_point_left, 1);
   pub_point_right = nh.advertise<geometry_msgs::PointStamped>(param_point_right, 1);
-  pub_q = nh.advertise<caros_control_msgs::RobotState>(param_robot_state_pub, 1);
+  pub_transform = nh.advertise<geometry_msgs::TransformStamped>(param_robot_transform, 1);
 
   message_filters::Subscriber<sensor_msgs::Image> sub_image_left(nh, param_image_left, 1);
   message_filters::Subscriber<sensor_msgs::Image> sub_image_right(nh, param_image_right, 1);
   //message_filters::Subscriber<caros_control_msgs::RobotState> sub_q_state(nh, param_robot_state_sub, 0);
 
   ros::Subscriber sub = nh.subscribe(param_robot_state_sub, 1, robot_state_q_callback);
-  
+
 //, caros_control_msgs::RobotState
   message_filters::TimeSynchronizer<sensor_msgs::Image, sensor_msgs::Image> sync(sub_image_left, sub_image_right, 20);
   sync.registerCallback(boost::bind(&image_sync_callback, _1, _2));
