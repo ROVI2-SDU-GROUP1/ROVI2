@@ -12,4 +12,15 @@
 		<param name="pub_point_right" value="/pose/2d_right" />
 
 	</node>
+
+        <!-- Stereo node -->
+        <node pkg="rovi2_development" type="stereo" name="stereo_node" output="screen">
+                <param name="point_sub_left" value="/pose/2d_left" />
+                <param name="point_sub_right" value="/pose/2d_right" />
+                <param name="point_pub" value="/pose/3d" />
+        </node>
+	<!-- Logger node -->
+	<node pkg="rovi2_development" type="QAnd3DPoseLogger.py" name="Logger_node" output="screen">
+	</node>
+
 </launch>
