@@ -56,9 +56,9 @@ void QToTransform(caros_control_msgs::RobotState &Q_state){
   rw::math::Quaternion<double> TmpQuaternion = rw::math::Quaternion<double>(_device->baseTframe(Frame, _state).R());
   geometry_msgs::TransformStamped msg_out  = geometry_msgs::TransformStamped();
 
-  msg_out.transform.translation.x = tool_pos.x;
-  msg_out.transform.translation.y = tool_pos.y;
-  msg_out.transform.translation.z = tool_pos.z;
+  msg_out.transform.translation.x = tool_pos[0];
+  msg_out.transform.translation.y = tool_pos[1];
+  msg_out.transform.translation.z = tool_pos[2];
 
   msg_out.transform.rotation.x = TmpQuaternion.getQx();
   msg_out.transform.rotation.y = TmpQuaternion.getQy();
@@ -178,7 +178,7 @@ int main(int argc, char **argv){
 	ros::NodeHandle nh("~");
 	ros::Rate rate(20);
 
-   _wc = WorkCellLoader::Factory::load("/home/student/Downloads/PA10WorkCell/ScenePA10RoVi1.wc.xml");
+   _wc = rw::loaders::WorkCellLoader::Factory::load("/home/student/Downloads/PA10WorkCell/ScenePA10RoVi1.wc.xml");
    _device = _wc->findDevice("UR5");
    _state = _wc->getDefaultState();
 

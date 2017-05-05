@@ -1,4 +1,5 @@
 <launch>
+
 	<!-- Hand to eye calibration node -->
 	<node pkg="rovi2_development" type="hand_to_eye" name="hand_to_eye_calibration" output="screen">
 		<param name="image_left" value="/camera/left/image_raw" />
@@ -10,15 +11,15 @@
 		<param name="pub_robot_state" value="/q_state_processed" />
 		<param name="pub_point_left" value="/pose/2d_left" />
 		<param name="pub_point_right" value="/pose/2d_right" />
-
 	</node>
 
-        <!-- Stereo node -->
-        <node pkg="rovi2_development" type="stereo" name="stereo_node" output="screen">
-                <param name="point_sub_left" value="/pose/2d_left" />
-                <param name="point_sub_right" value="/pose/2d_right" />
-                <param name="point_pub" value="/pose/3d" />
-        </node>
+	<!-- Stereo node -->
+	<node pkg="rovi2_development" type="stereo" name="stereo_node" output="screen">
+		<param name="point_sub_left" value="/pose/2d_left" />
+		<param name="point_sub_right" value="/pose/2d_right" />
+		<param name="point_pub" value="/pose/3d" />
+	</node>
+	
 	<!-- Logger node -->
 	<node pkg="rovi2_development" type="QAnd3DPoseLogger.py" name="Logger_node" output="screen">
 	</node>
