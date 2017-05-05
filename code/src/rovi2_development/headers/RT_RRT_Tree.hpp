@@ -92,6 +92,10 @@ namespace rwlibs { namespace pathplanners {
         node_type& getLast() const { return *_nodes.back(); }
         node_type *getLastPtr() const { return _nodes.back(); }
 
+        void clear_unsafe()
+        {
+            this->_nodes.clear();
+        }
         void add(const value_type& value, node_type* parent)
         {
             auto tmp_node = new node_type(value, parent);
@@ -103,6 +107,10 @@ namespace rwlibs { namespace pathplanners {
 
         typedef typename std::vector<node_type*>::const_iterator const_iterator;
 
+        void add(node_type* node)
+        {
+            _nodes.push_back(node);
+        }
         std::pair<const_iterator, const_iterator>
         getNodes() const
         { return std::make_pair(_nodes.begin(), _nodes.end()); }

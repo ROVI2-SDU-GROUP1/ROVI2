@@ -84,7 +84,7 @@ class RT_RRTNode
         double get_cost()
         {
             if(this->getParent() == nullptr)
-                return 0;
+                return this->cost;
             return this->_parent->get_cost() + (this->_parent->_value - this->_value).norm2();
         }
         double get_heuristic(RT_RRTNode<T> *goal) { return (this->getValue() - goal->getValue()).norm2(); }
