@@ -11,8 +11,19 @@
 #include <limits>
 #include <cstdlib>
 #include <cmath>
-//TODO: This pathplanning strategy is very slow apperently...
-//Try to combine this aproach of rewiring and heurisitcs with RRT_Connect
+
+static rw::pathplanning::PlannerConstraint *stat_constraint = nullptr;
+
+
+
+void validate_path(std::vector<RT_Node *> &path, const rw::pathplanning::PlannerConstraint& constraint);
+
+void validate_path(std::vector<RT_Node *> &path)
+{
+    validate_path(path, *stat_constraint);
+}
+
+
 
 double get_dist(rw::math::Q &q1, rw::math::Q &q2)
 {
@@ -68,25 +79,66 @@ double get_path_length(std::vector<RT_Node *> &path)
 
 
 
+bool inCollision(const rw::pathplanning::PlannerConstraint& constraint, const rw::math::Q& q)
+{
+    return constraint.getQConstraint().inCollision(q);
+}
+
+// 'node' is known to be collision free, but 'b' is not.
+bool inCollision(const rw::pathplanning::PlannerConstraint& constraint,
+                 RT_Node *a,
+                 const rw::math::Q& b)
+{
+    return
+        constraint.getQConstraint().inCollision(b) ||
+        constraint.getQEdgeConstraint().inCollision(a->getValue(), b);
+}
+
+bool inCollision(const rw::pathplanning::PlannerConstraint& constraint,
+                 const rw::math::Q& a,
+                 RT_Node *b)
+{
+    return
+        constraint.getQConstraint().inCollision(b->getValue()) ||
+        constraint.getQEdgeConstraint().inCollision(a, b->getValue());
+}
+
+bool inCollision(const rw::pathplanning::PlannerConstraint& constraint,
+                 const rw::math::Q& a,
+                 const rw::math::Q& b)
+{
+    return
+        constraint.getQConstraint().inCollision(b) ||
+        constraint.getQEdgeConstraint().inCollision(a, b);
+}
+
+bool inCollision(const rw::pathplanning::PlannerConstraint& constraint,
+                 RT_Node *a,
+                 RT_Node *b)
+{
+    return
+        constraint.getQConstraint().inCollision(b->getValue()) ||
+        constraint.getQEdgeConstraint().inCollision(a->getValue(), b->getValue());
+}
+
 
 RT_RRT_Star::RT_RRT_Star(rw::math::Q _q_start, rw::math::Q _q_goal, const rw::pathplanning::PlannerConstraint& constraint,
     rw::pathplanning::QSampler::Ptr sampler, rw::math::QMetric::Ptr metric, double _closeness)
     : _rrt(constraint, sampler, metric), startTree(_q_start), goalTree(_q_goal), TreeA(&startTree), TreeB(&goalTree), closeness(_closeness),
     unit_distribution(0, 1),  u_X(pow( M_PI, 6 / 2 ) / fac( 6 / 2 + 1) * pow( (2 * M_PI), 6))
 {
-    assert(!this->_rrt.constraint.getQConstraint().inCollision(_q_start));
-    assert(!this->_rrt.constraint.getQConstraint().inCollision(_q_goal));
+    assert(!inCollision(this->_rrt.constraint, _q_start));
+    assert(!inCollision(this->_rrt.constraint, _q_goal));
 
 
 
     this->agent = this->startTree.getLastPtr();
     this->agent->set_cost(0.);
-    //this->startTree.add(_q_goal, nullptr);
     this->goal = goalTree.getLastPtr();
     this->goal->set_cost(std::numeric_limits<double>::max());
     this->closest = this->agent;
 
-    if (!_rrt.constraint.getQEdgeConstraint().inCollision(_q_start, _q_goal)) {
+    if (!inCollision(this->_rrt.constraint, _q_start, _q_goal)) {
         this->startTree.add(this->goal->getValue(), this->agent);
         this->closest = this->startTree.getLastPtr();
     }
@@ -129,7 +181,8 @@ ExtendResult RT_RRT_Star::extend(Tree *tree,
     const double dist = delta.norm2();
 
     if (dist <= this->rrt_connect_epsilon) {
-        if (!_rrt.constraint.getQEdgeConstraint().inCollision(qNearNode->getValue(), q)) {
+        if (!inCollision(this->_rrt.constraint, qNearNode->getValue(), q)) {
+            assert(!inCollision(this->_rrt.constraint, q));
             tree->add(q, qNearNode);
             return Reached;
         } else {
@@ -137,7 +190,8 @@ ExtendResult RT_RRT_Star::extend(Tree *tree,
         }
     } else {
         const rw::math::Q qNew = qNear + (this->rrt_connect_epsilon / dist) * delta;
-        if (!_rrt.constraint.getQEdgeConstraint().inCollision(qNearNode->getValue(), qNew)) {
+        if (!inCollision(this->_rrt.constraint, qNearNode->getValue(), qNew)) {
+            assert(!inCollision(this->_rrt.constraint, qNew));
             tree->add(qNew, qNearNode);
             return Advanced;
         } else {
@@ -180,6 +234,8 @@ void RT_RRT_Star::connect_trees()
     {
         //The trees are now connected, do something
         //We need to merge the goal and start tree
+        validate_path(this->startTree._nodes, this->_rrt.constraint);
+        validate_path(this->goalTree._nodes, this->_rrt.constraint);
         this->mergeTrees();
         printf("Trees are connected now!\n");
 
@@ -198,7 +254,6 @@ void RT_RRT_Star::mergeTrees()
     printf("next_to_fix: %p\n", next_to_fix);
     RT_Node *next_parent = this->startTree.getLastPtr();
     printf("next_parent: %p\n", next_parent);
-    RT_Node *next_n = next_to_fix;
     //Move all goalTree nodes to startTree
     for(auto node : this->goalTree._nodes)
     {
@@ -234,7 +289,7 @@ void RT_RRT_Star::expand_and_rewire()
     rw::math::Q x_rand = this->create_random_node();
     //std::cout << "Distance from rand to goal: " << (x_rand - this->goal->getValue()).norm2() << " rand:" << x_rand << " closest: " << this->closest->getValue() << std::endl;
     //for(uint8_t i = 2; i < x_rand.size(); i++ ) x_rand[i] = 0.;
-    if(!this->_rrt.constraint.getQConstraint().inCollision(x_rand))
+    if(!inCollision(this->_rrt.constraint, x_rand))
     {
         bool added = false;
         //std::cout << x_rand << std::endl;
@@ -263,8 +318,14 @@ void RT_RRT_Star::expand_and_rewire()
 
 void RT_RRT_Star::set_new_goal(rw::math::Q q_newgoal)
 {
-    assert(!this->_rrt.constraint.getQConstraint().inCollision(q_newgoal));
-    this->goalTree.clear_unsafe();
+    assert(!inCollision(this->_rrt.constraint, q_newgoal));
+    if (!inCollision(this->_rrt.constraint, this->agent->getValue(), q_newgoal)) {
+        this->startTree.add(q_newgoal, this->agent);
+        this->closest = this->startTree.getLastPtr();
+        return;
+    }
+
+    this->goalTree.clear();
     this->goalTree.add(q_newgoal, nullptr);
     this->goal = this->goalTree.getLastPtr();
     this->TreeA = &this->goalTree;
@@ -273,24 +334,35 @@ void RT_RRT_Star::set_new_goal(rw::math::Q q_newgoal)
     return;
 }
 
-//TODO: cost recomputation of the path to x0
-//TODO: Don't add goal to the tree, instead just keep it in this class, and have a closeness check, when adding a node, to check if we are close enough.
-
 void RT_RRT_Star::move_agent(RT_Node *_agent_node)
 {
     //We can only move the agent to a node in the tree, which follows the computed path.
-    //If this is not done, the planner will return suboptimal solutions
-    #warning "MOVE AGENT NOT IMPLEMENTED!"
-    //We Set the new node to have 0 parents, and a cost of 0 (Do we need to update child node cost?, also, we could set the former parent as a child, with some smart propegation?)
+    //If this is not done, the planner may return suboptimal solutions
+    //#warning "MOVE AGENT NOT IMPLEMENTED!"
+    //We Set the new node to have 0 parents, and a cost of 0. Also, we propegate this as the new tree root
+    this->propegate_new_agent(_agent_node->getParent(), _agent_node);
+    printf("Propegation done\n");
     _agent_node->set_cost(0);
     _agent_node->setParent(nullptr);
     this->agent = _agent_node;
+    printf("agent changed\n");
     for(auto node : this->startTree._nodes)
     { //Set rewired to false for all nodes
         node->set_rewired(false);
     }
     //Clear Q_s
     std::queue<RT_Node *>().swap(this->Q_s);
+}
+
+void RT_RRT_Star::propegate_new_agent(RT_Node * node, RT_Node *new_parent)
+{   //This function propegates the updates of node child->parent relationships when the agent is moved.
+    //This should propegate towards the old agent and stop when it is reached.
+    validate_path(this->startTree._nodes, this->_rrt.constraint);
+    if(node == nullptr) return;
+    printf("Updating relationships %p->%p to %p->%p\n", node, node->getParent(), node, new_parent);
+    auto old_parent = node->getParent();
+    node->setParent(new_parent);
+    this->propegate_new_agent(old_parent, node);
 }
 
 bool RT_RRT_Star::add_nodes_to_tree(rw::math::Q &x_new, std::vector<RT_Node *> &X_near)
@@ -301,13 +373,17 @@ bool RT_RRT_Star::add_nodes_to_tree(rw::math::Q &x_new, std::vector<RT_Node *> &
     for (auto x_near : X_near)
     {
         double c_new = x_near->get_cost() + (x_near->getValue() - x_new).norm2();
-        if(c_new < c_min and !this->_rrt.constraint.getQEdgeConstraint().inCollision(x_near->getValue(), x_new) )
+        if(c_new < c_min and !inCollision(this->_rrt.constraint, x_near->getValue(), x_new) )
         {
             c_min = c_new; x_min = x_near;
         }
     }
     if(c_min == std::numeric_limits<double>::max()) return false;
+    validate_path(this->startTree._nodes, this->_rrt.constraint);
+    printf("Adding %p\n", x_min);
     this->startTree.add(x_new, x_min);
+    validate_path(this->startTree._nodes, this->_rrt.constraint);
+    printf("%p added without issues\n", x_min);
     this->startTree.getLastPtr()->set_cost(c_min);
     if( (this->startTree.getLastPtr()->getValue() - this->goal->getValue()).norm2() < (this->closest->getValue() - this->goal->getValue()).norm2() )
     {
@@ -329,11 +405,16 @@ void RT_RRT_Star::rewire_random_nodes(double epsilon)
         {
             double c_old = x_near->get_cost();
             double c_new = x_r->get_cost() + (x_r->getValue() - x_near->getValue()).norm2();
-            if(c_new < c_old and (!this->_rrt.constraint.getQEdgeConstraint().inCollision(x_r->getValue(), x_near->getValue())) )
+            if(c_new < c_old and (!inCollision(this->_rrt.constraint, x_r->getValue(), x_near->getValue())) )
             {
                 //if ( x_near == this->goal) std::cout << "Goal got new cost!" << std::endl;
+                validate_path(this->startTree._nodes, this->_rrt.constraint);
+                printf("rewiring %p %p\n", x_near, x_r);
                 x_near->set_cost(c_new);
                 x_near->setParent(x_r);
+                validate_path(this->startTree._nodes, this->_rrt.constraint);
+                printf("%p %p rewired successfully\n", x_near, x_r);
+
                 this->Q_r.push(x_near);
             }
         }
@@ -370,12 +451,14 @@ void RT_RRT_Star::rewire_from_tree_root(double epsilon)
             //printf("x_near: %p\n", x_s);
             double c_old = x_near->get_cost();
             double c_new = x_s->get_cost() + (x_s->getValue() - x_near->getValue()).norm2();
-            if(c_new < c_old and !this->_rrt.constraint.getQEdgeConstraint().inCollision(x_s->getValue(), x_near->getValue()) )
+            if(c_new < c_old and !inCollision(this->_rrt.constraint, x_s->getValue(), x_near->getValue()) )
             {
-                //if ( x_near == this->goal) std::cout << "Goal got new cost: " << c_new <<  std::endl;
+                validate_path(this->startTree._nodes, this->_rrt.constraint);
+                printf("rewiring %p %p\n", x_near, x_s);
                 x_near->set_cost(c_new);
                 x_near->setParent(x_s);
-                //this->Q_s.push(x_s);
+                validate_path(this->startTree._nodes, this->_rrt.constraint);
+                printf("%p %p rewired successfully\n", x_near, x_s);
             }
             if(x_near->get_rewired() == false)
             {
@@ -477,6 +560,8 @@ void RT_RRT_Star::validate_tree_structure()
         for(auto child : node->get_childs())
         {
             assert(child->getParent() == node);
+            assert(child != child->getParent());
+            assert(node != child);
         }
     }
 }
@@ -485,18 +570,27 @@ void validate_path(std::vector<RT_Node *> &path, const rw::pathplanning::Planner
 {
     for(auto node : path)
     {
+        assert(!inCollision(constraint,node->getValue()));
         for(auto child : node->get_childs())
-            assert(!constraint.getQEdgeConstraint().inCollision(child->getValue(), node->getValue()));
+        {
+            std::cout << "Checking collision " << child->getValue() << "->" << node->getValue() << "\t" << child << "->" << node << std::endl;
+            assert(!inCollision(constraint, child->getValue()));
+            assert(!inCollision(constraint, node->getValue()));
+            assert(!inCollision(constraint, child->getValue(), node->getValue()));
+        }
     }
 }
 
+RT_Node *RT_RRT_Star::get_random_node()
+{
+    return this->startTree.get_random_node();
+}
 
 
 int main(__attribute__((unused)) int argc, __attribute__((unused)) char const *argv[]) {
     printf("Wow, it works!\n");
     printf("Compile info: GCC %u.%u.%u\t", __GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__);
     printf("Compile date: %s -- %s\n", __DATE__, __TIME__);
-
     rw::models::WorkCell::Ptr wc = rw::loaders::WorkCellLoader::Factory::load(SCENE_FILE);
   	rw::models::Device::Ptr device = wc->findDevice("UR1");
 
@@ -510,6 +604,7 @@ int main(__attribute__((unused)) int argc, __attribute__((unused)) char const *a
     rw::math::Q q_2(6, -1.032, -3.186, -0.298, -0.341, 0, 0);
     device->setQ(q_1, state);
     rw::pathplanning::PlannerConstraint constraint = rw::pathplanning::PlannerConstraint::make(detector,device,state);
+    stat_constraint = &constraint;
     rw::pathplanning::QSampler::Ptr sampler = rw::pathplanning::QSampler::makeConstrained(rw::pathplanning::QSampler::QSampler::makeUniform(device),constraint.getQConstraintPtr());
 
 
@@ -529,15 +624,17 @@ int main(__attribute__((unused)) int argc, __attribute__((unused)) char const *a
     for(uint64_t itterations = 0; rt_rrt_star.found_solution() == false || itterations < 200; itterations++)
     {
         auto new_path = rt_rrt_star.find_next_path(time_to_solve);
-        validate_path(new_path, constraint);
         for(auto node : new_path)
         {
             std::cout << node->getValue() << std::endl;
         }
+        validate_path(new_path, constraint);
+
         std::cout << "End of itteration " << itterations << " Tree size: " << rt_rrt_star.get_size() << std::endl;
         rt_rrt_star.nodes_without_parents();
         rt_rrt_star.validate_tree_structure();
         std::cout << get_path_length(new_path) << std::endl;
+        if(rt_rrt_star.found_solution()) rt_rrt_star.move_agent(rt_rrt_star.get_random_node());
     }
     std::cout << "Tree size at exit: " << rt_rrt_star.get_size() << std::endl;
 

@@ -54,6 +54,8 @@ class RT_RRTNode
         RT_RRTNode<T> *getParent() const { return this->_parent; }
         void setParent(RT_RRTNode<T> *p)
         {
+            printf("setting %p as parent of %p\n", p, this);
+
             if(this->_parent)
             {
                 this->_parent->remove_child(this);
@@ -93,11 +95,13 @@ class RT_RRTNode
         bool get_rewired() { return this->rewired; }
         void add_child(RT_RRTNode<T> *child)
         {
+            printf("adding %p as child of %p\n", child, this);
             childs.push_back(child);
         }
 
         void remove_child(RT_RRTNode<T> *child)
         {
+            printf("removing %p as child of %p\n", child, this);
             size_t i = 0;
             bool found = false;
             for(RT_RRTNode<T> *c : this->childs)

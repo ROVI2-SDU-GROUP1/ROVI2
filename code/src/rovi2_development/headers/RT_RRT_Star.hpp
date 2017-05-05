@@ -76,6 +76,9 @@ class RT_RRT_Star
         ExtendResult extend(Tree *tree, const rw::math::Q& q, RT_Node* qNearNode);
         ExtendResult connect(Tree *tree, const rw::math::Q& q);
         void mergeTrees();
+        void propegate_new_agent(RT_Node * node, RT_Node *new_parent);
+        RT_Node *get_random_node();
+
     private:
         double alpha = 0.1;
         double beta = 3;
