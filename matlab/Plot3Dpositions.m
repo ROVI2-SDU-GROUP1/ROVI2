@@ -79,27 +79,32 @@ clearvars filename delimiter formatSpec fileID dataArray ans raw col numericData
 %% 3D plots
 figure
 scatter3(x,y,z);
+%pbaspect([1 1 1])
+axis('equal');
 title('3D movement of ball')
 xlabel('X-axis') % x-axis label
 ylabel('Y-axis') % y-axis label
 zlabel('Z-axis') % z-axis label
-
+%%
 figure
 
 subplot(3,1,1);
 scatter(x,y)
+axis([-2 2 -2 2])
 title('XY movement of ball')
 xlabel('X-axis') % x-axis label
 ylabel('Y-axis') % y-axis label
-
+%%
 subplot(3,1,2);
 scatter(z,y);
+axis([-2 2 -2 2])
 title('ZY movement of ball')
 xlabel('Z-axis') % z-axis label
 ylabel('Y-axis') % y-axis label
 
 subplot(3,1,3);
 scatter(z,x);
+axis([-2 2 -2 2])
 title('ZX movement of ball')
 xlabel('X-axis') % z-axis label
 ylabel('Z-axis') % y-axis label
