@@ -51,7 +51,7 @@ class RT_RRT_Star
 {
     public:
         RT_RRT_Star(rw::math::Q _q_start, rw::math::Q _q_goal, const rw::pathplanning::PlannerConstraint& constraint,
-        	rw::pathplanning::QSampler::Ptr sampler, rw::math::QMetric::Ptr metric, double cloeseness = 0.005);
+        	rw::pathplanning::QSampler::Ptr sampler, rw::math::QMetric::Ptr metric, rw::models::Device::Ptr _device, double cloeseness = 0.005);
 
         //Change the goal position to a new one
         void set_new_goal(rw::math::Q q_newgoal);
@@ -101,6 +101,7 @@ class RT_RRT_Star
         double closeness;
 
         std::default_random_engine generator;
+        rw::models::Device::Ptr device;
         std::uniform_real_distribution<double> unit_distribution;
         RT_Node *closest = nullptr;
         double u_X;

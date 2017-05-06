@@ -119,10 +119,12 @@ namespace rwlibs { namespace pathplanners {
         {
             auto tmp_node = new node_type(value, parent);
             //printf("Adding node with address %p and parent address %p to the tree..!\n", tmp_node, tmp_node->getParent());
+            //validate_path(this->_nodes);
+
             _nodes.push_back(tmp_node);
             //flann::Matrix< RT_RRTNode<X> > new_points(_nodes.back(), 1, 1);
             //this->index.addPoints(new_points);
-            validate_path(this->_nodes);
+            //validate_path(this->_nodes);
         }
 
         typedef typename std::vector<node_type*>::const_iterator const_iterator;

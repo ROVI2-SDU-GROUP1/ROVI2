@@ -109,8 +109,8 @@ add_executable(ball_traj_tester src/ball_traj_tester.cpp)
 add_dependencies(ball_traj_tester ${catkin_EXPORTED_TARGETS})
 target_link_libraries(ball_traj_tester ${OpenCV_LIBS} ${EIGEN3_LIBS} ${catkin_LIBRARIES})
 
-# Anytime RRT tests
-add_executable(rt_rrt_star src/RT_RRT_Star.cpp src/LineSampler.cpp)
+# Realtime RRT Star tests
+add_executable(rt_rrt_star src/RT_RRT_Star.cpp src/LineSampler.cpp src/UnitBallSampler.cpp src/ElipsisSampler.cpp)
 add_dependencies(rt_rrt_star ${catkin_EXPORTED_TARGETS})
 target_link_libraries(rt_rrt_star ${OpenCV_LIBS} ${EIGEN3_LIBS} ${catkin_LIBRARIES} ${ROBWORK_LIBRARIES})
 
