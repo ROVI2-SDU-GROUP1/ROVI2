@@ -22,9 +22,6 @@
 #include <rw/kinematics/Frame.hpp>
 #include <rw/math/Quaternion.hpp>
 
-//  Sub
-cv::Mat imageLeft;
-cv::Mat imageRight;
 caros_control_msgs::RobotState qState;
 
 //  Pub
@@ -89,7 +86,7 @@ void CallBackFuncRight(int event, int x, int y, int flags, void* userdata){
     rightPressed = true;
   }
 }
-
+//
 cv::Mat Undistored(cv::Mat input, cv::Mat *cameraMatrix, cv::Mat *distCoeffs){
   cv::Mat undistorted;
   cv::undistort(input, undistorted, *cameraMatrix, *distCoeffs);
@@ -115,27 +112,23 @@ void image_sync_callback(const sensor_msgs::Image::ConstPtr &image_left, const s
   cv::Mat tmp_l = cv_ptr_left->image.clone();
   cv::Mat tmp_r = cv_ptr_right->image.clone();
 
-  imageLeft = Undistored(tmp_l, cameraMatrixLeft, distCoeffsLeft);
-  imageRight = Undistored(tmp_r, cameraMatrixRight, distCoeffsRight);
-
+  cv::Mat imageLeft = Undistored(tmp_l, cameraMatrixLeft, distCoeffsLeft);
+  cv::Mat imageRight = Undistored(tmp_r, cameraMatrixRight, distCoeffsRight);
   cv::imshow("Leftimage", imageLeft);
   cv::imshow("Rightimage", imageRight);
   cv::waitKey(1);
-
-  // while(!(leftPressed && rightPressed));
-  //
 
   if (leftPressed and rightPressed) {
     qStateTransformed.header.stamp = image_left->header.stamp;
     pub_point_left.publish(pose2DLeft);
     pub_point_right.publish(pose2DRight);
-    //pub_q.publish(qState);
+
     QToTransform(qState);
 
     leftPressed = false;
     rightPressed = false;
   }
-
+  return ;
 }
 
 bool is_file_exist(std::string fileName){
@@ -175,17 +168,20 @@ void robot_state_q_callback(const caros_control_msgs::RobotState::ConstPtr &q){
   qState = *q;
 }
 
-int main(int argc, char **argv){
-  std::cout << __LINE__ << std::endl;
+int main(__attribute__((unused)) int argc, __attribute__((unused)) char const *argv[]) {
+    printf("Wow, it works!\n");
+    printf("Compile info: GCC %u.%u.%u\t", __GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__);
+    printf("Compile date: %s -- %s\n", __DATE__, __TIME__);
 
-    ros::init(argc, argv, "hand_to_eye_calibration");
+    rw::models::WorkCell::Ptr wc = rw::loaders::WorkCellLoader::Factory::load(SCENE_FILE);
+  	rw::models::Device::Ptr device = wc->findDevice("UR1");
+
+    std::cout << __LINE__ << std::endl;
+
+    ros::init(argc, (char **)argv, "hand_to_eye_calibration");
     ros::NodeHandle nh("~");
     ros::Rate rate(20);
 
-    std::cout << __LINE__ << std::endl;
-    std::cout << SCENE_FILE << std::endl;
-    rw::models::WorkCell::Ptr tmp = rw::loaders::WorkCellLoader::Factory::load(SCENE_FILE);
-    return 0;
     std::cout << __LINE__ << std::endl;
     if (_wc == NULL){
      ROS_WARN("Unable to load workcell: %s", SCENE_FILE);
