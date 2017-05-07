@@ -84,7 +84,7 @@ class RT_RRT_Star
         double beta = 3;
         double k_max = 10000;
         double r_s = 1;
-        double rrt_connect_epsilon = 1;
+        double rrt_connect_epsilon = 0.01;
         std::queue<RT_Node *> Q_r;
         std::queue<RT_Node *> Q_s;
         RRTStruct _rrt;

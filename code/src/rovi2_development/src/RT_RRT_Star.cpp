@@ -350,16 +350,20 @@ void RT_RRT_Star::set_new_goal(rw::math::Q q_newgoal)
     if (!inCollision(this->_rrt.constraint, this->agent->getValue(), q_newgoal)) {
         this->startTree.add(q_newgoal, this->agent);
         this->closest = this->startTree.getLastPtr();
-        return;
+        this->goal = this->startTree.getLastPtr();
     }
-
-    this->goalTree.clear();
-    this->goalTree.add(q_newgoal, nullptr);
-    this->goal = this->goalTree.getLastPtr();
-    this->TreeA = &this->goalTree;
-    this->TreeB = &this->startTree;
-    this->closest = this->startTree.get_nearest(q_newgoal);
+    else
+    {
+        this->goalTree.clear();
+        this->goalTree.add(q_newgoal, nullptr);
+        this->goal = this->goalTree.getLastPtr();
+        this->goal->set_cost(std::numeric_limits<double>::max());
+        this->TreeA = &this->goalTree;
+        this->TreeB = &this->startTree;
+        this->closest = this->startTree.get_nearest(q_newgoal);
+    }
     return;
+
 }
 
 void RT_RRT_Star::move_agent(RT_Node *_agent_node)
@@ -622,6 +626,7 @@ RT_Node *RT_RRT_Star::get_random_node()
 
 
 int main(__attribute__((unused)) int argc, __attribute__((unused)) char const *argv[]) {
+    rw::math::Math::seed(time(NULL));
     //printf("Wow, it works!\n");
     //printf("Compile info: GCC %u.%u.%u\t", __GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__);
     //printf("Compile date: %s -- %s\n", __DATE__, __TIME__);
@@ -635,7 +640,7 @@ int main(__attribute__((unused)) int argc, __attribute__((unused)) char const *a
     rw::kinematics::State state = wc->getDefaultState();;
 
     rw::math::Q q_1(6, 0, -1.5, -0.298, -0.341, 0, 0);
-    rw::math::Q q_2(6, -1.032, -3.186, -0.298, -0.341, 0, 0);
+    rw::math::Q q_2(6, 4.52282, -3.22411, 5.80915, 3.47969, -0.552745, 4.30143);
     //std::cout << q_2 << std::endl;
     /*ElipsisSampler e_sampler(q_1, q_2, (q_2 - q_1).norm2() * 1.1 );
     for(uint64_t i = 0; i < 10000; i++)
@@ -662,15 +667,15 @@ int main(__attribute__((unused)) int argc, __attribute__((unused)) char const *a
     rw::trajectory::QPath path;
     #define MAXTIME 1000.
 
-    planner->query(q_1,q_2,path,MAXTIME);
+    /*planner->query(q_1,q_2,path,MAXTIME);
     for(auto q_ : path)
     {
         std::cout << q_ << std::endl;
-    }
+    }*/
     //return 0;
     RT_RRT_Star rt_rrt_star(q_1, q_2, p_constraint, sampler, metric, device);
-    std::chrono::milliseconds time_to_solve{100};
-    for(uint64_t itterations = 0; rt_rrt_star.found_solution() == false || itterations < 200; itterations++)
+    std::chrono::milliseconds time_to_solve{1000};
+    for(uint64_t itterations = 0; rt_rrt_star.found_solution() == false || itterations < 2000; itterations++)
     {
         auto new_path = rt_rrt_star.find_next_path(time_to_solve);
         for(auto node : new_path)
@@ -683,7 +688,19 @@ int main(__attribute__((unused)) int argc, __attribute__((unused)) char const *a
         rt_rrt_star.nodes_without_parents();
         rt_rrt_star.validate_tree_structure();
         std::cout << get_path_length(new_path) << std::endl;
-        if(rt_rrt_star.found_solution()) rt_rrt_star.move_agent(rt_rrt_star.get_random_node());
+        std::cout << rt_rrt_star.found_solution() << std::endl;
+        if(rt_rrt_star.found_solution())
+        {
+            while(true)
+            {
+                auto tmp_q = sampler->sample();
+                if(p_constraint.getQConstraint().inCollision(tmp_q)) continue;
+                assert(!inCollision(p_constraint, tmp_q));
+                rt_rrt_star.set_new_goal(tmp_q);
+                std::cout << "New goal is " << tmp_q << std::endl;
+                break;
+            }
+        }
     }
     std::cout << "Tree size at exit: " << rt_rrt_star.get_size() << std::endl;
 

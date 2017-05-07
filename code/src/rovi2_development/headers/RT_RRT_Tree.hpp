@@ -107,6 +107,7 @@ namespace rwlibs { namespace pathplanners {
             BOOST_FOREACH(node_type* node, _nodes) {
                 delete node;
             }
+            this->_nodes.clear();
 
         }
 
