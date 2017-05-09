@@ -23,6 +23,11 @@
 #include <vector>
 #include <algorithm>
 #include <boost/foreach.hpp>
+#include <cstdlib>
+typedef RT_RRTNode<rw::math::Q> RT_Node;
+
+void validate_path(std::vector<RT_Node *> &path, const rw::pathplanning::PlannerConstraint& constraint);
+
 
 bool operator>(const rw::math::Q &lhs, const rw::math::Q &rhs)
 {
@@ -96,13 +101,31 @@ namespace rwlibs { namespace pathplanners {
         {
             this->_nodes.clear();
         }
+
+        void clear()
+        {
+            BOOST_FOREACH(node_type* node, _nodes) {
+                delete node;
+            }
+            this->_nodes.clear();
+
+        }
+
+        node_type *get_random_node()
+        {
+            return this->_nodes[rand() % this->_nodes.size()]; //This is biased, but who gives a fuck?
+        }
+
         void add(const value_type& value, node_type* parent)
         {
             auto tmp_node = new node_type(value, parent);
             //printf("Adding node with address %p and parent address %p to the tree..!\n", tmp_node, tmp_node->getParent());
+            //validate_path(this->_nodes);
+
             _nodes.push_back(tmp_node);
             //flann::Matrix< RT_RRTNode<X> > new_points(_nodes.back(), 1, 1);
             //this->index.addPoints(new_points);
+            //validate_path(this->_nodes);
         }
 
         typedef typename std::vector<node_type*>::const_iterator const_iterator;
@@ -117,9 +140,7 @@ namespace rwlibs { namespace pathplanners {
 
         ~RT_RRT_Tree()
         {
-            BOOST_FOREACH(node_type* node, _nodes) {
-                delete node;
-            }
+            this->clear();
         }
 
         size_t size() const { return _nodes.size(); }

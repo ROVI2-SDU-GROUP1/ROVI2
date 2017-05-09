@@ -26,11 +26,11 @@ public:
     virtual rw::math::Q doSample();
     rw::math::Q q1;
     rw::math::Q q2;
+    virtual ~LineSampler() {};
 
 private:
     static LineSampler *instance;
     LineSampler(rw::math::Q _q1, rw::math::Q _q2);
-    virtual ~LineSampler() {};
     rw::math::Q q_direction;
     std::default_random_engine generator;
     std::uniform_real_distribution<double> distribution;
