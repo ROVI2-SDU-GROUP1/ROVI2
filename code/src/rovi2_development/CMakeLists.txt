@@ -85,7 +85,7 @@ add_dependencies(opencv_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORT
 target_link_libraries(opencv_node ${OpenCV_LIBS} ${catkin_LIBRARIES})
 
 # Image detector node
-add_executable(image_detector src/image_detector_node.cpp)
+add_executable(image_detector src/image_detector_node.cpp src/HsvAdjust.cpp)
 add_dependencies(image_detector ${catkin_EXPORTED_TARGETS})
 target_link_libraries(image_detector ${OpenCV_LIBS} ${catkin_LIBRARIES} yaml-cpp)
 
