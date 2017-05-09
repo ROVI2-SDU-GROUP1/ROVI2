@@ -1,6 +1,6 @@
 <WorkCell name="SceneUR">
 
-<Frame name="Foot" refframe="WORLD" type="Movable">  
+<Frame name="Foot" refframe="WORLD" type="Movable">
 	<RPY> 0 0 0 </RPY> <Pos> 0 0 0 </Pos>
 	<Drawable name="EnvGeo" refframe="Env">
           <Polytope file="Geometry/foot" />
@@ -13,12 +13,12 @@
  <Include file="UR/UR.wc.xml" />
 
   <Frame name="WSG50" refframe="UR1.TCP">
-    <RPY> 180 0 -90 </RPY> <Pos> 0 0 0.005 </Pos>
+    <RPY> 180 0 -90 </RPY> <Pos> -0.02 0 0.005 </Pos>
   </Frame>
   <Include file="WSG50/WSG50.wc.xml"/>
 
 
- <Frame name="WorkPiece" refframe="WORLD">  
+ <Frame name="WorkPiece" refframe="WORLD">
  <RPY>0 0 0.02 </RPY> <Pos> -0.09 -0.770 1.072 </Pos>
  </Frame>
 
@@ -37,7 +37,7 @@
    <Polytope file="Geometry/wall1" />
   </Drawable>
   </Frame>
-  
+
    <Frame name="Wall2" refframe="WORLD">
       <RPY> 0 0 0 </RPY> <Pos> -1.90 -0.875 0 </Pos>
      <Drawable name="Fencegeo2" refframe="right" >
@@ -45,7 +45,7 @@
    <Polytope file="Geometry/wall2" />
   </Drawable>
   </Frame>
-  
+
    <Frame name="Wall3" refframe="WORLD">
       <RPY> 90 0 0 </RPY> <Pos> 1.055 -0.85 0 </Pos>
      <Drawable name="Fencegeo3" refframe="back" >
