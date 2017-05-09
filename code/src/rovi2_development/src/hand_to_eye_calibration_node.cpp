@@ -34,6 +34,10 @@ static cv::Mat *cameraMatrixRight;
 static cv::Mat *distCoeffsLeft;
 static cv::Mat *distCoeffsRight;
 
+
+int image_width;
+int image_height;
+
 ros::Publisher pub_point_left;
 ros::Publisher pub_point_right;
 ros::Publisher pub_transform;
@@ -47,19 +51,23 @@ rw::kinematics::State _state;
 rw::kinematics::MovableFrame* TcpFrame;
 
 void QToTransform(caros_control_msgs::RobotState &Q_state){
+
+
   rw::math::Q RW_Q_state(6, Q_state.q.data[0],Q_state.q.data[1],Q_state.q.data[2],Q_state.q.data[3],Q_state.q.data[4],Q_state.q.data[5] );
   _device->setQ(RW_Q_state, _state);
-
 
   // auto frames = _device->frames();
   // for(auto elm: frames){
   //   auto prop = elm->getPropertyMap();
   //   std::cout << "name: " << prop->getName () << std::endl;
   // }
+  ROS_INFO("Before baseTframe");
 
   auto tool_pos = _device->baseTframe(TcpFrame, _state).P();
 
   rw::math::Quaternion<double> TmpQuaternion = rw::math::Quaternion<double>(_device->baseTframe(TcpFrame, _state).R());
+
+  ROS_INFO("After Quaternion");
 
   geometry_msgs::TransformStamped qStateTransformed;
   qStateTransformed.transform.translation.x = tool_pos[0];
@@ -78,8 +86,8 @@ void QToTransform(caros_control_msgs::RobotState &Q_state){
 
 void CallBackFuncLeft(int event, int x, int y, int flags, void* userdata){
   if ( flags == cv::EVENT_FLAG_LBUTTON ){
-    pose2DLeft.point.x = x;
-    pose2DLeft.point.y = y;
+    pose2DLeft.point.x = x - image_width/2;
+    pose2DLeft.point.y = - y + image_height/2;
     std::cout << "Left mouse button is clicked - position (" << x << ", " << y << ")" << std::endl;
     leftPressed = true;
   }
@@ -87,8 +95,8 @@ void CallBackFuncLeft(int event, int x, int y, int flags, void* userdata){
 
 void CallBackFuncRight(int event, int x, int y, int flags, void* userdata){
   if ( flags == cv::EVENT_FLAG_LBUTTON ){
-    pose2DRight.point.x = x;
-    pose2DRight.point.y = y;
+    pose2DRight.point.x = x - image_width/2;
+    pose2DRight.point.y = - y + image_height/2;
     std::cout << "Right mouse button is clicked - position (" << x << ", " << y << ")" << std::endl;
     rightPressed = true;
   }
@@ -128,7 +136,11 @@ void image_sync_callback(const sensor_msgs::Image::ConstPtr &image_left, const s
     pub_point_left.publish(pose2DLeft);
     pub_point_right.publish(pose2DRight);
 
-    QToTransform(qState);
+    if(qState.q.data.size() > 0){
+      QToTransform(qState);
+    } else {
+      ROS_INFO("No Q received");
+    }
 
     leftPressed = false;
     rightPressed = false;
@@ -152,6 +164,9 @@ void loadYAMLparameters( std::string yaml_path, cv::Mat *&cameraMatrix, cv::Mat 
   YAML::Node calibration_yaml = YAML::LoadFile(abs_yaml_path);
   YAML::Node camera_matrix = calibration_yaml["camera_matrix"];
   YAML::Node distortion_coefficients = calibration_yaml["distortion_coefficients"];
+  image_width =  calibration_yaml["image_width"].as<int>();
+  image_height =  calibration_yaml["image_height"].as<int>();
+
 
   cameraMatrix = new cv::Mat(3,3, CV_64FC1);
   distCoeffs = new cv::Mat(1,5, CV_64FC1);
@@ -196,7 +211,7 @@ int main(__attribute__((unused)) int argc, __attribute__((unused)) char *argv[])
      ROS_WARN("Loading file");
     }
 
-    std::string FindFrame = "WSG50.Marker";
+    std::string FindFrame = "WSG50.TCP";
     TcpFrame = (rw::kinematics::MovableFrame*)_wc->findFrame(FindFrame);
     if(TcpFrame == NULL){
       ROS_WARN("Frame %s not found!",FindFrame);
