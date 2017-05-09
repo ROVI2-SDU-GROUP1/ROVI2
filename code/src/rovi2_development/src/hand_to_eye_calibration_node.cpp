@@ -5,7 +5,6 @@
 #include <geometry_msgs/TransformStamped.h>
 #include <message_filters/time_synchronizer.h>
 #include <message_filters/subscriber.h>
-//#include <
 #include <opencv2/highgui/highgui.hpp>
 #include <image_transport/image_transport.h>
 #include <cv_bridge/cv_bridge.h>
@@ -20,6 +19,8 @@
 #include <rw/math/Q.hpp>
 #include <rw/loaders/WorkCellFactory.hpp>
 #include <rw/kinematics/Frame.hpp>
+#include <rw/kinematics/MovableFrame.hpp>
+
 #include <rw/math/Quaternion.hpp>
 
 caros_control_msgs::RobotState qState;
@@ -27,7 +28,6 @@ caros_control_msgs::RobotState qState;
 //  Pub
 geometry_msgs::PointStamped pose2DLeft;
 geometry_msgs::PointStamped pose2DRight;
-geometry_msgs::TransformStamped qStateTransformed;
 
 static cv::Mat *cameraMatrixLeft;
 static cv::Mat *cameraMatrixRight;
@@ -44,17 +44,24 @@ bool rightPressed = false;
 rw::models::WorkCell::Ptr _wc;
 rw::models::Device::Ptr _device;
 rw::kinematics::State _state;
+rw::kinematics::MovableFrame* TcpFrame;
 
 void QToTransform(caros_control_msgs::RobotState &Q_state){
   rw::math::Q RW_Q_state(6, Q_state.q.data[0],Q_state.q.data[1],Q_state.q.data[2],Q_state.q.data[3],Q_state.q.data[4],Q_state.q.data[5] );
   _device->setQ(RW_Q_state, _state);
 
-  rw::kinematics::Frame* Frame = _wc->findFrame("TCP");
-  auto tool_pos = _device->baseTframe(Frame, _state).P();
-  //_device->baseTframe(Frame, _state).R()
 
-  rw::math::Quaternion<double> TmpQuaternion = rw::math::Quaternion<double>(_device->baseTframe(Frame, _state).R());
+  // auto frames = _device->frames();
+  // for(auto elm: frames){
+  //   auto prop = elm->getPropertyMap();
+  //   std::cout << "name: " << prop->getName () << std::endl;
+  // }
 
+  auto tool_pos = _device->baseTframe(TcpFrame, _state).P();
+
+  rw::math::Quaternion<double> TmpQuaternion = rw::math::Quaternion<double>(_device->baseTframe(TcpFrame, _state).R());
+
+  geometry_msgs::TransformStamped qStateTransformed;
   qStateTransformed.transform.translation.x = tool_pos[0];
   qStateTransformed.transform.translation.y = tool_pos[1];
   qStateTransformed.transform.translation.z = tool_pos[2];
@@ -65,7 +72,7 @@ void QToTransform(caros_control_msgs::RobotState &Q_state){
   qStateTransformed.transform.rotation.w = TmpQuaternion.getQw();
 
   qStateTransformed.header.stamp = pose2DLeft.header.stamp;
-
+  ROS_INFO("Publishing transform");
   pub_transform.publish(qStateTransformed);
 }
 
@@ -94,7 +101,6 @@ cv::Mat Undistored(cv::Mat input, cv::Mat *cameraMatrix, cv::Mat *distCoeffs){
 }
 // , const caros_control_msgs::RobotState::ConstPtr &q
 void image_sync_callback(const sensor_msgs::Image::ConstPtr &image_left, const sensor_msgs::Image::ConstPtr &image_right){
-  std::cout << "image_sync_callback invoked" << std::endl;
   pose2DLeft.header.stamp = image_left->header.stamp;
   pose2DRight.header.stamp = image_left->header.stamp;
 
@@ -119,7 +125,6 @@ void image_sync_callback(const sensor_msgs::Image::ConstPtr &image_left, const s
   cv::waitKey(1);
 
   if (leftPressed and rightPressed) {
-    qStateTransformed.header.stamp = image_left->header.stamp;
     pub_point_left.publish(pose2DLeft);
     pub_point_right.publish(pose2DRight);
 
@@ -164,37 +169,39 @@ void loadYAMLparameters( std::string yaml_path, cv::Mat *&cameraMatrix, cv::Mat 
 }
 
 void robot_state_q_callback(const caros_control_msgs::RobotState::ConstPtr &q){
-  std::cout << "Got q" << std::endl;
   qState = *q;
 }
 
-int main(__attribute__((unused)) int argc, __attribute__((unused)) char const *argv[]) {
+int main(__attribute__((unused)) int argc, __attribute__((unused)) char *argv[]) {
     printf("Wow, it works!\n");
     printf("Compile info: GCC %u.%u.%u\t", __GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__);
     printf("Compile date: %s -- %s\n", __DATE__, __TIME__);
 
-    rw::models::WorkCell::Ptr wc = rw::loaders::WorkCellLoader::Factory::load(SCENE_FILE);
-  	rw::models::Device::Ptr device = wc->findDevice("UR1");
+    _wc = rw::loaders::WorkCellLoader::Factory::load(SCENE_FILE);
+  	_device = _wc->findDevice("UR1");
 
-    std::cout << __LINE__ << std::endl;
+    if (_device == NULL){
+      ROS_WARN("Unable to load device");
+    }else {
+      ROS_WARN("Loading device");
+    }
 
     ros::init(argc, (char **)argv, "hand_to_eye_calibration");
     ros::NodeHandle nh("~");
-    ros::Rate rate(20);
+    //ros::Rate rate(20);
 
-    std::cout << __LINE__ << std::endl;
     if (_wc == NULL){
      ROS_WARN("Unable to load workcell: %s", SCENE_FILE);
     } else {
      ROS_WARN("Loading file");
     }
-    _device = _wc->findDevice("UR1");
 
-   if (_device == NULL){
-     ROS_WARN("Unable to load device");
-   }else {
-     ROS_WARN("Loading device");
-   }
+    std::string FindFrame = "WSG50.Marker";
+    TcpFrame = (rw::kinematics::MovableFrame*)_wc->findFrame(FindFrame);
+    if(TcpFrame == NULL){
+      ROS_WARN("Frame %s not found!",FindFrame);
+    }
+
    _state = _wc->getDefaultState();
 
   cv::namedWindow("Leftimage", 1);
@@ -236,10 +243,11 @@ int main(__attribute__((unused)) int argc, __attribute__((unused)) char const *a
   message_filters::TimeSynchronizer<sensor_msgs::Image, sensor_msgs::Image> sync(sub_image_left, sub_image_right, 20);
   sync.registerCallback(boost::bind(&image_sync_callback, _1, _2));
 
-  while (ros::ok()){
-    ros::spinOnce();
-		rate.sleep();
-  }
+  // while (ros::ok()){
+  //   ros::spinOnce();
+	// 	rate.sleep();
+  // }
+  ros::spin();
 
   return 0;
 }
