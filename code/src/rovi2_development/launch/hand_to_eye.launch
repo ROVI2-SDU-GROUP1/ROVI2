@@ -8,7 +8,7 @@
 		<param name="calibration_yaml_path_left" value="left_front.yaml" />
 		<param name="calibration_yaml_path_right" value="right_front.yaml" />
 
-		<param name="pub_robot_state" value="/q_state_processed" />
+		<param name="pub_robot_transform" value="/q_state_processed" />
 		<param name="pub_point_left" value="/pose/2d_left" />
 		<param name="pub_point_right" value="/pose/2d_right" />
 	</node>
@@ -19,9 +19,11 @@
 		<param name="point_sub_right" value="/pose/2d_right" />
 		<param name="point_pub" value="/pose/3d" />
 	</node>
-	
+
 	<!-- Logger node -->
 	<node pkg="rovi2_development" type="QAnd3DPoseLogger.py" name="Logger_node" output="screen">
+		<param name="sub_robot_state" value="/q_state_processed" />
+		<param name="sub_3d_point" value="/pose/3d" />
 	</node>
 
 </launch>
