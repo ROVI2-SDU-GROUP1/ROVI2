@@ -96,8 +96,8 @@ void openCVMethod(){
   center_right.at<double>(0,0) = pose2DRight.point.x;
   center_right.at<double>(0,1) = pose2DRight.point.y;
 
-  cv::Mat proj_left = ( cv::Mat_<float>(3, 4) << calL.P(0,0), calL.P(0,1), calL.P(0,2), calL.P(1,0), calL.P(1,1), calL.P(1,2), calL.P(2,0), calL.P(2,1), calL.P(2,2) );
-  cv::Mat proj_right = ( cv::Mat_<float>(3, 4) << calR.P(0,0), calR.P(0,1), calR.P(0,2), calR.P(1,0), calR.P(1,1), calR.P(1,2), calR.P(2,0), calR.P(2,1), calR.P(2,2) );
+  cv::Mat proj_left = ( cv::Mat_<float>(3, 4) << calL.P(0,0), calL.P(0,1), calL.P(0,2), calL.P(0,3), calL.P(1,0), calL.P(1,1), calL.P(1,2),calL.P(1,3), calL.P(2,0), calL.P(2,1), calL.P(2,2),calL.P(2,3) );
+  cv::Mat proj_right = ( cv::Mat_<float>(3, 4) << calR.P(0,0), calR.P(0,1), calR.P(0,2), calR.P(0,3), calR.P(1,0), calR.P(1,1), calR.P(1,2),calR.P(1,3), calR.P(2,0), calR.P(2,1), calR.P(2,2),calR.P(2,3) );
 
   cv::Mat point4D;
 
@@ -108,7 +108,7 @@ void openCVMethod(){
   pose3D.point.z = point4D.at<double>(2,0);
 
   pose3D.header.stamp = pose2DLeft.header.stamp;
-
+  ROS_INFO("Point out");
   pub3D.publish(pose3D);
 }
 
@@ -142,7 +142,8 @@ void linearSolv(){
 }
 
 void calc3DPose(){
-  openCVMethod();
+  ROS_INFO("Got calc3Dpose");
+  //openCVMethod();
   linearSolv();
 }
 

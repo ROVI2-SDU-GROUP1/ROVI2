@@ -128,14 +128,14 @@ void image_sync_callback(const sensor_msgs::Image::ConstPtr &image_left, const s
   cv::Size sizeRight = tmp_r.size();
   cv::Mat rectLeft, map1Left, map2Left, rectRight, map1Right, map2Right;
 
-  auto NCML = cv::getOptimalNewCameraMatrix( cameraMatrixLeft,  distCoeffsLeft, sizeLeft, 1, sizeLeft, 0);
-  auto NCMR = cv::getOptimalNewCameraMatrix( cameraMatrixRight,  distCoeffsRight, sizeLeft, 1, sizeLeft, 0);
+  auto NCML = cv::getOptimalNewCameraMatrix( *cameraMatrixLeft,  *distCoeffsLeft, sizeLeft, 1, sizeLeft, 0);
+  auto NCMR = cv::getOptimalNewCameraMatrix( *cameraMatrixRight,  *distCoeffsRight, sizeLeft, 1, sizeLeft, 0);
 
-  cv::initUndistortRectifyMap( cameraMatrixLeft,  distCoeffsLeft,  rectMatrixLeft,
+  cv::initUndistortRectifyMap( *cameraMatrixLeft,  *distCoeffsLeft,  *rectMatrixLeft,
                           NCML,
                           sizeLeft, CV_32FC1, map1Left, map2Left);
 
-  cv::initUndistortRectifyMap( cameraMatrixRight,  distCoeffsRight,  rectMatrixRight,
+  cv::initUndistortRectifyMap( *cameraMatrixRight,  *distCoeffsRight,  *rectMatrixRight,
                           NCMR,
                           sizeLeft, CV_32FC1, map1Right, map2Right);
 
