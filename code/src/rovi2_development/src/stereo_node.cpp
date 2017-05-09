@@ -8,11 +8,11 @@
 #include <cassert>
 #include <fstream>
 
-
 #include "yaml-cpp/yaml.h"
 
 #include <opencv2/core/mat.hpp>
-//#include <opencv2/calib3d.hpp>
+#include <opencv2/calib3d.hpp>
+#include <opencv2/video/tracking.hpp>
 
 ros::Time leftTime;
 ros::Time rightTime;
@@ -85,13 +85,34 @@ Intrinsic loadCalibration(std::string fileName){
   return cal;
 }
 
-void linearSolv(){
-  //std::cout << "\tLinear method" << std::endl << std::endl;
+void openCVMethod(){
 
-  //std::cout << "Left:" << std::endl;
-  //std::cout << pose2DLeft.point.x << "\n" << pose2DLeft.point.y << std::endl;
-  //std::cout << "Right:" << std::endl;
-  //std::cout << pose2DRight.point.x << "\n" << pose2DRight.point.y << std::endl;
+  cv::Mat center_right(2, 1, CV_64FC1);
+  cv::Mat center_left(2, 1, CV_64FC1);
+
+  center_left.at<double>(0,0) = pose2DLeft.point.x;
+  center_left.at<double>(0,1) = pose2DLeft.point.y;
+
+  center_right.at<double>(0,0) = pose2DRight.point.x;
+  center_right.at<double>(0,1) = pose2DRight.point.y;
+
+  cv::Mat proj_left = ( cv::Mat_<float>(3, 4) << calL.P(0,0), calL.P(0,1), calL.P(0,2), calL.P(1,0), calL.P(1,1), calL.P(1,2), calL.P(2,0), calL.P(2,1), calL.P(2,2) );
+  cv::Mat proj_right = ( cv::Mat_<float>(3, 4) << calR.P(0,0), calR.P(0,1), calR.P(0,2), calR.P(1,0), calR.P(1,1), calR.P(1,2), calR.P(2,0), calR.P(2,1), calR.P(2,2) );
+
+  cv::Mat point4D;
+
+  cv::triangulatePoints(proj_left, proj_right, center_left, center_right, point4D);
+
+  pose3D.point.x = point4D.at<double>(0,0);
+  pose3D.point.y = point4D.at<double>(1,0);
+  pose3D.point.z = point4D.at<double>(2,0);
+
+  pose3D.header.stamp = pose2DLeft.header.stamp;
+
+  pub3D.publish(pose3D);
+}
+
+void linearSolv(){
 
   Eigen::MatrixXd A(4, 3);
   A.row(0) = -pose2DLeft.point.x * calL.PX.row(2) + calL.PX.row(0);
@@ -111,18 +132,6 @@ void linearSolv(){
   Eigen::MatrixXd x(3, 1);
   x = (invA * A).inverse() * (invA * B);
 
-  // std::cout << "A:" << std::endl;
-  // std::cout << A << std::endl;
-  // std::cout << "invA:" << std::endl;
-  // std::cout << invA << std::endl;
-  // std::cout << "B:" << std::endl;
-  // std::cout << B << std::endl;
-  // std::cout << "x:" << std::endl;
-  // std::cout << x << std::endl;
-  //
-  // std::cout << "x_norm:" << std::endl;
-  // std::cout << x.norm() << std::endl;
-
   pose3D.point.x = x(0, 0);
   pose3D.point.y = x(1, 0);
   pose3D.point.z = x(2, 0);
@@ -133,11 +142,7 @@ void linearSolv(){
 }
 
 void calc3DPose(){
-  // Stereo proc        - http://wiki.ros.org/stereo_image_proc
-  // Dense stereo ros
-  // Q matrix
-  //std::cout << std::endl << std::endl << "----Calc 3d pos!" << std::endl;
-
+  openCVMethod();
   linearSolv();
 }
 
