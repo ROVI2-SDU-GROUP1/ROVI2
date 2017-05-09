@@ -72,12 +72,12 @@ Intrinsic loadCalibration(std::string fileName){
 }
 
 void linearSolv(){
-  std::cout << "\tLinear method" << std::endl << std::endl;
+  //std::cout << "\tLinear method" << std::endl << std::endl;
 
-  std::cout << "Left:" << std::endl;
-  std::cout << pose2DLeft.point.x << "\n" << pose2DLeft.point.y << std::endl;
-  std::cout << "Right:" << std::endl;
-  std::cout << pose2DRight.point.x << "\n" << pose2DRight.point.y << std::endl;
+  //std::cout << "Left:" << std::endl;
+  //std::cout << pose2DLeft.point.x << "\n" << pose2DLeft.point.y << std::endl;
+  //std::cout << "Right:" << std::endl;
+  //std::cout << pose2DRight.point.x << "\n" << pose2DRight.point.y << std::endl;
 
   Eigen::MatrixXd A(4, 3);
   A.row(0) = -pose2DLeft.point.x * calL.PX.row(2) + calL.PX.row(0);
@@ -103,11 +103,11 @@ void linearSolv(){
   // std::cout << invA << std::endl;
   // std::cout << "B:" << std::endl;
   // std::cout << B << std::endl;
-  std::cout << "x:" << std::endl;
-  std::cout << x << std::endl;
-
-  std::cout << "x_norm:" << std::endl;
-  std::cout << x.norm() << std::endl;
+  // std::cout << "x:" << std::endl;
+  // std::cout << x << std::endl;
+  //
+  // std::cout << "x_norm:" << std::endl;
+  // std::cout << x.norm() << std::endl;
 
   pose3D.point.x = x(0, 0);
   pose3D.point.y = x(1, 0);
@@ -122,7 +122,7 @@ void calc3DPose(){
   // Stereo proc        - http://wiki.ros.org/stereo_image_proc
   // Dense stereo ros
   // Q matrix
-  std::cout << std::endl << std::endl << "----Calc 3d pos!" << std::endl;
+  //std::cout << std::endl << std::endl << "----Calc 3d pos!" << std::endl;
 
   linearSolv();
 }
