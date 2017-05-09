@@ -16,6 +16,20 @@
 static rw::pathplanning::PlannerConstraint *stat_constraint = nullptr;
 
 
+void validate_path(std::vector<RT_Node *> &path, const rw::pathplanning::PlannerConstraint& constraint);
+
+
+bool operator>(const rw::math::Q &lhs, const rw::math::Q &rhs)
+{
+    return lhs.norm2() > rhs.norm2();
+}
+
+bool operator>=(const rw::math::Q &lhs, const rw::math::Q &rhs)
+{
+    return lhs.norm2() >= rhs.norm2();
+}
+
+
 bool inBounds(rw::models::CompositeDevice::QBox bounds, rw::math::Q q)
 {
     for(uint8_t i = 0; i < q.size(); i++)
@@ -625,7 +639,7 @@ RT_Node *RT_RRT_Star::get_random_node()
 }
 
 
-int main(__attribute__((unused)) int argc, __attribute__((unused)) char const *argv[]) {
+__attribute__((weak)) int main(__attribute__((unused)) int argc, __attribute__((unused)) char const *argv[]) {
     rw::math::Math::seed(time(NULL));
     //printf("Wow, it works!\n");
     //printf("Compile info: GCC %u.%u.%u\t", __GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__);
