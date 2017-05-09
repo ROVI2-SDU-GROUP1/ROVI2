@@ -6,6 +6,8 @@
 #include <eigen3/Eigen/Core>
 #include <eigen3/Eigen/SVD>
 #include <cassert>
+#include <fstream>
+
 
 #include "yaml-cpp/yaml.h"
 
@@ -21,8 +23,7 @@ geometry_msgs::PointStamped pose2DLeft;
 geometry_msgs::PointStamped pose2DRight;
 geometry_msgs::PointStamped pose3D;
 
-template<typename _Matrix_Type_>_Matrix_Type_ pseudoInverse(const _Matrix_Type_ &a, double epsilon = std::numeric_limits<double>::epsilon())
-{
+template<typename _Matrix_Type_>_Matrix_Type_ pseudoInverse(const _Matrix_Type_ &a, double epsilon = std::numeric_limits<double>::epsilon()){
     Eigen::JacobiSVD< _Matrix_Type_ > svd(a ,Eigen::ComputeThinU | Eigen::ComputeThinV);
     double tolerance = epsilon * std::max(a.cols(), a.rows()) *svd.singularValues().array().abs()(0);
     return svd.matrixV() *  (svd.singularValues().array().abs() > tolerance).select(svd.singularValues().array().inverse(), 0).matrix().asDiagonal() * svd.matrixU().adjoint();
@@ -43,11 +44,23 @@ struct Intrinsic{
 Intrinsic calL;
 Intrinsic calR;
 
-#define CALIB_RIGHT_FRONT CALIBRATION_DIR"right_front.yaml"
-#define CALIB_LEFT_FRONT CALIBRATION_DIR"left_front.yaml"
+bool is_file_exist(std::string fileName){
+    std::ifstream infile(fileName.c_str());
+    return infile.good();
+}
+
 
 Intrinsic loadCalibration(std::string fileName){
-  YAML::Node calibration_yaml = YAML::LoadFile(fileName);
+  std::string yaml_filename = std::string(CALIBRATION_DIR) + fileName;
+  if(!is_file_exist(yaml_filename)){
+    ROS_WARN("File: %s does not exist\n", yaml_filename.c_str());
+    exit(1);
+  } else {
+    ROS_INFO("Calib file opened: \n", yaml_filename.c_str());
+
+  }
+
+  YAML::Node calibration_yaml = YAML::LoadFile(yaml_filename);
 
   Intrinsic cal;
   cal.intrinsic.resize(3, 3);
@@ -62,6 +75,7 @@ Intrinsic loadCalibration(std::string fileName){
   for(unsigned int i = 0; i < tmp["data"].size();i+=4){
     cal.P.row(i/4) << tmp["data"][i].as<double>(), tmp["data"][i+1].as<double>(),tmp["data"][i+2].as<double>(),tmp["data"][i+3].as<double>();
   }
+
   // PX
   cal.PX = cal.P.block(0, 0, 3, 3);
 
@@ -72,12 +86,12 @@ Intrinsic loadCalibration(std::string fileName){
 }
 
 void linearSolv(){
-  std::cout << "\tLinear method" << std::endl << std::endl;
+  //std::cout << "\tLinear method" << std::endl << std::endl;
 
-  std::cout << "Left:" << std::endl;
-  std::cout << pose2DLeft.point.x << "\n" << pose2DLeft.point.y << std::endl;
-  std::cout << "Right:" << std::endl;
-  std::cout << pose2DRight.point.x << "\n" << pose2DRight.point.y << std::endl;
+  //std::cout << "Left:" << std::endl;
+  //std::cout << pose2DLeft.point.x << "\n" << pose2DLeft.point.y << std::endl;
+  //std::cout << "Right:" << std::endl;
+  //std::cout << pose2DRight.point.x << "\n" << pose2DRight.point.y << std::endl;
 
   Eigen::MatrixXd A(4, 3);
   A.row(0) = -pose2DLeft.point.x * calL.PX.row(2) + calL.PX.row(0);
@@ -103,11 +117,11 @@ void linearSolv(){
   // std::cout << invA << std::endl;
   // std::cout << "B:" << std::endl;
   // std::cout << B << std::endl;
-  std::cout << "x:" << std::endl;
-  std::cout << x << std::endl;
-
-  std::cout << "x_norm:" << std::endl;
-  std::cout << x.norm() << std::endl;
+  // std::cout << "x:" << std::endl;
+  // std::cout << x << std::endl;
+  //
+  // std::cout << "x_norm:" << std::endl;
+  // std::cout << x.norm() << std::endl;
 
   pose3D.point.x = x(0, 0);
   pose3D.point.y = x(1, 0);
@@ -122,7 +136,7 @@ void calc3DPose(){
   // Stereo proc        - http://wiki.ros.org/stereo_image_proc
   // Dense stereo ros
   // Q matrix
-  std::cout << std::endl << std::endl << "----Calc 3d pos!" << std::endl;
+  //std::cout << std::endl << std::endl << "----Calc 3d pos!" << std::endl;
 
   linearSolv();
 }
@@ -136,11 +150,16 @@ void image_sync_callback(const geometry_msgs::PointStamped::ConstPtr &image_left
 int main(int argc, char **argv){
 
     ros::init(argc, argv, "stereo");
-  	ros::NodeHandle nh;
-  	ros::Rate rate(20);
+  	ros::NodeHandle nh("~");
 
-    calL = loadCalibration(CALIB_RIGHT_FRONT);
-    calR = loadCalibration(CALIB_LEFT_FRONT);
+    std::string param_yaml_path_left;
+    std::string param_yaml_path_right;
+
+    nh.param<std::string>("calibration_yaml_path_left", param_yaml_path_left, "default.yaml");
+    nh.param<std::string>("calibration_yaml_path_right", param_yaml_path_right, "default.yaml");
+
+    calL = loadCalibration(param_yaml_path_left);
+    calR = loadCalibration(param_yaml_path_right);
 
     pub3D = nh.advertise<geometry_msgs::PointStamped>("/pose/3d", 1);
 
@@ -149,13 +168,7 @@ int main(int argc, char **argv){
     message_filters::TimeSynchronizer<geometry_msgs::PointStamped, geometry_msgs::PointStamped> sync(image_left, image_right, 10);
     sync.registerCallback(boost::bind(&image_sync_callback, _1, _2));
 
-    ros::Time last = ros::Time::now();
-
-    while (ros::ok()){
-      last = ros::Time::now();
-      ros::spinOnce();
-  		rate.sleep();
-    }
+    ros::spin();
 
     return 0;
 }

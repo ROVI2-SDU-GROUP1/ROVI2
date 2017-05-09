@@ -10,12 +10,12 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
   message_generation
 )
+add_definitions(-DSCENE_FILE="${CMAKE_BINARY_DIR}/../../WorkCell_scenes/WorkStation_3/WC3_Scene.wc.xml")
+
 catkin_python_setup()
 find_package(cmake_modules REQUIRED)
 find_package(Eigen REQUIRED)
-
 find_package(OpenCV)
-
 
  add_message_files(
    FILES
@@ -92,7 +92,7 @@ target_link_libraries(image_detector ${OpenCV_LIBS} ${catkin_LIBRARIES} yaml-cpp
 # Hand to eye
 add_executable(hand_to_eye src/hand_to_eye_calibration_node.cpp)
 add_dependencies(hand_to_eye ${catkin_EXPORTED_TARGETS})
-target_link_libraries(hand_to_eye ${OpenCV_LIBS} ${catkin_LIBRARIES} yaml-cpp)
+target_link_libraries(hand_to_eye ${OpenCV_LIBS} ${catkin_LIBRARIES} ${ROBWORK_LIBRARIES} yaml-cpp)
 
 # Stereo node
 add_executable(stereo src/stereo_node.cpp)
