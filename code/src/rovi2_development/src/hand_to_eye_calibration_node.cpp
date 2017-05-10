@@ -7,7 +7,7 @@
 #include <message_filters/subscriber.h>
 #include <image_transport/image_transport.h>
 #include <cv_bridge/cv_bridge.h>
-
+#include <limits>
 #include "yaml-cpp/yaml.h"
 
 #include <fstream>
@@ -137,20 +137,13 @@ void image_sync_callback(const sensor_msgs::Image::ConstPtr &image_left, const s
 
   cv::initUndistortRectifyMap( *cameraMatrixRight,  *distCoeffsRight,  *rectMatrixRight,
                           NCMR,
-                          sizeLeft, CV_32FC1, map1Right, map2Right);
+                          sizeRight, CV_32FC1, map1Right, map2Right);
 
-  cv::remap(tmp_l, rectLeft, map1Left, map2Left, cv::INTER_LINEAR);
-  cv::remap(tmp_r, rectRight, map1Right, map2Right, cv::INTER_LINEAR);
+  cv::remap(tmp_l, rectLeft, map1Left, map2Left, cv::INTER_LINEAR, cv::BORDER_CONSTANT, std::numeric_limits<float>::quiet_NaN());
+  cv::remap(tmp_r, rectRight, map1Right, map2Right, cv::INTER_LINEAR,cv::BORDER_CONSTANT, std::numeric_limits<float>::quiet_NaN());
 
-  imshow("Image View L", rectLeft);
-  imshow("Image View R", rectRight);
-  cv::waitKey(1);
-
-  cv::Mat imageLeft = Undistored(tmp_l, cameraMatrixLeft, distCoeffsLeft);
-  cv::Mat imageRight = Undistored(tmp_r, cameraMatrixRight, distCoeffsRight);
-
-  cv::imshow("Leftimage", imageLeft);
-  cv::imshow("Rightimage", imageRight);
+  cv::imshow("Leftimage", rectLeft);
+  cv::imshow("Rightimage", rectRight);
   cv::waitKey(1);
 
   if (leftPressed and rightPressed) {
@@ -249,8 +242,11 @@ int main(__attribute__((unused)) int argc, __attribute__((unused)) char *argv[])
 
    _state = _wc->getDefaultState();
 
-  cv::namedWindow("Leftimage", 1);
-  cv::namedWindow("Rightimage", 1);
+  cv::namedWindow("Leftimage", cv::WINDOW_NORMAL);
+  cv::namedWindow("Rightimage", cv::WINDOW_NORMAL);
+
+  // cv::namedWindow("RectLeft", cv::WINDOW_NORMAL);
+  // cv::namedWindow("RectRight", cv::WINDOW_NORMAL);
 
   cv::setMouseCallback("Leftimage", CallBackFuncLeft, NULL);
   cv::setMouseCallback("Rightimage", CallBackFuncRight, NULL);
