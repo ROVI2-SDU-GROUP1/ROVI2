@@ -129,7 +129,7 @@ void image_sync_callback(const sensor_msgs::Image::ConstPtr &image_left, const s
   cv::Mat rectLeft, map1Left, map2Left, rectRight, map1Right, map2Right;
 
   auto NCML = cv::getOptimalNewCameraMatrix( *cameraMatrixLeft,  *distCoeffsLeft, sizeLeft, 1, sizeLeft, 0);
-  auto NCMR = cv::getOptimalNewCameraMatrix( *cameraMatrixRight,  *distCoeffsRight, sizeLeft, 1, sizeLeft, 0);
+  auto NCMR = cv::getOptimalNewCameraMatrix( *cameraMatrixRight,  *distCoeffsRight, sizeRight, 1, sizeRight, 0);
 
   cv::initUndistortRectifyMap( *cameraMatrixLeft,  *distCoeffsLeft,  *rectMatrixLeft,
                           NCML,
@@ -141,6 +141,11 @@ void image_sync_callback(const sensor_msgs::Image::ConstPtr &image_left, const s
 
   cv::remap(tmp_l, rectLeft, map1Left, map2Left, cv::INTER_LINEAR, cv::BORDER_CONSTANT, std::numeric_limits<float>::quiet_NaN());
   cv::remap(tmp_r, rectRight, map1Right, map2Right, cv::INTER_LINEAR,cv::BORDER_CONSTANT, std::numeric_limits<float>::quiet_NaN());
+
+
+
+  // tmp_l = Undistored(tmp_l, cameraMatrixLeft, distCoeffsLeft);
+  // tmp_r = Undistored(tmp_r, cameraMatrixRight, distCoeffsRight);
 
   cv::imshow("Leftimage", rectLeft);
   cv::imshow("Rightimage", rectRight);
@@ -242,8 +247,8 @@ int main(__attribute__((unused)) int argc, __attribute__((unused)) char *argv[])
 
    _state = _wc->getDefaultState();
 
-  cv::namedWindow("Leftimage", cv::WINDOW_NORMAL);
-  cv::namedWindow("Rightimage", cv::WINDOW_NORMAL);
+  cv::namedWindow("Leftimage", cv::WINDOW_AUTOSIZE);
+  cv::namedWindow("Rightimage", cv::WINDOW_AUTOSIZE);
 
   // cv::namedWindow("RectLeft", cv::WINDOW_NORMAL);
   // cv::namedWindow("RectRight", cv::WINDOW_NORMAL);
