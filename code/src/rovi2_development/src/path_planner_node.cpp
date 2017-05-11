@@ -20,7 +20,62 @@
 #include <ElipsisSampler.hpp>
 #include <thread>
 #include <mutex>
+#include <limits>
 
+struct Plane3d
+{
+    public:
+    Eigen::Vector3d norm_vec;
+    Eigen::Vector3d point;
+};
+
+struct Trajectory3d
+{
+    public:
+    Eigen::Vector3d acceleration;
+    Eigen::Vector3d velocity;
+    Eigen::Vector3d position;
+};
+
+int sign(double n)
+{
+    if(n > 0) return 1;
+    if(n < 0) return -1;
+    return 0;
+}
+double distance_to_plane(const Plane3d &plane, const Eigen::Vector3d &point)
+{
+    return plane.norm_vec.cwiseProduct(point - plane.point).sum()  / plane.norm_vec.norm();
+}
+
+double find_plane_parobola_interception(const Plane3d &plane, const Trajectory3d &traj, double t_min = 0,
+    double t_max = 10, double stepsize = 1, double min_stepsize = 0.0000000001)
+{
+    double t_best = 0;
+    double min_distance = distance_to_plane(plane, traj.position);
+
+    for(double t = t_min; t < t_max; t += stepsize)
+    {
+        Eigen::Vector3d p = 0.5 * traj.acceleration * t * t + traj.velocity * t + traj.position;
+        double distance = distance_to_plane(plane, p);
+        std::cout << "distance " << distance << "\t" << sign(distance) << std::endl;
+        double tmp_min = min_distance;
+        if(std::fabs(tmp_min) > std::fabs(distance))
+        {
+            min_distance = distance;
+            t_best = t;
+        }
+        if(sign(tmp_min) != sign(distance))
+        {
+            if(stepsize <= min_stepsize)
+            {
+                return t_best;
+            }
+            return find_plane_parobola_interception(plane, traj, t - stepsize, t, stepsize / 10, min_stepsize);
+        }
+    }
+    return t_best;
+}
 
 rw::math::Q get_point_on_line(rw::math::Q a, rw::math::Q b, rw::math::Q p)
 {
@@ -186,12 +241,23 @@ void RobotPlanner::rob_state_callback(const caros_control_msgs::RobotState::Cons
 
 void RobotPlanner::trajectory_callback(const rovi2_development::Trajectory3D &parameters)
 {
+    //Here, we should trace along the trajectory and find the latest point which  we can still reach.
+    //We could apply other restrictions, e.g.
     std::cout << parameters << std::endl;
 }
 
 int main(int argc, char **argv) {
     rw::math::Math::seed(time(NULL)); //seed robwork with current time
     ros::init(argc, argv, "rovi2_pathplanner");
+    Eigen::Vector3d plane_normal(0,1,1);
+    Eigen::Vector3d plane_point(0,1,1);
+    Plane3d p = {plane_normal, plane_point};
+    Eigen::Vector3d traj_acc(0.3, 0.2, 0.1);
+    Eigen::Vector3d traj_vel(1, 2, 3);
+    Eigen::Vector3d traj_point(-10, -9,-7);
+    Trajectory3d t = {traj_acc, traj_vel, traj_point};
+    std::cout << find_plane_parobola_interception(p, t) << std::endl;;
+    return 0;
     /*rw::math::Q q1(6,0,0,0,0,0,0);
 
     rw::math::Q q3(6,9.51, 10.525, 30.1345, 10.339, 0.91,0.5);
