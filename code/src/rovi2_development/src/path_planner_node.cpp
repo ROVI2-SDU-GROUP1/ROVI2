@@ -121,6 +121,7 @@ class RobotPlanner
         RobotPlanner();
         ~RobotPlanner() {};
     private:
+        rw::math::Q find_new_goal(Plane3d intersect_plane, Trajectory3d traj, bool *found_new_goal);
         void rob_state_callback(const caros_control_msgs::RobotState::ConstPtr& data);
         void trajectory_callback(const rovi2_development::Trajectory3D &parameters);
         void rt_rrt_runner();
@@ -149,6 +150,7 @@ class RobotPlanner
         rw::math::Q next_goal;
         std::pair<RT_Node *, RT_Node *> current_edge;
         std::vector<RT_Node *> cur_path;
+        Eigen::Vector3d last_goal_point;
 };
 
 RobotPlanner::RobotPlanner()
@@ -169,12 +171,16 @@ sampler(rw::pathplanning::QSampler::makeConstrained(rw::pathplanning::QSampler::
 //ROS stuff
 sub_filtered(nh.subscribe("/pose/parameter",1, &RobotPlanner::trajectory_callback, this)),
 ptp_publisher(nh.serviceClient<caros_control_msgs::SerialDeviceMovePtp>("/ur_simple_demo_node/caros_serial_device_service_interface/move_ptp")),
-sub_robot_state(nh.subscribe("/ur_simple_demo_node/caros_serial_device_service_interface/robot_state", 1, &RobotPlanner::rob_state_callback, this))
+sub_robot_state(nh.subscribe("/ur_simple_demo_node/caros_serial_device_service_interface/robot_state", 1, &RobotPlanner::rob_state_callback, this)),
+
+//Other stuff
+last_goal_point(0,0,0)
 {
     this->ik_solver = new rw::invkin::JacobianIKSolver(this->device, this->state);
     this->ik_solver->setEnableInterpolation(true);
 	this->ik_solver->setInterpolatorStep(0.001);
-
+    this->current_q = device->getQ(this->state);
+    this->next_goal = device->getQ(this->state);
     //We have not found a trajectory for the ball yet, start building a tree to 0,0,0.40 (x,y,z)
     rw::math::Vector3D<double> init_goal(0,-0.2, 0.6);
     rw::math::Rotation3D<double> init_rotation( 0,-1,0, 0,0,-1, 1,0,0 );
@@ -202,7 +208,10 @@ void RobotPlanner::rt_rrt_runner(void)
         std::chrono::milliseconds time_to_solve{1000};
         if(this->update_goal == true)
         {
-            this->rt_rrt_star_planner->set_new_goal(this->next_goal);
+            this->cur_q_lock.lock();
+            rw::math::Q new_goal = this->next_goal;
+            this->rt_rrt_star_planner->set_new_goal(new_goal);
+            this->cur_q_lock.unlock();
         }
         if(this->update_agent)
         {
@@ -241,27 +250,70 @@ void RobotPlanner::rob_state_callback(const caros_control_msgs::RobotState::Cons
 
 void RobotPlanner::trajectory_callback(const rovi2_development::Trajectory3D &parameters)
 {
-    //Here, we should trace along the trajectory and find the latest point which  we can still reach.
-    //We could apply other restrictions, e.g.
-    std::cout << parameters << std::endl;
+    //The plane we want to intercept the ball in.
+    Eigen::Vector3d plane_normal(0,1,1);
+    Eigen::Vector3d plane_point(0,1,1);
+    Plane3d plane = {plane_normal, plane_point};
+
+    //The trajectory as eigen matrix
+    Eigen::Vector3d traj_acc(parameters.acc.x, parameters.acc.y, parameters.acc.z);
+    Eigen::Vector3d traj_vel(parameters.vel.x, parameters.vel.y, parameters.vel.z);
+    Eigen::Vector3d traj_point(parameters.pos.x, parameters.pos.y, parameters.pos.z);
+    Trajectory3d trajectory = {traj_acc, traj_vel, traj_point};
+    bool new_goal = false;
+    rw::math::Q _next_goal = this->find_new_goal(plane, trajectory, &new_goal);
+    if(new_goal)
+    {
+        //Update the goal, agent, and force a replanning of the path
+        this->cur_q_lock.lock();
+        this->next_goal = _next_goal;
+        this->update_goal = true;
+        this->update_agent = true;
+        this->rt_rrt_star_planner->force_stop();
+        this->cur_q_lock.unlock();
+    }
+}
+rw::math::Q RobotPlanner::find_new_goal(Plane3d intersect_plane, Trajectory3d traj, bool *found_new_goal)
+{
+    *found_new_goal = false;
+    //Find the best plane intersection.
+    double cath_time = find_plane_parobola_interception(intersect_plane, traj);
+    std::cout << "We need to catch the ball in " << cath_time << " seconds!" << std::endl;
+
+    Eigen::Vector3d p = 0.5 * traj.acceleration * cath_time * cath_time + traj.velocity * cath_time + traj.position;
+    if( (p - this->last_goal_point).norm() < 10) return rw::math::Q(); //Return if goal have not changed by much.
+    //Find the point closest to this where there is a collision free poisition.
+    for(double t_offset = 0; t_offset < 2; t_offset += 0.01)
+    {
+        double t = cath_time + t_offset;
+        p = 0.5 * traj.acceleration * t * t + traj.velocity * t + traj.position;
+        rw::math::Vector3D<double> goal(p);
+        rw::math::Rotation3D<double> rotation( 0,-1,0, 0,0,-1, 1,0,0 ); //It would be nice to rotate the tool so we the "bat" is perpendicular to the p'(t)
+        rw::math::Transform3D<double> NewToolPosition(goal, rotation);
+        std::vector<rw::math::Q> solutions = ik_solver->solve(NewToolPosition, this->state);
+        if(solutions.size())
+        {
+            *found_new_goal = true;
+            return solutions[0];
+        }
+        t = cath_time - t_offset;
+        p = 0.5 * traj.acceleration * t * t + traj.velocity * t + traj.position;
+        goal = rw::math::Vector3D<double>(p);
+        rotation =rw::math::Rotation3D<double>( 0,-1,0, 0,0,-1, 1,0,0 ); //It would be nice to rotate the tool so we the "bat" is perpendicular to the p'(t)
+        NewToolPosition = rw::math::Transform3D<double>(goal, rotation);
+        solutions = ik_solver->solve(NewToolPosition, this->state);
+        if(solutions.size())
+        {
+            *found_new_goal = true;
+            return solutions[0];
+        }
+    }
+    return rw::math::Q();
 }
 
 int main(int argc, char **argv) {
     rw::math::Math::seed(time(NULL)); //seed robwork with current time
     ros::init(argc, argv, "rovi2_pathplanner");
-    Eigen::Vector3d plane_normal(0,1,1);
-    Eigen::Vector3d plane_point(0,1,1);
-    Plane3d p = {plane_normal, plane_point};
-    Eigen::Vector3d traj_acc(0.3, 0.2, 0.1);
-    Eigen::Vector3d traj_vel(1, 2, 3);
-    Eigen::Vector3d traj_point(-10, -9,-7);
-    Trajectory3d t = {traj_acc, traj_vel, traj_point};
-    std::cout << find_plane_parobola_interception(p, t) << std::endl;;
-    return 0;
-    /*rw::math::Q q1(6,0,0,0,0,0,0);
-
-    rw::math::Q q3(6,9.51, 10.525, 30.1345, 10.339, 0.91,0.5);
-    std::cout << get_point_on_line(q1, q2, q3) << std::endl;*/
     RobotPlanner planner;
     ros::spin();
     return 0;
