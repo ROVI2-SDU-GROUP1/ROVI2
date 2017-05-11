@@ -15,7 +15,7 @@ def calcNorm():
 	f.flush();
 	p1 = myList(0)
 	p2 = myList(1)
-	pointNorm = sqrt( (p1.point.x - p2.point.x)**2 + (p1.point.y - p2.point.y)**2 + (p1.point.z - p2.point.z)**2 + )
+	pointNorm = sqrt( (p1.point.x - p2.point.x)**2 + (p1.point.y - p2.point.y)**2 + (p1.point.z - p2.point.z)**2 )
 	f.write("Distance: " + str(pointNorm));
 	f.flush();
 
