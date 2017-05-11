@@ -5,15 +5,16 @@
 #include <geometry_msgs/TransformStamped.h>
 #include <message_filters/time_synchronizer.h>
 #include <message_filters/subscriber.h>
-#include <opencv2/highgui/highgui.hpp>
 #include <image_transport/image_transport.h>
 #include <cv_bridge/cv_bridge.h>
-#include <opencv2/core/mat.hpp>
-
+#include <limits>
 #include "yaml-cpp/yaml.h"
 
 #include <fstream>
 
+#include <opencv2/core/mat.hpp>
+#include <opencv2/calib3d.hpp>
+#include <opencv2/highgui/highgui.hpp>
 
 #include <rw/kinematics/State.hpp>
 #include <rw/math/Q.hpp>
@@ -33,7 +34,8 @@ static cv::Mat *cameraMatrixLeft;
 static cv::Mat *cameraMatrixRight;
 static cv::Mat *distCoeffsLeft;
 static cv::Mat *distCoeffsRight;
-
+static cv::Mat *rectMatrixLeft;
+static cv::Mat *rectMatrixRight;
 
 int image_width;
 int image_height;
@@ -51,16 +53,9 @@ rw::kinematics::State _state;
 rw::kinematics::MovableFrame* TcpFrame;
 
 void QToTransform(caros_control_msgs::RobotState &Q_state){
-
-
   rw::math::Q RW_Q_state(6, Q_state.q.data[0],Q_state.q.data[1],Q_state.q.data[2],Q_state.q.data[3],Q_state.q.data[4],Q_state.q.data[5] );
   _device->setQ(RW_Q_state, _state);
 
-  // auto frames = _device->frames();
-  // for(auto elm: frames){
-  //   auto prop = elm->getPropertyMap();
-  //   std::cout << "name: " << prop->getName () << std::endl;
-  // }
   ROS_INFO("Before baseTframe");
 
   auto tool_pos = _device->baseTframe(TcpFrame, _state).P();
@@ -107,6 +102,7 @@ cv::Mat Undistored(cv::Mat input, cv::Mat *cameraMatrix, cv::Mat *distCoeffs){
   cv::undistort(input, undistorted, *cameraMatrix, *distCoeffs);
   return undistorted;
 }
+
 // , const caros_control_msgs::RobotState::ConstPtr &q
 void image_sync_callback(const sensor_msgs::Image::ConstPtr &image_left, const sensor_msgs::Image::ConstPtr &image_right){
   pose2DLeft.header.stamp = image_left->header.stamp;
@@ -126,10 +122,33 @@ void image_sync_callback(const sensor_msgs::Image::ConstPtr &image_left, const s
   cv::Mat tmp_l = cv_ptr_left->image.clone();
   cv::Mat tmp_r = cv_ptr_right->image.clone();
 
-  cv::Mat imageLeft = Undistored(tmp_l, cameraMatrixLeft, distCoeffsLeft);
-  cv::Mat imageRight = Undistored(tmp_r, cameraMatrixRight, distCoeffsRight);
-  cv::imshow("Leftimage", imageLeft);
-  cv::imshow("Rightimage", imageRight);
+  cv::Mat newCameraMatrixLeft;
+  cv::Mat newCameraMatrixRight;
+  cv::Size sizeLeft = tmp_l.size();
+  cv::Size sizeRight = tmp_r.size();
+  cv::Mat rectLeft, map1Left, map2Left, rectRight, map1Right, map2Right;
+
+  auto NCML = cv::getOptimalNewCameraMatrix( *cameraMatrixLeft,  *distCoeffsLeft, sizeLeft, 1, sizeLeft, 0);
+  auto NCMR = cv::getOptimalNewCameraMatrix( *cameraMatrixRight,  *distCoeffsRight, sizeRight, 1, sizeRight, 0);
+
+  cv::initUndistortRectifyMap( *cameraMatrixLeft,  *distCoeffsLeft,  *rectMatrixLeft,
+                          NCML,
+                          sizeLeft, CV_32FC1, map1Left, map2Left);
+
+  cv::initUndistortRectifyMap( *cameraMatrixRight,  *distCoeffsRight,  *rectMatrixRight,
+                          NCMR,
+                          sizeRight, CV_32FC1, map1Right, map2Right);
+
+  cv::remap(tmp_l, rectLeft, map1Left, map2Left, cv::INTER_LINEAR, cv::BORDER_CONSTANT, std::numeric_limits<float>::quiet_NaN());
+  cv::remap(tmp_r, rectRight, map1Right, map2Right, cv::INTER_LINEAR,cv::BORDER_CONSTANT, std::numeric_limits<float>::quiet_NaN());
+
+
+
+  // tmp_l = Undistored(tmp_l, cameraMatrixLeft, distCoeffsLeft);
+  // tmp_r = Undistored(tmp_r, cameraMatrixRight, distCoeffsRight);
+
+  cv::imshow("Leftimage", rectLeft);
+  cv::imshow("Rightimage", rectRight);
   cv::waitKey(1);
 
   if (leftPressed and rightPressed) {
@@ -153,7 +172,7 @@ bool is_file_exist(std::string fileName){
     return infile.good();
 }
 
-void loadYAMLparameters( std::string yaml_path, cv::Mat *&cameraMatrix, cv::Mat *&distCoeffs ){
+void loadYAMLparameters( std::string yaml_path, cv::Mat *&cameraMatrix, cv::Mat *&distCoeffs, cv::Mat *&rectMatrix ){
   std::string abs_yaml_path = std::string(CALIBRATION_DIR) + yaml_path;
   std::cout << "Loading calib: " << abs_yaml_path << std::endl;
   if(!is_file_exist(abs_yaml_path)){
@@ -164,17 +183,26 @@ void loadYAMLparameters( std::string yaml_path, cv::Mat *&cameraMatrix, cv::Mat 
   YAML::Node calibration_yaml = YAML::LoadFile(abs_yaml_path);
   YAML::Node camera_matrix = calibration_yaml["camera_matrix"];
   YAML::Node distortion_coefficients = calibration_yaml["distortion_coefficients"];
+  YAML::Node rectification_matrix = calibration_yaml["rectification_matrix"];
   image_width =  calibration_yaml["image_width"].as<int>();
   image_height =  calibration_yaml["image_height"].as<int>();
 
 
   cameraMatrix = new cv::Mat(3,3, CV_64FC1);
   distCoeffs = new cv::Mat(1,5, CV_64FC1);
+  rectMatrix = new cv::Mat(3,3, CV_64FC1);
 
   for(unsigned int i = 0; i < 3; i++){
     for(unsigned int j = 0; j < 3; j++){
       cameraMatrix->at<double>(i,j) = camera_matrix["data"][i*3+j].as<double>();
       std::cout << cameraMatrix->at<double>(i,j) << std::endl;
+    }
+  }
+
+  for(unsigned int i = 0; i < 3; i++){
+    for(unsigned int j = 0; j < 3; j++){
+      rectMatrix->at<double>(i,j) = rectification_matrix["data"][i*3+j].as<double>();
+      std::cout << rectMatrix->at<double>(i,j) << std::endl;
     }
   }
 
@@ -219,8 +247,11 @@ int main(__attribute__((unused)) int argc, __attribute__((unused)) char *argv[])
 
    _state = _wc->getDefaultState();
 
-  cv::namedWindow("Leftimage", 1);
-  cv::namedWindow("Rightimage", 1);
+  cv::namedWindow("Leftimage", cv::WINDOW_AUTOSIZE);
+  cv::namedWindow("Rightimage", cv::WINDOW_AUTOSIZE);
+
+  // cv::namedWindow("RectLeft", cv::WINDOW_NORMAL);
+  // cv::namedWindow("RectRight", cv::WINDOW_NORMAL);
 
   cv::setMouseCallback("Leftimage", CallBackFuncLeft, NULL);
   cv::setMouseCallback("Rightimage", CallBackFuncRight, NULL);
@@ -243,8 +274,8 @@ int main(__attribute__((unused)) int argc, __attribute__((unused)) char *argv[])
   nh.param<std::string>("pub_point_right", param_point_right, "/pose/2d_right");
   nh.param<std::string>("pub_robot_transform", param_robot_transform, "/robot_transform");
 
-  loadYAMLparameters(param_yaml_path_left, cameraMatrixLeft, distCoeffsLeft);
-  loadYAMLparameters(param_yaml_path_right, cameraMatrixRight, distCoeffsRight);
+  loadYAMLparameters(param_yaml_path_left, cameraMatrixLeft, distCoeffsLeft, rectMatrixLeft);
+  loadYAMLparameters(param_yaml_path_right, cameraMatrixRight, distCoeffsRight, rectMatrixRight);
 
   pub_point_left = nh.advertise<geometry_msgs::PointStamped>(param_point_left, 1);
   pub_point_right = nh.advertise<geometry_msgs::PointStamped>(param_point_right, 1);
