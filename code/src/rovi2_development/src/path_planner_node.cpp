@@ -251,8 +251,8 @@ void RobotPlanner::rob_state_callback(const caros_control_msgs::RobotState::Cons
 void RobotPlanner::trajectory_callback(const rovi2_development::Trajectory3D &parameters)
 {
     //The plane we want to intercept the ball in.
-    Eigen::Vector3d plane_normal(0,1,1);
-    Eigen::Vector3d plane_point(0,1,1);
+    Eigen::Vector3d plane_normal(0,1,0);
+    Eigen::Vector3d plane_point(0,-0.3,0);
     Plane3d plane = {plane_normal, plane_point};
 
     //The trajectory as eigen matrix
