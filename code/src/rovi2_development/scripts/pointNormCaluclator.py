@@ -45,8 +45,6 @@ rospy.init_node('Logger_node', anonymous=True)
 
 param_sub_pose_3d = rospy.get_param('~sub_3d_point', '/pose/3d')
 
-sub_3d_point = message_filters.Subscriber(param_sub_pose_3d, PointStamped)
+sub_3d_point = rospy.Subscriber(param_sub_pose_3d, PointStamped, callback)
 
-ts = message_filters.TimeSynchronizer([sub_3d_point,sub_transform], 10)
-ts.registerCallback(callback)
 rospy.spin()
