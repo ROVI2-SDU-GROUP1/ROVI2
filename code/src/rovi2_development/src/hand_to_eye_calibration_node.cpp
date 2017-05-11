@@ -128,27 +128,27 @@ void image_sync_callback(const sensor_msgs::Image::ConstPtr &image_left, const s
   cv::Size sizeRight = tmp_r.size();
   cv::Mat rectLeft, map1Left, map2Left, rectRight, map1Right, map2Right;
 
-  auto NCML = cv::getOptimalNewCameraMatrix( *cameraMatrixLeft,  *distCoeffsLeft, sizeLeft, 1, sizeLeft, 0);
-  auto NCMR = cv::getOptimalNewCameraMatrix( *cameraMatrixRight,  *distCoeffsRight, sizeRight, 1, sizeRight, 0);
+  // auto NCML = cv::getOptimalNewCameraMatrix( *cameraMatrixLeft,  *distCoeffsLeft, sizeLeft, 1, sizeLeft, 0);
+  // auto NCMR = cv::getOptimalNewCameraMatrix( *cameraMatrixRight,  *distCoeffsRight, sizeRight, 1, sizeRight, 0);
+  //
+  // cv::initUndistortRectifyMap( *cameraMatrixLeft,  *distCoeffsLeft,  *rectMatrixLeft,
+  //                         NCML,
+  //                         sizeLeft, CV_32FC1, map1Left, map2Left);
+  //
+  // cv::initUndistortRectifyMap( *cameraMatrixRight,  *distCoeffsRight,  *rectMatrixRight,
+  //                         NCMR,
+  //                         sizeRight, CV_32FC1, map1Right, map2Right);
+  //
+  // cv::remap(tmp_l, rectLeft, map1Left, map2Left, cv::INTER_LINEAR, cv::BORDER_CONSTANT, std::numeric_limits<float>::quiet_NaN());
+  // cv::remap(tmp_r, rectRight, map1Right, map2Right, cv::INTER_LINEAR,cv::BORDER_CONSTANT, std::numeric_limits<float>::quiet_NaN());
+  //
 
-  cv::initUndistortRectifyMap( *cameraMatrixLeft,  *distCoeffsLeft,  *rectMatrixLeft,
-                          NCML,
-                          sizeLeft, CV_32FC1, map1Left, map2Left);
 
-  cv::initUndistortRectifyMap( *cameraMatrixRight,  *distCoeffsRight,  *rectMatrixRight,
-                          NCMR,
-                          sizeRight, CV_32FC1, map1Right, map2Right);
+  tmp_l = Undistored(tmp_l, cameraMatrixLeft, distCoeffsLeft);
+  tmp_r = Undistored(tmp_r, cameraMatrixRight, distCoeffsRight);
 
-  cv::remap(tmp_l, rectLeft, map1Left, map2Left, cv::INTER_LINEAR, cv::BORDER_CONSTANT, std::numeric_limits<float>::quiet_NaN());
-  cv::remap(tmp_r, rectRight, map1Right, map2Right, cv::INTER_LINEAR,cv::BORDER_CONSTANT, std::numeric_limits<float>::quiet_NaN());
-
-
-
-  // tmp_l = Undistored(tmp_l, cameraMatrixLeft, distCoeffsLeft);
-  // tmp_r = Undistored(tmp_r, cameraMatrixRight, distCoeffsRight);
-
-  cv::imshow("Leftimage", rectLeft);
-  cv::imshow("Rightimage", rectRight);
+  cv::imshow("Leftimage", tmp_l);
+  cv::imshow("Rightimage", tmp_r);
   cv::waitKey(1);
 
   if (leftPressed and rightPressed) {
