@@ -1,4 +1,5 @@
 #include <ElipsisSampler.hpp>
+#include <UnitBallSampler.hpp>
 
 rw::math::Q ElipsisSampler::doSample()
 {
@@ -22,9 +23,8 @@ rw::math::Q ElipsisSampler::doSample()
     L(0,0) = this->c_max / 2;
     for(uint8_t i = 1; i < 6; i++) L(i,i) = sqrt(this->c_max * this->c_max - c_min * c_min) / 2.;
     //Now, we draw a sample uniformly distributed in a 6D unitball.
-    auto q_rand_ball = u_sampler.doSample();
+    auto q_rand_ball = UnitBallSampler::get_instance()->doSample();
     //Transform into an elipsis, rotate it to the correct orientation, and center it between start and goal.
-
     auto x_rand = C * L * q_rand_ball.e() + x_center.e();
     return rw::math::Q(x_rand);
 }

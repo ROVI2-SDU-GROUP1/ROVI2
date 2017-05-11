@@ -19,7 +19,6 @@
     <node pkg="caros_universalrobot" type="caros_universalrobot_node" name="caros_universalrobot">
     </node>
   </group>
-
 <!-- 
 ############################################################################
 ##### start the bumblebee node (here we should do something to upload the ##
@@ -36,6 +35,17 @@
   <group ns="$(arg camera_name)">
     <node pkg="nodelet" type="nodelet" name="bumblebee_nodelet_manager" args="manager" />
 
+<!-- Remote
+    <node pkg="nodelet" type="nodelet" name="bumblebee_nodelet" machine="Cell3"
+          args="load pointgrey_camera_driver/PointGreyStereoCameraNodelet bumblebee_nodelet_manager" >
+      <param name="frame_id" value="bumblebee" />
+      <param name="frame_rate" value="20" />
+      <param name="first_namespace" value="left" />
+      <param name="second_namespace" value="right" />
+      <param name="format7_color_coding" value="raw16" />
+      <param name="serial" value="$(arg bumblebee_serial)" />
+-->
+
     <node pkg="nodelet" type="nodelet" name="bumblebee_nodelet"
           args="load pointgrey_camera_driver/PointGreyStereoCameraNodelet bumblebee_nodelet_manager" >
       <param name="frame_id" value="bumblebee" />
@@ -44,7 +54,7 @@
       <param name="second_namespace" value="right" />
       <param name="format7_color_coding" value="raw16" />
       <param name="serial" value="$(arg bumblebee_serial)" />
-      
+           
 
 
       <!-- Use the camera_calibration package to create these files -->
@@ -90,6 +100,8 @@
 		<param name="point_sub_left" value="/pose/2d_left" />
 		<param name="point_sub_right" value="/pose/2d_right" />
 		<param name="point_pub" value="/pose/3d" />
+		<param name="calibration_yaml_path_left" value="matlab_left_front.yaml" />
+		<param name="calibration_yaml_path_right" value="matlab_right_front.yaml" />
 	</node>
 
 <!-- Start the kalman filter node -->
