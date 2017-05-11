@@ -1,0 +1,102 @@
+<launch>
+  <!-- Start the caros nodes -->
+
+  <group>
+    <include file="$(find caros_universalrobot)/launch/caros_universalrobot_param.xml" ns="ur_simple_demo_node">
+      <arg name="device_name" value="UR-6-85-5-A" />
+    </include>
+    <!-- The 'name' parameter has to match the 'ns' parameter used in the include tag above -->
+    <node pkg="caros_universalrobot" type="caros_universalrobot_node" name="ur_simple_demo_node" required="true" output="screen">
+      <!-- Nothing -->
+    </node>
+  </group>
+
+  <group>
+    <!-- Including the caros_universalrobot ROS parameters, as they are used for collision detection within the demo -->
+    <include file="$(find caros_universalrobot)/launch/caros_universalrobot_param.xml" ns="simple_caros_universalrobot_demo_using_move_ptp">
+      <arg name="device_name" value="UR-6-85-5-A" />
+    </include>
+    <!-- The 'name' parameter has to match the 'ns' parameter used in the include tag above -->
+    <!--node pkg="caros_universalrobot" type="simple_caros_universalrobot_demo_using_move_ptp" name="simple_caros_universalrobot_demo_using_move_ptp" required="true" output="screen"-->
+    <!--/node-->
+  </group>
+
+
+
+<!-- ####################################################################
+##### start the bumblebee node (here we should do something to upload the 
+##### shutter time settings, etc.) -->
+
+  <!-- Determine this using rosrun pointgrey_camera_driver list_cameras.
+       If not specified, defaults to first camera found. -->
+  <arg name="camera_name" default="camera" />
+  <arg name="bumblebee_serial" default="0" />
+  <arg name="calibrated" default="0" />
+
+  <group ns="$(arg camera_name)">
+    <node pkg="nodelet" type="nodelet" name="bumblebee_nodelet_manager" args="manager" />
+
+    <node pkg="nodelet" type="nodelet" name="bumblebee_nodelet"
+          args="load pointgrey_camera_driver/PointGreyStereoCameraNodelet bumblebee_nodelet_manager" >
+      <param name="frame_id" value="bumblebee" />
+      <param name="frame_rate" value="20" />
+      <param name="first_namespace" value="left" />
+      <param name="second_namespace" value="right" />
+      <param name="format7_color_coding" value="raw16" />
+      <param name="serial" value="$(arg bumblebee_serial)" />
+      <param name="shutter_speed" value="$(arg bumblebee_serial)" />
+
+      <!-- Use the camera_calibration package to create these files -->
+      <param name="camera_info_url" if="$(arg calibrated)"
+             value="file://$(env HOME)/.ros/camera_info/$(arg bumblebee_serial).yaml" />
+      <param name="second_info_url" if="$(arg calibrated)"
+             value="file://$(env HOME)/.ros/camera_info/$(arg bumblebee_serial)_right.yaml" />
+    </node>
+    <node pkg="nodelet" type="nodelet" name="image_proc_debayer_left"
+        args="load image_proc/debayer bumblebee_nodelet_manager">
+      <remap from="image_raw" to="left/image_raw"/>
+      <remap from="image_mono" to="left/image_mono"/>
+      <remap from="image_color" to="left/image_color"/>
+    </node>
+    <node pkg="nodelet" type="nodelet" name="image_proc_debayer_right"
+        args="load image_proc/debayer bumblebee_nodelet_manager">
+      <remap from="image_raw" to="right/image_raw"/>
+      <remap from="image_mono" to="right/image_mono"/>
+      <remap from="image_color" to="right/image_color"/>
+    </node>
+  </group>
+
+
+<!-- start the blob detection and stereo nodes -->
+
+
+	<!-- Left image detector node -->
+	<!-- <node pkg="rovi2_development" type="image_detector" name="image_detector_left" output="screen">
+		<param name="image_sub" value="/camera/left/image_raw" />
+		<param name="point_pub" value="/pose/2d_left" />
+		<param name="calibration_yaml_path" value="left_front.yaml" />
+	</node> -->
+
+	<!-- Right image detector node -->
+	<!-- <node pkg="rovi2_development" type="image_detector" name="image_detector_right" output="screen" >
+		<param name="image_sub" value="/camera/right/image_raw" />
+		<param name="point_pub" value="/pose/2d_right" />
+		<param name="calibration_yaml_path" value="right_front.yaml" />
+	</node> -->
+
+	<!-- Stereo node -->
+	<node pkg="rovi2_development" type="stereo" name="stereo_node" output="screen">
+		<param name="point_sub_left" value="/pose/2d_left" />
+		<param name="point_sub_right" value="/pose/2d_right" />
+		<param name="point_pub" value="/pose/3d" />
+	</node>
+
+
+<!-- Start the kalman filter node -->
+  <node name="kalman_node" pkg="rovi2_development" type="kalman_node" output="screen" />
+<!--  <node name="ball_traj_tester" pkg="rovi2_development" type="ball_traj_tester" output="screen" /> -->
+
+<!-- Start planner node -->
+  <node name="planner_node" pkg="rovi2_development" type="path_planner_node" output="screen" />
+
+</launch>
