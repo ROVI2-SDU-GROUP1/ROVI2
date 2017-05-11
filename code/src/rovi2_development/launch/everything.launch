@@ -1,31 +1,31 @@
 <launch>
+  <!-- Define machines -->
+	<machine name="Cell3" address="192.168.100.53" user="rovi2" password="student" />
+
   <!-- Start the caros nodes -->
 
+  <!-- use something like set_workcell:=0 (to disable setting a workcell using this launch script), or specify a specific workcell using workcell_path:=/path/to/the/workcell on the roslaunch commandline -->
+  <arg name="set_workcell" default="1" />
+  <group if="$(arg set_workcell)">
+    <arg name="workcell_path" default="$(env RW_ROOT)/example/ModelData/XMLScenes/RobotOnTable/Scene.xml" />
+    <param name="/caros/workcell" value="$(arg workcell_path)" />
+  </group>
+
   <group>
-    <include file="$(find caros_universalrobot)/launch/caros_universalrobot_param.xml" ns="ur_simple_demo_node">
-      <arg name="device_name" value="UR-6-85-5-A" />
+    <include file="$(find rovi2_development)/launch/caros_universalrobot_param.xml" ns="caros_universalrobot">
+      <!-- No parameters have to be set - relying on default values, but they are highly dependent on the workcell that is being used -->
     </include>
     <!-- The 'name' parameter has to match the 'ns' parameter used in the include tag above -->
-    <node pkg="caros_universalrobot" type="caros_universalrobot_node" name="ur_simple_demo_node" required="true" output="screen">
-      <!-- Nothing -->
+    <node pkg="caros_universalrobot" type="caros_universalrobot_node" name="caros_universalrobot">
     </node>
   </group>
 
-  <group>
-    <!-- Including the caros_universalrobot ROS parameters, as they are used for collision detection within the demo -->
-    <include file="$(find caros_universalrobot)/launch/caros_universalrobot_param.xml" ns="simple_caros_universalrobot_demo_using_move_ptp">
-      <arg name="device_name" value="UR-6-85-5-A" />
-    </include>
-    <!-- The 'name' parameter has to match the 'ns' parameter used in the include tag above -->
-    <!--node pkg="caros_universalrobot" type="simple_caros_universalrobot_demo_using_move_ptp" name="simple_caros_universalrobot_demo_using_move_ptp" required="true" output="screen"-->
-    <!--/node-->
-  </group>
-
-
-
-<!-- ####################################################################
-##### start the bumblebee node (here we should do something to upload the 
-##### shutter time settings, etc.) -->
+<!-- 
+############################################################################
+##### start the bumblebee node (here we should do something to upload the ##
+##### shutter time settings, etc.)                                        ##
+############################################################################
+-->
 
   <!-- Determine this using rosrun pointgrey_camera_driver list_cameras.
        If not specified, defaults to first camera found. -->
@@ -44,7 +44,8 @@
       <param name="second_namespace" value="right" />
       <param name="format7_color_coding" value="raw16" />
       <param name="serial" value="$(arg bumblebee_serial)" />
-      <param name="shutter_speed" value="$(arg bumblebee_serial)" />
+      
+
 
       <!-- Use the camera_calibration package to create these files -->
       <param name="camera_info_url" if="$(arg calibrated)"
@@ -91,12 +92,15 @@
 		<param name="point_pub" value="/pose/3d" />
 	</node>
 
-
 <!-- Start the kalman filter node -->
   <node name="kalman_node" pkg="rovi2_development" type="kalman_node" output="screen" />
 <!--  <node name="ball_traj_tester" pkg="rovi2_development" type="ball_traj_tester" output="screen" /> -->
 
 <!-- Start planner node -->
   <node name="planner_node" pkg="rovi2_development" type="path_planner_node" output="screen" />
+
+<!-- Reconfigure the bumblebee node -->
+<!-- <node name="dynamic_reconfigure_load" pkg="dynamic_reconfigure" type="dynparam" args="load /camera/bumblebee_nodelet $(find my_package)/params/bumblebee_config_file.yaml" /> -->
+
 
 </launch>

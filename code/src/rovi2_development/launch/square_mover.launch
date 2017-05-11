@@ -6,13 +6,6 @@
     <param name="/caros/workcell" value="$(arg workcell_path)" />
   </group>
 
-  <group>
-    <include file="$(find rovi2_development)/launch/caros_universalrobot_param.xml" ns="caros_universalrobot">
-      <!-- No parameters have to be set - relying on default values, but they are highly dependent on the workcell that is being used -->
-    </include>
-    <!-- The 'name' parameter has to match the 'ns' parameter used in the include tag above -->
-    <node pkg="caros_universalrobot" type="caros_universalrobot_node" name="caros_universalrobot">
-    </node>
-  </group>
+
   <node name="square_mover" pkg="rovisquaremover" type="node"/>
 </launch>
