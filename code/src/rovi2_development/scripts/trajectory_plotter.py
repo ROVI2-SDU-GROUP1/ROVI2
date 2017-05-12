@@ -84,22 +84,21 @@ class Trajectory_Plotter:
         plt.ion()
         fig = plt.figure(figsize=(16, 8), dpi=100,)
         ax = fig.add_subplot(111, projection='3d')
+        plt.axis('equal')
         plt.show()
         last_plot = None
         last_points = None
         plane_point  = np.array([0, -0.3, 0])
         plane_normal = np.array([0.000001, 1, 0.000001])
         plot_plane(ax, plane_point, plane_normal)
-        while(len(self.raw_points) < 50):
+        while(len(self.raw_points) < 8000):
             with self.lock:
                 if(last_plot is not None): last_plot.remove()
                 if(last_points is not None):
                     for p in last_points: p.remove()
                 if(len(self.filtered_trajectories) == 0):
-                    time.sleep(0.1)
                     continue
                 if(len(self.raw_points) == 0):
-                    time.sleep(0.1)
                     continue
 
                 last_traj = self.filtered_trajectories[-1]

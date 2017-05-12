@@ -22,6 +22,16 @@
 #include <mutex>
 #include <limits>
 
+bool compare_paths(std::vector<RT_Node *> path1, std::vector<RT_Node *> path2)
+{ //Return false if the paths are different, true if equal
+    if(path1.size() != path2.size()) return false;
+    for(size_t i = 0; i < path1.size(); i++)
+    {
+        if(path1[i] != path2[i]) return false;
+    }
+    return true;
+}
+
 struct Plane3d
 {
     public:
@@ -43,22 +53,26 @@ int sign(double n)
     if(n < 0) return -1;
     return 0;
 }
+
+Eigen::Vector3d predict_point(const Trajectory3d &traj, double t)
+{
+    return 0.5 * traj.acceleration * t * t + traj.velocity * t + traj.position;
+}
+
 double distance_to_plane(const Plane3d &plane, const Eigen::Vector3d &point)
 {
     return plane.norm_vec.cwiseProduct(point - plane.point).sum()  / plane.norm_vec.norm();
 }
 
 double find_plane_parobola_interception(const Plane3d &plane, const Trajectory3d &traj, double t_min = 0,
-    double t_max = 10, double stepsize = 1, double min_stepsize = 0.0000000001)
+    double t_max = 20, double stepsize = 1, double min_stepsize = 0.0000000001)
 {
     double t_best = 0;
     double min_distance = distance_to_plane(plane, traj.position);
-
     for(double t = t_min; t < t_max; t += stepsize)
     {
-        Eigen::Vector3d p = 0.5 * traj.acceleration * t * t + traj.velocity * t + traj.position;
+        Eigen::Vector3d p = predict_point(traj, t);
         double distance = distance_to_plane(plane, p);
-        std::cout << "distance " << distance << "\t" << sign(distance) << std::endl;
         double tmp_min = min_distance;
         if(std::fabs(tmp_min) > std::fabs(distance))
         {
@@ -71,7 +85,7 @@ double find_plane_parobola_interception(const Plane3d &plane, const Trajectory3d
             {
                 return t_best;
             }
-            return find_plane_parobola_interception(plane, traj, t - stepsize, t, stepsize / 10, min_stepsize);
+            return find_plane_parobola_interception(plane, traj, t - stepsize, t + stepsize, stepsize / 10, min_stepsize);
         }
     }
     return t_best;
@@ -143,14 +157,19 @@ class RobotPlanner
         ros::Subscriber sub_robot_state;
         std::thread *rt_rrt_thread;
         std::mutex cur_q_lock;
+        std::mutex next_path_lock;
+
         RT_RRT_Star *rt_rrt_star_planner = nullptr;
         bool update_agent = false;
         bool update_goal = false;
+        bool updated_path = false;
         rw::math::Q current_q;
         rw::math::Q next_goal;
         std::pair<RT_Node *, RT_Node *> current_edge;
         std::vector<RT_Node *> cur_path;
+        std::vector<RT_Node *> next_path;
         Eigen::Vector3d last_goal_point;
+        void SendQ(rw::math::Q q);
 };
 
 RobotPlanner::RobotPlanner()
@@ -174,6 +193,7 @@ ptp_publisher(nh.serviceClient<caros_control_msgs::SerialDeviceMovePtp>("/ur_sim
 sub_robot_state(nh.subscribe("/ur_simple_demo_node/caros_serial_device_service_interface/robot_state", 1, &RobotPlanner::rob_state_callback, this)),
 
 //Other stuff
+current_edge(nullptr, nullptr),
 last_goal_point(0,0,0)
 {
     this->ik_solver = new rw::invkin::JacobianIKSolver(this->device, this->state);
@@ -189,6 +209,7 @@ last_goal_point(0,0,0)
     std::cout << "trying to solve inverse kinematics" << std::endl;
     std::vector<rw::math::Q> solutions = force_find_ik(this->ik_solver, NewToolPosition, &this->state, this->device);
     std::cout << solutions[0] << std::endl;
+    this->SendQ(solutions[0]);
     std::cout << "solved" << std::endl;
 
     assert(solutions.size());
@@ -198,6 +219,34 @@ last_goal_point(0,0,0)
 
 }
 
+void RobotPlanner::SendQ(rw::math::Q q)
+{
+	//beginner_tutorials::AddTwoInts srv;
+	caros_control_msgs::SerialDeviceMovePtp srv;
+
+	caros_common_msgs::Q Q;
+    Q.data.push_back( q[0] );
+    Q.data.push_back( q[1] );
+    Q.data.push_back( q[2] );
+    Q.data.push_back( q[3] );
+    Q.data.push_back( q[4] );
+    Q.data.push_back( q[5] );
+
+
+	srv.request.targets.push_back(Q);
+
+	srv.request.speeds.push_back(0.5);
+
+	srv.request.blends.push_back(0.1);
+
+	if (this->ptp_publisher.call(srv)){
+		ROS_INFO("Sum: %ld", (long int)srv.response.success);
+	} else	{
+		ROS_ERROR("Failed to call service add_two_ints");
+	}
+}
+
+
 void RobotPlanner::rt_rrt_runner(void)
 {
     while(true)
@@ -205,36 +254,52 @@ void RobotPlanner::rt_rrt_runner(void)
         //If we have not found a trajectory for the ball yet, start building a tree to 0,0,40 (x,y,z)
         //this->rt_rrt_star_planner(q_1, q_2, p_constraint, sampler, metric, device);
         //We start the rrt now!
-        std::chrono::milliseconds time_to_solve{1000};
+        std::chrono::milliseconds time_to_solve{50};
         if(this->update_goal == true)
         {
             this->cur_q_lock.lock();
             rw::math::Q new_goal = this->next_goal;
             this->rt_rrt_star_planner->set_new_goal(new_goal);
             this->cur_q_lock.unlock();
+            this->update_goal = false;
+            //Force update the agent when the goal is updated.
+            this->update_agent = true;
         }
         if(this->update_agent)
         {
+            this->update_agent = false;
             this->cur_q_lock.lock();
-            auto cur_copy = this->current_q;
-            rw::math::Q new_node = get_point_on_line(this->current_edge.first->getValue(), this->current_edge.second->getValue(), cur_copy);
-            this->cur_q_lock.unlock();
-            std::cout << "New: " << new_node << std::endl;
-            auto new_agent = this->rt_rrt_star_planner->split_edge_with_point(new_node,
-                this->current_edge.first, this->current_edge.second);
-            this->rt_rrt_star_planner->move_agent(new_agent);
+            this->next_path_lock.lock();
+            if(this->current_edge.second != nullptr)
+            {
+                auto cur_copy = this->current_q;
+                rw::math::Q new_node = get_point_on_line(this->current_edge.first->getValue(), this->current_edge.second->getValue(), cur_copy);
+                this->next_path_lock.unlock();
+                this->cur_q_lock.unlock();
+                std::cout << "New: " << new_node << std::endl;
+                auto new_agent = this->rt_rrt_star_planner->split_edge_with_point(new_node,
+                    this->current_edge.first, this->current_edge.second);
+                this->rt_rrt_star_planner->move_agent(new_agent);
+            }
+            else{
+                this->cur_q_lock.unlock();
+                this->next_path_lock.unlock();
+            }
         }
         auto new_path = this->rt_rrt_star_planner->find_next_path(time_to_solve, true);
         for(auto node : new_path)
         {
             std::cout << node->getValue() << std::endl;
         }
+        std::cout << std::endl;
         //Simulate update of q
-        this->cur_path = new_path;
-        this->current_edge = std::pair<RT_Node *, RT_Node *>(new_path[0], new_path[1]);
-        this->update_agent = true;
-        this->current_q = LineSampler::get_instance(new_path[0]->getValue(), new_path[1]->getValue())->doSample() * 0.5;
-        std::cout << new_path[0]->getValue() << "\t" << new_path[1]->getValue() << "\t" << this->current_q << std::endl;
+        this->next_path_lock.lock();
+        if(!compare_paths(this->next_path, new_path))
+        {
+            this->next_path = new_path;
+            this->updated_path = true;
+        }
+        this->next_path_lock.unlock();
         std::cout << "tree size: " << this->rt_rrt_star_planner->get_size()  <<  std::endl;
     }
 }
@@ -243,9 +308,57 @@ void RobotPlanner::rob_state_callback(const caros_control_msgs::RobotState::Cons
 {
     this->cur_q_lock.lock();
     this->current_q = rw::math::Q(6, data->q.data[0], data->q.data[1],data->q.data[2], data->q.data[3],data->q.data[4], data->q.data[5]);
+    rw::math::Q tmp_q = this->current_q;
+    this->device->setQ(this->current_q, this->state);
     this->cur_q_lock.unlock();
+    //We find out if we want to set a new configuration on the robot
+    this->next_path_lock.lock();
+    std::pair<RT_Node *, RT_Node *> tmp_edge = this->current_edge;
+    if(this->cur_path.size() == 0 or this->current_edge.second == nullptr)
+    {   //We are not moving between any edges at all atm. If there is a path ready, use it!
+        if(this->next_path.size())
+        {
+            this->cur_path = this->next_path;
+            this->current_edge = {this->cur_path[0], this->cur_path[1]};
+        }
+    }
+    this->next_path_lock.unlock();
+    if(this->current_edge.second == nullptr) return;
+    if(tmp_edge.second == nullptr)
+    {
+        this->SendQ(this->current_edge.second->getValue());
+        return;
+    }
+    //Now all about initiasing the movement should have been handled.
 
-    std::cout << data << std::endl;
+    //If path has been updated, force the new edge to be the start of this.
+    this->next_path_lock.lock();
+    if(this->updated_path)
+    {
+        this->updated_path = false;
+        this->cur_path = this->next_path;
+        this->current_edge = {this->cur_path[0], this->cur_path[1]};
+        this->SendQ(this->current_edge.second->getValue());
+    }
+    this->next_path_lock.unlock();
+
+    //Check if we have reached the end of the current edge, and if so, choose the next.
+    if( (tmp_q - tmp_edge.second->getValue()).norm2() < 0.01)
+    {
+        for(size_t i = 0; i < this->cur_path.size(); i++)
+        {
+            if(this->cur_path[i] == tmp_edge.second)
+            {
+                if(this->cur_path.size() > i + 1)
+                {
+                    this->next_path_lock.lock();
+                    this->current_edge = {this->cur_path[i], this->cur_path[i + 1]};
+                    this->SendQ(this->current_edge.second->getValue());
+                    this->next_path_lock.unlock();
+                }
+            }
+        }
+    }
 }
 
 void RobotPlanner::trajectory_callback(const rovi2_development::Trajectory3D &parameters)
@@ -264,6 +377,7 @@ void RobotPlanner::trajectory_callback(const rovi2_development::Trajectory3D &pa
     rw::math::Q _next_goal = this->find_new_goal(plane, trajectory, &new_goal);
     if(new_goal)
     {
+        std::cout << "Next goal should be: " << _next_goal << std::endl;
         //Update the goal, agent, and force a replanning of the path
         this->cur_q_lock.lock();
         this->next_goal = _next_goal;
@@ -277,33 +391,42 @@ rw::math::Q RobotPlanner::find_new_goal(Plane3d intersect_plane, Trajectory3d tr
 {
     *found_new_goal = false;
     //Find the best plane intersection.
-    double cath_time = find_plane_parobola_interception(intersect_plane, traj);
-    std::cout << "We need to catch the ball in " << cath_time << " seconds!" << std::endl;
+    double catch_time = find_plane_parobola_interception(intersect_plane, traj);
+    if(catch_time <= 0) return rw::math::Q();
+    std::cout << "We need to catch the ball in " << catch_time << " seconds!" << std::endl;
 
-    Eigen::Vector3d p = 0.5 * traj.acceleration * cath_time * cath_time + traj.velocity * cath_time + traj.position;
-    if( (p - this->last_goal_point).norm() < 10) return rw::math::Q(); //Return if goal have not changed by much.
+    Eigen::Vector3d p = predict_point(traj, catch_time);
+    /*std::cout << "goal" << std::endl;
+    std::cout << p << std::endl;
+    std::cout << "cur_point" << std::endl;
+    std::cout << traj.position << std::endl << std::endl;*/
+
+    std::cout << (p - this->last_goal_point).norm() << std::endl;
+    if( (p - this->last_goal_point).norm() < 0.05) return rw::math::Q(); //Return if goal have not changed by much.
     //Find the point closest to this where there is a collision free poisition.
     for(double t_offset = 0; t_offset < 2; t_offset += 0.01)
     {
-        double t = cath_time + t_offset;
-        p = 0.5 * traj.acceleration * t * t + traj.velocity * t + traj.position;
+        double t = catch_time + t_offset;
+        p = predict_point(traj, t);
         rw::math::Vector3D<double> goal(p);
         rw::math::Rotation3D<double> rotation( 0,-1,0, 0,0,-1, 1,0,0 ); //It would be nice to rotate the tool so we the "bat" is perpendicular to the p'(t)
         rw::math::Transform3D<double> NewToolPosition(goal, rotation);
         std::vector<rw::math::Q> solutions = ik_solver->solve(NewToolPosition, this->state);
-        if(solutions.size())
+        if(solutions.size() > 0 and !this->constraint->inCollision(solutions[0]))
         {
+            this->last_goal_point = p;
             *found_new_goal = true;
             return solutions[0];
         }
-        t = cath_time - t_offset;
-        p = 0.5 * traj.acceleration * t * t + traj.velocity * t + traj.position;
+        t = catch_time - t_offset;
+        p = predict_point(traj, t);
         goal = rw::math::Vector3D<double>(p);
         rotation =rw::math::Rotation3D<double>( 0,-1,0, 0,0,-1, 1,0,0 ); //It would be nice to rotate the tool so we the "bat" is perpendicular to the p'(t)
         NewToolPosition = rw::math::Transform3D<double>(goal, rotation);
         solutions = ik_solver->solve(NewToolPosition, this->state);
-        if(solutions.size())
+        if(solutions.size() > 0 and !this->constraint->inCollision(solutions[0]))
         {
+            this->last_goal_point = p;
             *found_new_goal = true;
             return solutions[0];
         }

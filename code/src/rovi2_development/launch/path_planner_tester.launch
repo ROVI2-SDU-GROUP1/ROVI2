@@ -1,4 +1,9 @@
 <launch>
+  <!-- Define machines -->
+	<machine name="Cell3" address="192.168.100.53" user="rovi2" password="student" />
+
+  <!-- Start the caros nodes -->
+
   <!-- Hardcoded workcell path... This should not be hardcoded, else the test should be CARO/MARVIN specific - the hardcoded q-configuration is also sort of scene specific... -->
   <param name="/caros/workcell" value="$(env RW_ROOT)/example/ModelData/XMLScenes/RobotOnTable/Scene.xml" />
 
@@ -21,6 +26,16 @@
     <!--node pkg="caros_universalrobot" type="simple_caros_universalrobot_demo_using_move_ptp" name="simple_caros_universalrobot_demo_using_move_ptp" required="true" output="screen"-->
     <!--/node-->
   </group>
-  <node name="square_mover" pkg="rovisquaremover" type="node" output="screen" />
-</launch>
 
+<!-- Start the kalman filter node -->
+  <node name="kalman_node" pkg="rovi2_development" type="kalman_node" output="screen" />
+<!--  <node name="ball_traj_tester" pkg="rovi2_development" type="ball_traj_tester" output="screen" /> -->
+
+<!-- Start planner node -->
+  <node name="planner_node" pkg="rovi2_development" type="path_planner_node" output="screen" />
+  <node name="ball_traj_tester" pkg="rovi2_development" type="ball_traj_tester" output="screen" />
+<!--  <node name="trajectory_plotter" pkg="rovi2_development" type="trajectory_plotter.py" output="screen" /> -->
+
+
+
+</launch>
