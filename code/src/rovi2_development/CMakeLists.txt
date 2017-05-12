@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.0.0)
 project(rovi2_development)
 
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
@@ -36,7 +39,7 @@ SET(ROOT ${CMAKE_CURRENT_SOURCE_DIR})
 
 # Set the RobWork root (edit in .bashrc if necessary)
 SET(RW_ROOT $ENV{RW_ROOT})
-
+SET(RWSTUDIO_ROOT $ENV{RWS_ROOT})
 
 # Use RobWork
 MESSAGE("-- RobWork root: " ${RW_ROOT})
@@ -44,6 +47,13 @@ SET(RobWork_DIR ${RW_ROOT}/cmake)
 FIND_PACKAGE(RobWork REQUIRED)
 INCLUDE_DIRECTORIES( SYSTEM ${ROBWORK_INCLUDE_DIRS} )
 LINK_DIRECTORIES( ${ROBWORK_LIBRARY_DIRS} )
+
+# Use RobWorkStudio
+MESSAGE("-- RobWorkStudio root: " ${RWSTUDIO_ROOT})
+SET(RobWorkStudio_DIR ${RWSTUDIO_ROOT}/cmake)
+FIND_PACKAGE(RobWorkStudio REQUIRED)
+INCLUDE_DIRECTORIES( ${INCLUDE_DIRECTORIES} ${ROBWORKSTUDIO_INCLUDE_DIRS} )
+LINK_DIRECTORIES( ${ROBWORKSTUDIO_LIBRARY_DIRS} )
 
 catkin_package(CATKIN_DEPENDS message_runtime)
 
@@ -113,6 +123,18 @@ target_link_libraries(ball_traj_tester ${OpenCV_LIBS} ${EIGEN3_LIBS} ${catkin_LI
 add_executable(path_planner_node src/path_planner_node.cpp src/RT_RRT_Star.cpp src/LineSampler.cpp src/UnitBallSampler.cpp src/ElipsisSampler.cpp)
 add_dependencies(path_planner_node ${catkin_EXPORTED_TARGETS})
 target_link_libraries(path_planner_node ${OpenCV_LIBS} ${EIGEN3_LIBS} ${catkin_LIBRARIES} ${ROBWORK_LIBRARIES})
+
+# If we want to use ui files add them here
+#QT4_WRAP_UI(UIS_OUT_H src/RW_Live_plugin/SamplePlugin.ui)
+# Moc
+#QT4_WRAP_CPP(MocSrcFiles src/RW_Live_plugin/SamplePlugin.hpp)
+# Rcc the files:
+#QT4_ADD_RESOURCES(RccSrcFiles rc/RW_Live_plugin/resources.qrc)
+
+# Add the source files to build (besides the Qt generated source files)
+#ADD_LIBRARY(RW_Live_plugin src/RW_Live_plugin/SamplePlugin.cpp)
+#TARGET_LINK_LIBRARIES(RW_Live_plugin MODULE vision ${OpenCV_LIBS} ${ROBWORK_LIBRARIES} ${ROBWORKSTUDIO_LIBRARIES})
+#include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 catkin_install_python(PROGRAMS scripts/trajectory_plotter.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})

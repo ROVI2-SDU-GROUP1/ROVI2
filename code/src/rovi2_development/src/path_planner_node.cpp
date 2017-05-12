@@ -232,7 +232,7 @@ void RobotPlanner::SendQ(rw::math::Q q)
     Q.data.push_back( q[4] );
     Q.data.push_back( q[5] );
 
-
+    std::cout << srv.request.targets.size() << std::endl;
 	srv.request.targets.push_back(Q);
 
 	srv.request.speeds.push_back(0.5);
@@ -326,7 +326,7 @@ void RobotPlanner::rob_state_callback(const caros_control_msgs::RobotState::Cons
     if(this->current_edge.second == nullptr) return;
     if(tmp_edge.second == nullptr)
     {
-        this->SendQ(this->current_edge.second->getValue());
+        //this->SendQ(this->current_edge.second->getValue());
         return;
     }
     //Now all about initiasing the movement should have been handled.
