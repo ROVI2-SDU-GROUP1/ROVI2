@@ -71,7 +71,7 @@ Intrinsic loadCalibration(std::string fileName){
 
   // P
   cal.P.resize(3,4);
-  tmp = calibration_yaml["projection_rectified_matrix"];
+  tmp = calibration_yaml["projection_matrix"];
   for(unsigned int i = 0; i < tmp["data"].size();i+=4){
     cal.P.row(i/4) << tmp["data"][i].as<double>(), tmp["data"][i+1].as<double>(),tmp["data"][i+2].as<double>(),tmp["data"][i+3].as<double>();
   }

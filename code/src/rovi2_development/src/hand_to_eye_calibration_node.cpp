@@ -139,85 +139,40 @@ void image_sync_callback(const sensor_msgs::Image::ConstPtr &image_left, const s
   //cv::Mat rectLeft, map1Left, map2Left, rectRight, map1Right, map2Right;
 
 
- //tmp_l = Undistored(tmp_l, cameraMatrixLeft, distCoeffsLeft);
- //tmp_r = Undistored(tmp_r, cameraMatrixRight, distCoeffsRight);
+ tmp_l = Undistored(tmp_l, cameraMatrixLeft, distCoeffsLeft);
+ tmp_r = Undistored(tmp_r, cameraMatrixRight, distCoeffsRight);
 
-
-  cv::Mat R1, R2, P1, P2, Q;
-  cv::Mat rectLeft, map1Left, map2Left, map1Right, map2Right;
-
-  stereoRectify(*cameraMatrixLeft, *distCoeffsLeft, *cameraMatrixRight,*distCoeffsRight, imageSize, *rotationMatrixRight,*translationVectorRight, R1, R2, P1, P2, Q, cv::CALIB_ZERO_DISPARITY, 0,imageSize,region_of_interest_left,region_of_interest_right);
-
-  initUndistortRectifyMap(*cameraMatrixLeft, *distCoeffsLeft, R1, P1, imageSize, CV_16SC2, map1Left, map2Left);
-  initUndistortRectifyMap(*cameraMatrixRight, *distCoeffsRight, R2, P2, imageSize, CV_16SC2, map1Right, map2Right);
-
-  cv::Mat img_l;
-  cv::Mat img_r;
-  remap(tmp_l, img_l, map1Left, map2Left, cv::INTER_LINEAR);
-  remap(tmp_r, img_r, map1Right, map2Right, cv::INTER_LINEAR);
-
-
-
-  std::cout << "P1: " << P1 << std::endl;
-  std::cout << "P2: " << P2 << std::endl;
-
-  std::cout << "R1: " << R1 << std::endl;
-  std::cout << "R2: " << R2 << std::endl;
 
   // cv::Mat R1, R2, P1, P2, Q;
+  // cv::Mat rectLeft, map1Left, map2Left, map1Right, map2Right;
   //
-  // cv::stereoRectify(*cameraMatrixLeft, *distCoeffsLeft, *cameraMatrixRight,*distCoeffsRight, imageSize, *rotationMatrixRight,*translationVectorRight, R1, R2, P1, P2, Q, cv::CALIB_ZERO_DISPARITY, 0,imageSize,region_of_interest_left,region_of_interest_right);
+  // stereoRectify(*cameraMatrixLeft, *distCoeffsLeft, *cameraMatrixRight,*distCoeffsRight, imageSize, *rotationMatrixRight,*translationVectorRight, R1, R2, P1, P2, Q, cv::CALIB_ZERO_DISPARITY, 0,imageSize,region_of_interest_left,region_of_interest_right);
   //
-  // cv::initUndistortRectifyMap(*cameraMatrixLeft, *distCoeffsLeft, R1, P1, imageSize, CV_16SC2, map1Left, map2Left);
-  // cv::initUndistortRectifyMap(*cameraMatrixRight, *distCoeffsRight, R2, P2, imageSize, CV_16SC2, map1Right, map2Right);
+  // initUndistortRectifyMap(*cameraMatrixLeft, *distCoeffsLeft, R1, P1, imageSize, CV_16SC2, map1Left, map2Left);
+  // initUndistortRectifyMap(*cameraMatrixRight, *distCoeffsRight, R2, P2, imageSize, CV_16SC2, map1Right, map2Right);
   //
-  // cv::Mat canvas;
-  // double sf;
-  // int w, h;
+  // cv::Mat img_l;
+  // cv::Mat img_r;
+  // remap(tmp_l, img_l, map1Left, map2Left, cv::INTER_LINEAR);
+  // remap(tmp_r, img_r, map1Right, map2Right, cv::INTER_LINEAR);
   //
-  // bool isVerticalStereo = fabs(P2.at<double>(1, 3)) > fabs(P2.at<double>(0, 3));
-  // //std::cout << "Is vertical: " << isVerticalStereo << std::endl;
-  // if( !isVerticalStereo )
-  // {
-  //     sf = 600./std::max(imageSize.width, imageSize.height);
-  //     w = round(imageSize.width*sf);
-  //     h = round(imageSize.height*sf);
-  //     canvas.create(h, w*2, CV_8UC3);
-  // }
-  // else
-  // {
-  //     sf = 300./std::max(imageSize.width, imageSize.height);
-  //     w = round(imageSize.width*sf);
-  //     h = round(imageSize.height*sf);
-  //     canvas.create(h*2, w, CV_8UC3);
-  // }
   //
-  // cv::Mat outL, outR;
-  // cv::remap(tmp_l, outL, map1Left, map2Left, cv::INTER_LINEAR);
-  // cv::Mat canvasPart = !isVerticalStereo ? canvas(cv::Rect(w*0, 0, w, h)) : canvas(cv::Rect(0, h*0, w, h));
-  // cv::resize(outL, canvasPart, canvasPart.size(), 0, 0, cv::INTER_AREA);
   //
-  // cv::Rect vroiL(round(region_of_interest_left->x*sf), round(region_of_interest_left->y*sf), round(region_of_interest_left->width*sf), round(region_of_interest_left->height*sf));
-  // cv::rectangle(canvasPart, vroiL, cv::Scalar(0,0,255), 3, 8);
+  // std::cout << "P1: " << P1 << std::endl;
+  // std::cout << "P2: " << P2 << std::endl;
   //
-  // cv::remap(tmp_r, outR, map1Right, map2Right, cv::INTER_LINEAR);
-  // canvasPart = !isVerticalStereo ? canvas(cv::Rect(w*1, 0, w, h)) : canvas(cv::Rect(0, h*1, w, h));
-  // cv::resize(outR, canvasPart, canvasPart.size(), 0, 0, cv::INTER_AREA);
-  //
-  // cv::Rect vroiR(round(region_of_interest_right->x*sf), round(region_of_interest_right->y*sf), round(region_of_interest_right->width*sf), round(region_of_interest_right->height*sf));
-  // cv::rectangle(canvasPart, vroiR, cv::Scalar(0,0,255), 3, 8);
-  //
-  // cv::imshow("rectified", canvas);
-  // char c = (char)cv::waitKey(1);
+  // std::cout << "R1: " << R1 << std::endl;
+  // std::cout << "R2: " << R2 << std::endl;
+
 
 
 
   //
-  cv::rectangle(img_l, *region_of_interest_left, cv::Scalar(255,0,0));
-  cv::imshow("Leftimage", img_l);
+  //cv::rectangle(img_l, *region_of_interest_left, cv::Scalar(255,0,0));
+  cv::imshow("Leftimage", tmp_l);
   //
-  cv::rectangle(img_r, *region_of_interest_right,cv::Scalar(255,0,0));
-  cv::imshow("Rightimage", img_r );
+  //cv::rectangle(img_r, *region_of_interest_right,cv::Scalar(255,0,0));
+  cv::imshow("Rightimage", tmp_r );
   cv::waitKey(1);
 
   if (leftPressed and rightPressed) {
