@@ -56,7 +56,7 @@ Intrinsic loadCalibration(std::string fileName){
     ROS_WARN("File: %s does not exist\n", yaml_filename.c_str());
     exit(1);
   } else {
-    ROS_INFO("Calib file opened: \n", yaml_filename.c_str());
+    ROS_INFO("Calib file opened: %s\n", yaml_filename.c_str());
 
   }
 
@@ -75,8 +75,6 @@ Intrinsic loadCalibration(std::string fileName){
   for(unsigned int i = 0; i < tmp["data"].size();i+=4){
     cal.P.row(i/4) << tmp["data"][i].as<double>(), tmp["data"][i+1].as<double>(),tmp["data"][i+2].as<double>(),tmp["data"][i+3].as<double>();
   }
-
-  std::cout << "P: " << cal.P << std::endl;
 
   // PX
   cal.PX = cal.P.block(0, 0, 3, 3);
@@ -144,7 +142,6 @@ void linearSolv(){
 }
 
 void calc3DPose(){
-  ROS_INFO("Got calc3Dpose");
   //openCVMethod();
   linearSolv();
 }
@@ -157,7 +154,7 @@ void image_sync_callback(const geometry_msgs::PointStamped::ConstPtr &image_left
 
 int main(int argc, char **argv){
 
-    ros::init(argc, argv, "stereo");
+    ros::init(argc, argv, "stereo_node");
   	ros::NodeHandle nh("~");
 
     std::string param_yaml_path_left;
@@ -177,6 +174,5 @@ int main(int argc, char **argv){
     sync.registerCallback(boost::bind(&image_sync_callback, _1, _2));
 
     ros::spin();
-
     return 0;
 }

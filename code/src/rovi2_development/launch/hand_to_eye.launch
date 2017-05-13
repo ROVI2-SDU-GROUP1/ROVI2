@@ -11,6 +11,12 @@ y	<!-- Hand to eye calibration node -->
 		<param name="pub_robot_transform" value="/q_state_processed" />
 		<param name="pub_point_left" value="/pose/2d_left" />
 		<param name="pub_point_right" value="/pose/2d_right" />
+
+		<param name="save_images" value="false"/>
+		<param name="rectify_images" value="false"/>
+		<param name="save_images_path_left" value="/tmp/"/>
+		<param name="save_images_path_right" value="/tmp/"/>
+
 	</node>
 
 	<!-- Stereo node -->
