@@ -4,25 +4,29 @@ import rospy
 import message_filters
 from sensor_msgs.msg import Image, CameraInfo
 from geometry_msgs.msg import PointStamped
+from math import sqrt
 
 import time
 
 timestr = time.strftime("%Y%m%d-%H%M%S")
 f = open('/tmp/' + timestr + ".csv", 'w')
 
+myList = []
+
 def calcNorm():
-	f.write("Calculating norm of last two points - ");
+	print("Calculating norm of last two points - ");
 	f.flush();
-	p1 = myList(0)
-	p2 = myList(1)
+	p1 = myList[0]
+	p2 = myList[1]
 	pointNorm = sqrt( (p1.point.x - p2.point.x)**2 + (p1.point.y - p2.point.y)**2 + (p1.point.z - p2.point.z)**2 )
-	f.write("Distance: " + str(pointNorm));
+	print("Distance: " + str(pointNorm));
 	f.flush();
 
 def callback(Point):
+	print Point
 	if len(myList) == 0:
 		myList.append(Point)
-		f.write("I need one more point");
+		print("I need one more point");
 		f.flush();
 		return
 	elif len(myList) == 1:
@@ -36,8 +40,6 @@ def callback(Point):
 def myhook():
 	print "shutdown time!"
 	f.close();
-
-myList = []
 
 rospy.on_shutdown(myhook)
 
