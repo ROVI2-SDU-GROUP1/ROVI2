@@ -62,6 +62,8 @@ rw::models::Device::Ptr _device;
 rw::kinematics::State _state;
 rw::kinematics::MovableFrame* TcpFrame;
 
+cv::Mat map1Left, map2Left, map1Right, map2Right;
+
 void QToTransform(caros_control_msgs::RobotState &Q_state){
   rw::math::Q RW_Q_state(6, Q_state.q.data[0],Q_state.q.data[1],Q_state.q.data[2],Q_state.q.data[3],Q_state.q.data[4],Q_state.q.data[5] );
   _device->setQ(RW_Q_state, _state);
@@ -113,8 +115,30 @@ cv::Mat Undistored(cv::Mat input, cv::Mat *cameraMatrix, cv::Mat *distCoeffs){
   return undistorted;
 }
 
+
+void initRectifyMatrix(){
+  cv::Mat R1, R2, P1, P2, Q;
+  cv::Size imageSize = cv::Size(1024, 768);
+
+  cv::Rect *region_of_interest_left = new cv::Rect();
+  cv::Rect *region_of_interest_right = new cv::Rect();
+
+  stereoRectify(*cameraMatrixLeft, *distCoeffsLeft, *cameraMatrixRight,*distCoeffsRight, imageSize, *rotationMatrixRight,*translationVectorRight, R1, R2, P1, P2, Q, cv::CALIB_ZERO_DISPARITY, 0,imageSize,region_of_interest_left,region_of_interest_right);
+
+  initUndistortRectifyMap(*cameraMatrixLeft, *distCoeffsLeft, R1, P1, imageSize, CV_16SC2, map1Left, map2Left);
+  initUndistortRectifyMap(*cameraMatrixRight, *distCoeffsRight, R2, P2, imageSize, CV_16SC2, map1Right, map2Right);
+
+  std::cout << "Map size: " << map1Left.size() << std::endl;
+  std::cout << "P1: " << P1 << std::endl;
+  std::cout << "P2: " << P2 << std::endl;
+
+  std::cout << "R1: " << R1 << std::endl;
+  std::cout << "R2: " << R2 << std::endl;
+}
+
 // , const caros_control_msgs::RobotState::ConstPtr &q
 void image_sync_callback(const sensor_msgs::Image::ConstPtr &image_left, const sensor_msgs::Image::ConstPtr &image_right){
+  static int i = 0;
   pose2DLeft.header.stamp = image_left->header.stamp;
   pose2DRight.header.stamp = image_left->header.stamp;
 
@@ -132,47 +156,27 @@ void image_sync_callback(const sensor_msgs::Image::ConstPtr &image_left, const s
   cv::Mat tmp_l = cv_ptr_left->image.clone();
   cv::Mat tmp_r = cv_ptr_right->image.clone();
 
-  cv::Rect *region_of_interest_left = new cv::Rect();
-  cv::Rect *region_of_interest_right = new cv::Rect();
-
-  cv::Size imageSize = tmp_r.size();
   //cv::Mat rectLeft, map1Left, map2Left, rectRight, map1Right, map2Right;
 
 
- tmp_l = Undistored(tmp_l, cameraMatrixLeft, distCoeffsLeft);
- tmp_r = Undistored(tmp_r, cameraMatrixRight, distCoeffsRight);
+  tmp_l = Undistored(tmp_l, cameraMatrixLeft, distCoeffsLeft);
+  tmp_r = Undistored(tmp_r, cameraMatrixRight, distCoeffsRight);
+  cv::Mat img_l;
+  cv::Mat img_r;
+  remap(tmp_l, img_l, map1Left, map2Left, cv::INTER_LINEAR);
+  remap(tmp_r, img_r, map1Right, map2Right, cv::INTER_LINEAR);
 
-
-  // cv::Mat R1, R2, P1, P2, Q;
-  // cv::Mat rectLeft, map1Left, map2Left, map1Right, map2Right;
-  //
-  // stereoRectify(*cameraMatrixLeft, *distCoeffsLeft, *cameraMatrixRight,*distCoeffsRight, imageSize, *rotationMatrixRight,*translationVectorRight, R1, R2, P1, P2, Q, cv::CALIB_ZERO_DISPARITY, 0,imageSize,region_of_interest_left,region_of_interest_right);
-  //
-  // initUndistortRectifyMap(*cameraMatrixLeft, *distCoeffsLeft, R1, P1, imageSize, CV_16SC2, map1Left, map2Left);
-  // initUndistortRectifyMap(*cameraMatrixRight, *distCoeffsRight, R2, P2, imageSize, CV_16SC2, map1Right, map2Right);
-  //
-  // cv::Mat img_l;
-  // cv::Mat img_r;
-  // remap(tmp_l, img_l, map1Left, map2Left, cv::INTER_LINEAR);
-  // remap(tmp_r, img_r, map1Right, map2Right, cv::INTER_LINEAR);
-  //
-  //
-  //
-  // std::cout << "P1: " << P1 << std::endl;
-  // std::cout << "P2: " << P2 << std::endl;
-  //
-  // std::cout << "R1: " << R1 << std::endl;
-  // std::cout << "R2: " << R2 << std::endl;
-
-
-
-
-  //
   //cv::rectangle(img_l, *region_of_interest_left, cv::Scalar(255,0,0));
+  std::string filename = "/home/mneerup/Theis_2/stereo/imagesRawHack/left/" + std::to_string(i) + "left.png";
   cv::imshow("Leftimage", tmp_l);
+  //cv::imwrite( filename.c_str(), tmp_l );
   //
   //cv::rectangle(img_r, *region_of_interest_right,cv::Scalar(255,0,0));
+  filename = "/home/mneerup/Theis_2/stereo/imagesRawHack/right/" + std::to_string(i++) + "right.png";
+
   cv::imshow("Rightimage", tmp_r );
+  //cv::imwrite( filename.c_str(), tmp_r );
+
   cv::waitKey(1);
 
   if (leftPressed and rightPressed) {
@@ -222,7 +226,6 @@ void loadYAMLparameters( std::string yaml_path, cv::Mat *&cameraMatrix, cv::Mat 
   rotationMatrix = new cv::Mat(3,3, CV_64FC1);
 
 
-
   for(unsigned int i = 0; i < 3; i++){
     for(unsigned int j = 0; j < 3; j++){
       cameraMatrix->at<double>(i,j) = camera_matrix["data"][i*3+j].as<double>();
@@ -249,6 +252,7 @@ void loadYAMLparameters( std::string yaml_path, cv::Mat *&cameraMatrix, cv::Mat 
       rotationMatrix->at<double>(y,x) = rotation_matrix["data"][y*3+x].as<double>();
     }
   }
+
 }
 
 void robot_state_q_callback(const caros_control_msgs::RobotState::ConstPtr &q){
@@ -316,6 +320,8 @@ int main(__attribute__((unused)) int argc, __attribute__((unused)) char *argv[])
 
   loadYAMLparameters(param_yaml_path_left, cameraMatrixLeft, distCoeffsLeft, rectMatrixLeft, translationVectorLeft, rotationMatrixLeft);
   loadYAMLparameters(param_yaml_path_right, cameraMatrixRight, distCoeffsRight, rectMatrixRight, translationVectorRight, rotationMatrixRight);
+
+  initRectifyMatrix();
 
   pub_point_left = nh.advertise<geometry_msgs::PointStamped>(param_point_left, 1);
   pub_point_right = nh.advertise<geometry_msgs::PointStamped>(param_point_right, 1);
