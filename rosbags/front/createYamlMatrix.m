@@ -1,10 +1,10 @@
-clc; format short eng
+clc; format short g;
 
 % ------------- Right camera ----------------------- %
 stereoParams = calibrationSession.CameraParameters;
 R = stereoParams.RotationOfCamera2;
 T = stereoParams.TranslationOfCamera2;
-Kr = stereoParams.CameraParameters2.IntrinsicMatrix';
+Kr = [1280.99658023138, -0, 514.932502746582; -0, 1280.99658023138, 387.48673248291; 0, 0, 1];
 PR = cameraMatrix(stereoParams.CameraParameters2,R,T)';
 
 RadialDistortionR = calibrationSession.CameraParameters.CameraParameters2.RadialDistortion;
@@ -47,7 +47,7 @@ fprintf("]\n\n");
 % ------------- Left camera ----------------------- %
 T = [0 0 0]';
 R = eye(3);
-IntrinsicL = stereoParams.CameraParameters1.IntrinsicMatrix';
+IntrinsicL = [1280.99658023138, -0, 521.351615905762; -0, 1280.99658023138, 387.48673248291; 0, 0, 1];
 %PL = [IntrinsicL [0 0 0]'] * TransformationL;
 PL = cameraMatrix(stereoParams.CameraParameters1,R,T)';
 

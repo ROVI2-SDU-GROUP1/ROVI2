@@ -104,6 +104,11 @@ add_executable(kalman_node src/kalman_estimator_node.cpp)
 add_dependencies(kalman_node ${catkin_EXPORTED_TARGETS})
 target_link_libraries(kalman_node ${OpenCV_LIBS} ${EIGEN3_LIBS} ${catkin_LIBRARIES})
 
+# Publish image node
+add_executable(publish_image_node src/image_publisher.cpp)
+add_dependencies(publish_image_node ${catkin_EXPORTED_TARGETS})
+target_link_libraries(publish_image_node ${OpenCV_LIBS} ${EIGEN3_LIBS} ${catkin_LIBRARIES})
+
 # Ball trajectory generator for testing kalman node
 add_executable(ball_traj_tester src/ball_traj_tester.cpp)
 add_dependencies(ball_traj_tester ${catkin_EXPORTED_TARGETS})

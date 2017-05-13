@@ -15,6 +15,10 @@
 #include <opencv2/core/mat.hpp>
 #include <opencv2/calib3d.hpp>
 #include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgcodecs.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/opencv.hpp>
+#include "opencv2/imgproc.hpp"
 
 #include <rw/kinematics/State.hpp>
 #include <rw/math/Q.hpp>
@@ -36,6 +40,12 @@ static cv::Mat *distCoeffsLeft;
 static cv::Mat *distCoeffsRight;
 static cv::Mat *rectMatrixLeft;
 static cv::Mat *rectMatrixRight;
+
+static cv::Mat *translationVectorRight;
+static cv::Mat *rotationMatrixRight;
+
+static cv::Mat *translationVectorLeft;
+static cv::Mat *rotationMatrixLeft;
 
 int image_width;
 int image_height;
@@ -81,8 +91,8 @@ void QToTransform(caros_control_msgs::RobotState &Q_state){
 
 void CallBackFuncLeft(int event, int x, int y, int flags, void* userdata){
   if ( flags == cv::EVENT_FLAG_LBUTTON ){
-    pose2DLeft.point.x = x - image_width/2;
-    pose2DLeft.point.y = - y + image_height/2;
+    pose2DLeft.point.x = x;
+    pose2DLeft.point.y = y;
     std::cout << "Left mouse button is clicked - position (" << x << ", " << y << ")" << std::endl;
     leftPressed = true;
   }
@@ -90,8 +100,8 @@ void CallBackFuncLeft(int event, int x, int y, int flags, void* userdata){
 
 void CallBackFuncRight(int event, int x, int y, int flags, void* userdata){
   if ( flags == cv::EVENT_FLAG_LBUTTON ){
-    pose2DRight.point.x = x - image_width/2;
-    pose2DRight.point.y = - y + image_height/2;
+    pose2DRight.point.x = x;
+    pose2DRight.point.y = y;
     std::cout << "Right mouse button is clicked - position (" << x << ", " << y << ")" << std::endl;
     rightPressed = true;
   }
@@ -122,33 +132,92 @@ void image_sync_callback(const sensor_msgs::Image::ConstPtr &image_left, const s
   cv::Mat tmp_l = cv_ptr_left->image.clone();
   cv::Mat tmp_r = cv_ptr_right->image.clone();
 
-  cv::Mat newCameraMatrixLeft;
-  cv::Mat newCameraMatrixRight;
-  cv::Size sizeLeft = tmp_l.size();
-  cv::Size sizeRight = tmp_r.size();
-  cv::Mat rectLeft, map1Left, map2Left, rectRight, map1Right, map2Right;
+  cv::Rect *region_of_interest_left = new cv::Rect();
+  cv::Rect *region_of_interest_right = new cv::Rect();
 
-  // auto NCML = cv::getOptimalNewCameraMatrix( *cameraMatrixLeft,  *distCoeffsLeft, sizeLeft, 1, sizeLeft, 0);
-  // auto NCMR = cv::getOptimalNewCameraMatrix( *cameraMatrixRight,  *distCoeffsRight, sizeRight, 1, sizeRight, 0);
-  //
-  // cv::initUndistortRectifyMap( *cameraMatrixLeft,  *distCoeffsLeft,  *rectMatrixLeft,
-  //                         NCML,
-  //                         sizeLeft, CV_32FC1, map1Left, map2Left);
-  //
-  // cv::initUndistortRectifyMap( *cameraMatrixRight,  *distCoeffsRight,  *rectMatrixRight,
-  //                         NCMR,
-  //                         sizeRight, CV_32FC1, map1Right, map2Right);
-  //
-  // cv::remap(tmp_l, rectLeft, map1Left, map2Left, cv::INTER_LINEAR, cv::BORDER_CONSTANT, std::numeric_limits<float>::quiet_NaN());
-  // cv::remap(tmp_r, rectRight, map1Right, map2Right, cv::INTER_LINEAR,cv::BORDER_CONSTANT, std::numeric_limits<float>::quiet_NaN());
-  //
+  cv::Size imageSize = tmp_r.size();
+  //cv::Mat rectLeft, map1Left, map2Left, rectRight, map1Right, map2Right;
 
 
-  tmp_l = Undistored(tmp_l, cameraMatrixLeft, distCoeffsLeft);
-  tmp_r = Undistored(tmp_r, cameraMatrixRight, distCoeffsRight);
+ //tmp_l = Undistored(tmp_l, cameraMatrixLeft, distCoeffsLeft);
+ //tmp_r = Undistored(tmp_r, cameraMatrixRight, distCoeffsRight);
 
-  cv::imshow("Leftimage", tmp_l);
-  cv::imshow("Rightimage", tmp_r);
+
+  cv::Mat R1, R2, P1, P2, Q;
+  cv::Mat rectLeft, map1Left, map2Left, map1Right, map2Right;
+
+  stereoRectify(*cameraMatrixLeft, *distCoeffsLeft, *cameraMatrixRight,*distCoeffsRight, imageSize, *rotationMatrixRight,*translationVectorRight, R1, R2, P1, P2, Q, cv::CALIB_ZERO_DISPARITY, 0,imageSize,region_of_interest_left,region_of_interest_right);
+
+  initUndistortRectifyMap(*cameraMatrixLeft, *distCoeffsLeft, R1, P1, imageSize, CV_16SC2, map1Left, map2Left);
+  initUndistortRectifyMap(*cameraMatrixRight, *distCoeffsRight, R2, P2, imageSize, CV_16SC2, map1Right, map2Right);
+
+  cv::Mat img_l;
+  cv::Mat img_r;
+  remap(tmp_l, img_l, map1Left, map2Left, cv::INTER_LINEAR);
+  remap(tmp_r, img_r, map1Right, map2Right, cv::INTER_LINEAR);
+
+
+
+  std::cout << "P1: " << P1 << std::endl;
+  std::cout << "P2: " << P2 << std::endl;
+
+  std::cout << "R1: " << R1 << std::endl;
+  std::cout << "R2: " << R2 << std::endl;
+
+  // cv::Mat R1, R2, P1, P2, Q;
+  //
+  // cv::stereoRectify(*cameraMatrixLeft, *distCoeffsLeft, *cameraMatrixRight,*distCoeffsRight, imageSize, *rotationMatrixRight,*translationVectorRight, R1, R2, P1, P2, Q, cv::CALIB_ZERO_DISPARITY, 0,imageSize,region_of_interest_left,region_of_interest_right);
+  //
+  // cv::initUndistortRectifyMap(*cameraMatrixLeft, *distCoeffsLeft, R1, P1, imageSize, CV_16SC2, map1Left, map2Left);
+  // cv::initUndistortRectifyMap(*cameraMatrixRight, *distCoeffsRight, R2, P2, imageSize, CV_16SC2, map1Right, map2Right);
+  //
+  // cv::Mat canvas;
+  // double sf;
+  // int w, h;
+  //
+  // bool isVerticalStereo = fabs(P2.at<double>(1, 3)) > fabs(P2.at<double>(0, 3));
+  // //std::cout << "Is vertical: " << isVerticalStereo << std::endl;
+  // if( !isVerticalStereo )
+  // {
+  //     sf = 600./std::max(imageSize.width, imageSize.height);
+  //     w = round(imageSize.width*sf);
+  //     h = round(imageSize.height*sf);
+  //     canvas.create(h, w*2, CV_8UC3);
+  // }
+  // else
+  // {
+  //     sf = 300./std::max(imageSize.width, imageSize.height);
+  //     w = round(imageSize.width*sf);
+  //     h = round(imageSize.height*sf);
+  //     canvas.create(h*2, w, CV_8UC3);
+  // }
+  //
+  // cv::Mat outL, outR;
+  // cv::remap(tmp_l, outL, map1Left, map2Left, cv::INTER_LINEAR);
+  // cv::Mat canvasPart = !isVerticalStereo ? canvas(cv::Rect(w*0, 0, w, h)) : canvas(cv::Rect(0, h*0, w, h));
+  // cv::resize(outL, canvasPart, canvasPart.size(), 0, 0, cv::INTER_AREA);
+  //
+  // cv::Rect vroiL(round(region_of_interest_left->x*sf), round(region_of_interest_left->y*sf), round(region_of_interest_left->width*sf), round(region_of_interest_left->height*sf));
+  // cv::rectangle(canvasPart, vroiL, cv::Scalar(0,0,255), 3, 8);
+  //
+  // cv::remap(tmp_r, outR, map1Right, map2Right, cv::INTER_LINEAR);
+  // canvasPart = !isVerticalStereo ? canvas(cv::Rect(w*1, 0, w, h)) : canvas(cv::Rect(0, h*1, w, h));
+  // cv::resize(outR, canvasPart, canvasPart.size(), 0, 0, cv::INTER_AREA);
+  //
+  // cv::Rect vroiR(round(region_of_interest_right->x*sf), round(region_of_interest_right->y*sf), round(region_of_interest_right->width*sf), round(region_of_interest_right->height*sf));
+  // cv::rectangle(canvasPart, vroiR, cv::Scalar(0,0,255), 3, 8);
+  //
+  // cv::imshow("rectified", canvas);
+  // char c = (char)cv::waitKey(1);
+
+
+
+  //
+  cv::rectangle(img_l, *region_of_interest_left, cv::Scalar(255,0,0));
+  cv::imshow("Leftimage", img_l);
+  //
+  cv::rectangle(img_r, *region_of_interest_right,cv::Scalar(255,0,0));
+  cv::imshow("Rightimage", img_r );
   cv::waitKey(1);
 
   if (leftPressed and rightPressed) {
@@ -172,7 +241,7 @@ bool is_file_exist(std::string fileName){
     return infile.good();
 }
 
-void loadYAMLparameters( std::string yaml_path, cv::Mat *&cameraMatrix, cv::Mat *&distCoeffs, cv::Mat *&rectMatrix ){
+void loadYAMLparameters( std::string yaml_path, cv::Mat *&cameraMatrix, cv::Mat *&distCoeffs, cv::Mat *&rectMatrix , cv::Mat *& translationVector, cv::Mat *& rotationMatrix){
   std::string abs_yaml_path = std::string(CALIBRATION_DIR) + yaml_path;
   std::cout << "Loading calib: " << abs_yaml_path << std::endl;
   if(!is_file_exist(abs_yaml_path)){
@@ -183,7 +252,10 @@ void loadYAMLparameters( std::string yaml_path, cv::Mat *&cameraMatrix, cv::Mat 
   YAML::Node calibration_yaml = YAML::LoadFile(abs_yaml_path);
   YAML::Node camera_matrix = calibration_yaml["camera_matrix"];
   YAML::Node distortion_coefficients = calibration_yaml["distortion_coefficients"];
+  YAML::Node translation_vector = calibration_yaml["translation_vector"];
+  YAML::Node rotation_matrix = calibration_yaml["rotation_matrix"];
   YAML::Node rectification_matrix = calibration_yaml["rectification_matrix"];
+
   image_width =  calibration_yaml["image_width"].as<int>();
   image_height =  calibration_yaml["image_height"].as<int>();
 
@@ -191,23 +263,36 @@ void loadYAMLparameters( std::string yaml_path, cv::Mat *&cameraMatrix, cv::Mat 
   cameraMatrix = new cv::Mat(3,3, CV_64FC1);
   distCoeffs = new cv::Mat(1,5, CV_64FC1);
   rectMatrix = new cv::Mat(3,3, CV_64FC1);
+  translationVector = new cv::Mat(3,1, CV_64FC1);
+  rotationMatrix = new cv::Mat(3,3, CV_64FC1);
+
+
 
   for(unsigned int i = 0; i < 3; i++){
     for(unsigned int j = 0; j < 3; j++){
       cameraMatrix->at<double>(i,j) = camera_matrix["data"][i*3+j].as<double>();
-      std::cout << cameraMatrix->at<double>(i,j) << std::endl;
     }
   }
 
   for(unsigned int i = 0; i < 3; i++){
     for(unsigned int j = 0; j < 3; j++){
       rectMatrix->at<double>(i,j) = rectification_matrix["data"][i*3+j].as<double>();
-      std::cout << rectMatrix->at<double>(i,j) << std::endl;
     }
   }
 
   for(unsigned int i = 0; i < distortion_coefficients["data"].size();i++){
     distCoeffs->at<double>(i) = distortion_coefficients["data"][i].as<double>();
+  }
+
+
+  for(unsigned int i = 0; i < translation_vector.size(); i++){
+    translationVector->at<double>(i) = translation_vector["data"][i].as<double>();
+  }
+
+  for(unsigned int y = 0; y < 3; y++){
+    for(unsigned int x = 0; x < 3; x++){
+      rotationMatrix->at<double>(y,x) = rotation_matrix["data"][y*3+x].as<double>();
+    }
   }
 }
 
@@ -236,7 +321,7 @@ int main(__attribute__((unused)) int argc, __attribute__((unused)) char *argv[])
     if (_wc == NULL){
      ROS_WARN("Unable to load workcell: %s", SCENE_FILE);
     } else {
-     ROS_WARN("Loading file");
+     ROS_INFO("Loading workcell");
     }
 
     std::string FindFrame = "WSG50.TCP";
@@ -249,7 +334,7 @@ int main(__attribute__((unused)) int argc, __attribute__((unused)) char *argv[])
 
   cv::namedWindow("Leftimage", cv::WINDOW_AUTOSIZE);
   cv::namedWindow("Rightimage", cv::WINDOW_AUTOSIZE);
-
+  //cv::namedWindow("rectified", cv::WINDOW_AUTOSIZE);
   // cv::namedWindow("RectLeft", cv::WINDOW_NORMAL);
   // cv::namedWindow("RectRight", cv::WINDOW_NORMAL);
 
@@ -274,8 +359,8 @@ int main(__attribute__((unused)) int argc, __attribute__((unused)) char *argv[])
   nh.param<std::string>("pub_point_right", param_point_right, "/pose/2d_right");
   nh.param<std::string>("pub_robot_transform", param_robot_transform, "/robot_transform");
 
-  loadYAMLparameters(param_yaml_path_left, cameraMatrixLeft, distCoeffsLeft, rectMatrixLeft);
-  loadYAMLparameters(param_yaml_path_right, cameraMatrixRight, distCoeffsRight, rectMatrixRight);
+  loadYAMLparameters(param_yaml_path_left, cameraMatrixLeft, distCoeffsLeft, rectMatrixLeft, translationVectorLeft, rotationMatrixLeft);
+  loadYAMLparameters(param_yaml_path_right, cameraMatrixRight, distCoeffsRight, rectMatrixRight, translationVectorRight, rotationMatrixRight);
 
   pub_point_left = nh.advertise<geometry_msgs::PointStamped>(param_point_left, 1);
   pub_point_right = nh.advertise<geometry_msgs::PointStamped>(param_point_right, 1);
