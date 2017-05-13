@@ -89,7 +89,7 @@ void QToTransform(caros_control_msgs::RobotState &Q_state){
   pub_transform.publish(qStateTransformed);
 }
 
-void CallBackFuncLeft(int event, int x, int y, int flags, void* userdata){
+void CallBackFuncLeft(__attribute__((unused))int event, int x, int y, __attribute__((unused))int flags, __attribute__((unused))void* userdata){
   if ( flags == cv::EVENT_FLAG_LBUTTON ){
     pose2DLeft.point.x = x;
     pose2DLeft.point.y = y;
@@ -98,7 +98,7 @@ void CallBackFuncLeft(int event, int x, int y, int flags, void* userdata){
   }
 }
 
-void CallBackFuncRight(int event, int x, int y, int flags, void* userdata){
+void CallBackFuncRight(__attribute__((unused)) int event, __attribute__((unused)) int x, int y, __attribute__((unused))int flags, __attribute__((unused))void* userdata){
   if ( flags == cv::EVENT_FLAG_LBUTTON ){
     pose2DRight.point.x = x;
     pose2DRight.point.y = y;
