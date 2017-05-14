@@ -13,6 +13,7 @@ class Kalman_Estimator
         ros::Subscriber sub;
         ros::Publisher pub_filtered;
         ros::Publisher pub_raw;
+        ros::Publisher pub_reset;
         bool test_reset(Eigen::Vector3d &cur_speed, Eigen::Vector3d &acc);
         tf2::Stamped<Eigen::Vector3d> prev_points[3]; //The three previosly recieved points
         Eigen::VectorXd cur_state;

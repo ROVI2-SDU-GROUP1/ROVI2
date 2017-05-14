@@ -4,6 +4,7 @@
 #include <rovi2_development/Trajectory3D.h>
 #include <kalman_estimator_node.hpp>
 #include <chrono>
+#include <std_msgs/Bool.h>
 
 tf2::Stamped<Eigen::Vector3d> pointstamped_to_vector3d(geometry_msgs::PointStamped &in)
 {
@@ -135,6 +136,9 @@ void Kalman_Estimator::pose_callback( __attribute__((unused)) const geometry_msg
   if(this->test_reset(cur_speed, acc))
   {
       this->position_count = 1;
+      std_msgs::Bool reset_msg;
+      reset_msg.data = true;
+      this->pub_reset.publish(reset_msg);
       this->reset();
       std::cout << "kalman state have been reset!" << std::endl;
       return;
@@ -185,6 +189,7 @@ Kalman_Estimator::Kalman_Estimator()
 : sub(nh.subscribe<geometry_msgs::PointStamped>("/pose/3d",5, &Kalman_Estimator::pose_callback, this)),
   pub_filtered(nh.advertise<rovi2_development::Trajectory3D>("/pose/parameter",5)),
   pub_raw(nh.advertise<rovi2_development::Trajectory3D>("/pose/parameter_raw",5)),
+  pub_reset(nh.advertise<std_msgs::Bool>("kalman/reset", 5)),
 
   cur_state(9)
 {

@@ -79,7 +79,7 @@ std::vector<cv::Point2f> fast_undistort(std::vector<cv::Point2f> &input_points)
     return output_points;
 }
 // state subscriber
-void find2DPose_CV(cv::Mat &img, const sensor_msgs::Image::ConstPtr& msg, bool overwrite = true)
+void find2DPose_CV(cv::Mat &img, const sensor_msgs::Image::ConstPtr& msg, __attribute__((unused)) bool overwrite = true)
 {
     //auto time_start = std::chrono::high_resolution_clock::now();
     cv::Mat &imageUndistorted = img;
@@ -104,6 +104,7 @@ void find2DPose_CV(cv::Mat &img, const sensor_msgs::Image::ConstPtr& msg, bool o
 
     opening(threshold);
     closing(threshold);
+    //cv::imshow("thres", threshold);
 
     std::vector<std::vector<cv::Point> > cont;
     std::vector<cv::Vec4i> hier;
@@ -142,7 +143,7 @@ void find2DPose_CV(cv::Mat &img, const sensor_msgs::Image::ConstPtr& msg, bool o
     cv::circle(imageUndistorted, imgCoord, 10, cv::Scalar(0, 255, 0), 2);
 
     //  cv::imshow("Distorted", imageBGR);
-    cv::imshow("t1", imageUndistorted);
+    //cv::imshow("t1", imageUndistorted);
     cv::waitKey(1);
 
     point_pub.publish(point);
