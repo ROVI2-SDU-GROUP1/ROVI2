@@ -33,11 +33,12 @@ Hand_to_eye_node::Hand_to_eye_node( int argc, char *argv[]){
 
     _state = _wc->getDefaultState();
 
-    cv::namedWindow("Leftimage", cv::WINDOW_AUTOSIZE);
-    cv::namedWindow("Rightimage", cv::WINDOW_AUTOSIZE);
-    cv::setMouseCallback("Leftimage", CallBackFuncLeft, NULL);
-    cv::setMouseCallback("Rightimage", CallBackFuncRight, NULL);
-
+    if(param_show_images){
+      cv::namedWindow("Leftimage", cv::WINDOW_AUTOSIZE);
+      cv::namedWindow("Rightimage", cv::WINDOW_AUTOSIZE);
+      cv::setMouseCallback("Leftimage", CallBackFuncLeft, NULL);
+      cv::setMouseCallback("Rightimage", CallBackFuncRight, NULL);
+    }
     std::string param_yaml_path_left;
     std::string param_yaml_path_right;
     std::string param_image_left;
@@ -182,8 +183,8 @@ void Hand_to_eye_node::image_sync_callback(const sensor_msgs::Image::ConstPtr &i
   cv::Mat tmp_l = cv_ptr_left->image.clone();
   cv::Mat tmp_r = cv_ptr_right->image.clone();
 
-  cv::Mat img_l;
-  cv::Mat img_r;
+  cv::Mat img_l = tmp_l;
+  cv::Mat img_r = tmp_r;
   if(param_rectify_images){
     remap(tmp_l, img_l, map1Left, map2Left, cv::INTER_LINEAR);
     remap(tmp_r, img_r, map1Right, map2Right, cv::INTER_LINEAR);
@@ -204,14 +205,12 @@ void Hand_to_eye_node::image_sync_callback(const sensor_msgs::Image::ConstPtr &i
   if(param_show_images){
       img_r = Undistored(tmp_r, cameraMatrixRight, distCoeffsRight);
       cv::imshow("Rightimage", img_r );
+      cv::waitKey(1);
   }
   if(param_save_images){
     cv::imwrite( filename.c_str(), img_r );
-  }else{
-
   }
 
-  cv::waitKey(1);
 
   if (leftPressed and rightPressed) {
     pub_point_left.publish(pose2D_Left);
