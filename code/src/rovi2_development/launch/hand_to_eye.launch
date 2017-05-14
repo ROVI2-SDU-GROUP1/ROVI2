@@ -1,6 +1,6 @@
 <launch>
-	<arg name="param_calib_left"  value="back/left.yaml" />
-	<arg name="param_calib_right" value="back/right.yaml" />
+	<arg name="param_calib_left"  value="front/left.yaml" />
+	<arg name="param_calib_right" value="front/right.yaml" />
 
 
 	<!-- Hand to eye calibration node -->
@@ -15,8 +15,9 @@
 		<param name="pub_point_left" value="/pose/2d_left" />
 		<param name="pub_point_right" value="/pose/2d_right" />
 
+		<param name="show_images" value="true"/>
 		<param name="save_images" value="false"/>
-		<param name="rectify_images" value="true"/>
+		<param name="rectify_images" value="false"/>
 		<param name="save_images_path_left" value="/tmp/back/left"/>
 		<param name="save_images_path_right" value="/tmp/back/right"/>
 

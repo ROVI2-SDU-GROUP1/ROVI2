@@ -1,11 +1,11 @@
 clear;clc
 %   Load the calibration file
-load('/home/mneerup/SDU/Skole/8.Semester/ROVI/code/src/rovi2_development/calibrations/back/calibrationSession.mat')
+load('/home/theis/calibrationSession2.mat')
 stereoParams = stereoParameters(calibrationSession.CameraParameters.CameraParameters1,calibrationSession.CameraParameters.CameraParameters2,calibrationSession.CameraParameters.RotationOfCamera2,calibrationSession.CameraParameters.TranslationOfCamera2);
 
 %   Choose filenames
-filenameLeft = '/home/mneerup/SDU/Skole/8.Semester/ROVI/code/src/rovi2_development/calibrations/back/left.yaml';
-filenameRight = '/home/mneerup/SDU/Skole/8.Semester/ROVI/code/src/rovi2_development/calibrations/back/right.yaml';
+filenameLeft = '/home/theis/workspace/ROVI2/code/src/rovi2_development/calibrations/front/left.yaml';
+filenameRight = '/home/theis/workspace/ROVI2/code/src/rovi2_development/calibrations/front/right.yaml';
 
 %   Set width and height
 width = 1024;
@@ -13,10 +13,9 @@ height = 768;
 
 %   Print to files
 for i = 1:2
-   if i == 1
+    if i == 1
         %   Save left camera YAML
         %       Create the matrices
-        % Parameters from ROS-yaml file.
         filename = filenameLeft;
         intrinsic = stereoParams.CameraParameters1.IntrinsicMatrix;
         cameraMatrix = reshape( intrinsic,1,9);
@@ -25,8 +24,7 @@ for i = 1:2
         projectionMatrix = reshape( ([intrinsic' zeros(3,1)] * eye(4))', 1, 12 );
         translationVector = [0; 0; 0];
         rotationMatrix = [1 0 0; 0 1 0; 0 0 1];
-
-   else
+    else
         %   Save right camera YAML
         %       Create the matrices
         filename = filenameRight;
@@ -37,7 +35,7 @@ for i = 1:2
         projectionMatrix = reshape( ( [intrinsic' zeros(3,1)] * [stereoParams.RotationOfCamera2' stereoParams.TranslationOfCamera2'; zeros(1,3) 1] )', 1, 12);
         translationVector = stereoParams.TranslationOfCamera2;
         rotationMatrix = reshape(stereoParams.RotationOfCamera2,1,9);
-   end
+    end
 
     fileID = fopen(filename, 'w');
 
@@ -48,7 +46,7 @@ for i = 1:2
     else
         fprintf(fileID, 'camera_name: narrow_stereo/right\n');
     end
-   fprintf(fileID, 'camera_matrix:\n');
+    fprintf(fileID, 'camera_matrix:\n');
     fprintf(fileID, '  rows: 3\n');
     fprintf(fileID, '  cols: 3\n');
     fprintf(fileID, '  data: ['); 
@@ -72,7 +70,7 @@ for i = 1:2
     commaSeperatedMatrix = sprintf('%f,' , rectificationMatrix);
     fprintf(fileID, '%s ',commaSeperatedMatrix(1:end-1));
     fprintf(fileID, ']\n');
-    
+
     fprintf(fileID, 'projection_matrix:\n');
     fprintf(fileID, '  rows: 3\n');
     fprintf(fileID, '  cols: 4\n');
@@ -80,8 +78,8 @@ for i = 1:2
     commaSeperatedMatrix = sprintf('%f,' , projectionMatrix);
     fprintf(fileID, '%s ',commaSeperatedMatrix(1:end-1));
     fprintf(fileID, ']\n');
-    
-    
+
+
     fprintf(fileID, 'translation_vector:\n');
     fprintf(fileID, '  rows: 3\n');
     fprintf(fileID, '  cols: 1\n');
@@ -89,8 +87,8 @@ for i = 1:2
     commaSeperatedMatrix = sprintf('%f,' , translationVector);
     fprintf(fileID, '%s ',commaSeperatedMatrix(1:end-1));
     fprintf(fileID, ']\n');
-    
-        
+
+
     fprintf(fileID, 'rotation_matrix:\n');
     fprintf(fileID, '  rows: 3\n');
     fprintf(fileID, '  cols: 3\n');

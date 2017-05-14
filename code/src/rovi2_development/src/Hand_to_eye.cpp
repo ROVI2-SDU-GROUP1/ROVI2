@@ -5,6 +5,7 @@ geometry_msgs::PointStamped pose2D_Right;
 
 bool leftPressed = false;
 bool rightPressed = false;
+
 Hand_to_eye_node::Hand_to_eye_node( int argc, char *argv[]){
     _wc = rw::loaders::WorkCellLoader::Factory::load(SCENE_FILE);
     _device = _wc->findDevice("UR1");
@@ -46,7 +47,6 @@ Hand_to_eye_node::Hand_to_eye_node( int argc, char *argv[]){
     std::string param_robot_transform;
     std::string param_robot_state_sub;
 
-
     nh.param<std::string>("calibration_yaml_path_left", param_yaml_path_left, "default.yaml");
     nh.param<std::string>("calibration_yaml_path_right", param_yaml_path_right, "default.yaml");
     nh.param<std::string>("image_left", param_image_left, "/camera/left/image_raw");
@@ -54,20 +54,30 @@ Hand_to_eye_node::Hand_to_eye_node( int argc, char *argv[]){
     nh.param<std::string>("sub_robot_state", param_robot_state_sub, "/ur_simple_demo_node/caros_serial_device_service_interface/robot_state");
     nh.param<std::string>("pub_point_left", param_point_left, "/pose/2d_left");
     nh.param<std::string>("pub_point_right", param_point_right, "/pose/2d_right");
+    nh.param<bool>("show_images", param_show_images, false);
     nh.param<bool>("save_images", param_save_images, false);
     nh.param<bool>("rectify_images", param_rectify_images, false);
     nh.param<std::string>("save_images_path_left", param_save_images_path_left, "/tmp/");
     nh.param<std::string>("save_images_path_right", param_save_images_path_right, "/tmp/");
 
-
     ROS_INFO("Use rectification: %d", param_rectify_images);
     ROS_INFO("Save images: %d", param_save_images);
+    ROS_INFO("Show images: %d", param_show_images);
 
-    std::string abs_yaml_path_right = std::string(CALIBRATION_DIR) + param_yaml_path_left;
     std::string abs_yaml_path_left = std::string(CALIBRATION_DIR) + param_yaml_path_left;
+    std::string abs_yaml_path_right = std::string(CALIBRATION_DIR) + param_yaml_path_right;
 
     YAMLCalibration yaml_calib_left(abs_yaml_path_left);
     YAMLCalibration yaml_calib_right(abs_yaml_path_right);
+
+    image_height = yaml_calib_left.get_height();
+    image_width = yaml_calib_left.get_width();
+
+    cameraMatrixLeft = yaml_calib_left.get_camera_matrix();
+    distCoeffsLeft = yaml_calib_left.get_distortion_coeffs();
+    rectMatrixLeft = yaml_calib_left.get_rect_matrix();
+    translationVectorLeft = yaml_calib_left.get_translation_vector();
+    rotationMatrixLeft = yaml_calib_left.get_rotation_matrix();
 
     cameraMatrixRight = yaml_calib_right.get_camera_matrix();
     distCoeffsRight = yaml_calib_right.get_distortion_coeffs();
@@ -75,17 +85,10 @@ Hand_to_eye_node::Hand_to_eye_node( int argc, char *argv[]){
     translationVectorRight = yaml_calib_right.get_translation_vector();
     rotationMatrixRight = yaml_calib_right.get_rotation_matrix();
 
-    cameraMatrixLeft = yaml_calib_left.get_camera_matrix();
-    distCoeffsLeft = yaml_calib_left.get_distortion_coeffs();
-    rectMatrixLeft = yaml_calib_left.get_rect_matrix();
-    translationVectorLeft = yaml_calib_left.get_translation_vector();
-    rotationMatrixLeft = yaml_calib_left.get_rotation_matrix();
-    image_height = yaml_calib_left.get_height();
-    image_width = yaml_calib_left.get_width();
-
     if(param_rectify_images){
       initRectifyMatrix();
     }
+
     pub_point_left = nh.advertise<geometry_msgs::PointStamped>(param_point_left, 1);
     pub_point_right = nh.advertise<geometry_msgs::PointStamped>(param_point_right, 1);
     pub_transform = nh.advertise<geometry_msgs::TransformStamped>(param_robot_transform, 1);
@@ -191,16 +194,22 @@ void Hand_to_eye_node::image_sync_callback(const sensor_msgs::Image::ConstPtr &i
 
   // Left
   std::string filename = param_save_images_path_left + "/left-" + std::to_string(i) + ".png";
-  cv::imshow("Leftimage", img_l);
+  if(param_show_images){
+      cv::imshow("Leftimage", img_l);
+  }
   if(param_save_images){
     cv::imwrite( filename.c_str(), img_l );
   }
 
   // Right
   filename = param_save_images_path_right + "/right-" + std::to_string(i++) + ".png";
-  cv::imshow("Rightimage", img_r );
+  if(param_show_images){
+      cv::imshow("Rightimage", img_r );
+  }
   if(param_save_images){
     cv::imwrite( filename.c_str(), img_r );
+  }else{
+
   }
 
   cv::waitKey(1);

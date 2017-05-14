@@ -64,6 +64,7 @@ private:
   int image_width;
   int image_height;
 
+  bool param_show_images;
   bool param_save_images;
   bool param_rectify_images;
 
