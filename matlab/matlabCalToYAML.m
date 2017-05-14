@@ -1,13 +1,13 @@
 clear;clc
 %   Load the calibration file
-load('back_calib.mat')
+load('front_calib.mat')
 stereoParams = stereoParameters(calibrationSession.CameraParameters.CameraParameters1,calibrationSession.CameraParameters.CameraParameters2,calibrationSession.CameraParameters.RotationOfCamera2,calibrationSession.CameraParameters.TranslationOfCamera2);
 
 %   Choose filenames
 path = strcat('/home/', getenv('USER'),'/ROVI2/code/src/rovi2_development/calibrations/');
 
-filenameLeft = strcat(path, '/back/left.yaml');
-filenameRight = strcat(path, '/back/right.yaml');
+filenameLeft = strcat(path, '/front/left.yaml');
+filenameRight = strcat(path, '/front/right.yaml');
 
 %   Set width and height
 width = 1024;
