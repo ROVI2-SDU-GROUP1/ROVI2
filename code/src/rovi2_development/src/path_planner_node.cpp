@@ -23,7 +23,6 @@
 #include <mutex>
 #include <limits>
 
-
 bool compare_paths(std::vector<RT_Node *> path1, std::vector<RT_Node *> path2)
 { //Return false if the paths are different, true if equal
     if(path1.size() != path2.size()) return false;
@@ -166,6 +165,7 @@ class RobotPlanner
         bool update_agent = false;
         bool update_goal = false;
         bool updated_path = false;
+        bool first_run = true;
         rw::math::Q current_q;
         rw::math::Q next_goal;
         std::pair<RT_Node *, RT_Node *> current_edge;
@@ -233,7 +233,7 @@ void RobotPlanner::SendQ(rw::math::Q q)
     Q.data.push_back( q[4] );
     Q.data.push_back( q[5] );
     srv.request.targets.push_back(Q);
-    srv.request.speeds.push_back(999);
+    srv.request.speeds.push_back(0.001);
 
 	if (ur_service.call(srv)){
 		ROS_INFO("CAROS ROSPONSE: %d", srv.response.success);
@@ -247,12 +247,11 @@ void RobotPlanner::rt_rrt_runner(void)
 {
     while(true)
     {
-        //If we have not found a trajectory for the ball yet, start building a tree to 0,0,40 (x,y,z)
-        //this->rt_rrt_star_planner(q_1, q_2, p_constraint, sampler, metric, device);
-        //We start the rrt now!
-        std::chrono::milliseconds time_to_solve{50};
+        //Adjust goal and agent position if requested.
+        std::cout << "rrt_runner" << std::endl;
         if(this->update_goal == true)
         {
+            std::cout << "updating the goal" << std::endl;
             this->cur_q_lock.lock();
             rw::math::Q new_goal = this->next_goal;
             this->rt_rrt_star_planner->set_new_goal(new_goal);
@@ -282,13 +281,16 @@ void RobotPlanner::rt_rrt_runner(void)
                 this->next_path_lock.unlock();
             }
         }
-        auto new_path = this->rt_rrt_star_planner->find_next_path(time_to_solve, true);
+
+        //We start the rrt now!
+        std::chrono::milliseconds time_to_solve{50};
+        auto new_path = this->rt_rrt_star_planner->find_next_path(time_to_solve, this->first_run);
         for(auto node : new_path)
         {
             std::cout << node->getValue() << std::endl;
         }
         std::cout << std::endl;
-        //Simulate update of q
+
         this->next_path_lock.lock();
         if(!compare_paths(this->next_path, new_path))
         {
@@ -311,33 +313,26 @@ void RobotPlanner::rob_state_callback(const caros_control_msgs::RobotState::Cons
     //We find out if we want to set a new configuration on the robot
     this->next_path_lock.lock();
     std::pair<RT_Node *, RT_Node *> tmp_edge = this->current_edge;
-    if(this->cur_path.size() == 0 or this->current_edge.second == nullptr)
+
+    if(this->updated_path)
     {   //We are not moving between any edges at all atm. If there is a path ready, use it!
-        if(this->next_path.size())
+        if(this->next_path.size() >= 2)
         {
+            this->updated_path = false;
             this->cur_path = this->next_path;
             this->current_edge = {this->cur_path[0], this->cur_path[1]};
+            this->SendQ(this->current_edge.second->getValue());
         }
     }
     this->next_path_lock.unlock();
     if(this->current_edge.second == nullptr) return;
     if(tmp_edge.second == nullptr)
     {
-        //this->SendQ(this->current_edge.second->getValue());
+        this->SendQ(this->current_edge.second->getValue());
         return;
     }
-    //Now all about initiasing the movement should have been handled.
 
-    //If path has been updated, force the new edge to be the start of this.
-    this->next_path_lock.lock();
-    if(this->updated_path)
-    {
-        this->updated_path = false;
-        this->cur_path = this->next_path;
-        this->current_edge = {this->cur_path[0], this->cur_path[1]};
-        //this->SendQ(this->current_edge.second->getValue());
-    }
-    this->next_path_lock.unlock();
+    //Now all about initiasing the movement should have been handled.
 
     //Check if we have reached the end of the current edge, and if so, choose the next.
     std::cout << (tmp_q - tmp_edge.second->getValue()).norm2() << std::endl;
@@ -351,7 +346,7 @@ void RobotPlanner::rob_state_callback(const caros_control_msgs::RobotState::Cons
                 {
                     this->next_path_lock.lock();
                     this->current_edge = {this->cur_path[i], this->cur_path[i + 1]};
-                    //this->SendQ(this->current_edge.second->getValue());
+                    this->SendQ(this->current_edge.second->getValue());
                     this->next_path_lock.unlock();
                 }
             }
@@ -375,10 +370,11 @@ void RobotPlanner::trajectory_callback(const rovi2_development::Trajectory3D &pa
     rw::math::Q _next_goal = this->find_new_goal(plane, trajectory, &new_goal);
     if(new_goal)
     {
-        this->SendQ(_next_goal);
+        //this->SendQ(_next_goal);
         std::cout << "Next goal should be: " << _next_goal << std::endl;
         //Update the goal, agent, and force a replanning of the path
         geometry_msgs::PointStamped pose3D;
+        this->first_run = false;
         pose3D.point.x = this->last_goal_point[0];
         pose3D.point.y = this->last_goal_point[1];
         pose3D.point.z = this->last_goal_point[2];

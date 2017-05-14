@@ -91,15 +91,15 @@ class Trajectory_Plotter:
         plane_point  = np.array([0, -0.3, 0])
         plane_normal = np.array([0.000001, 1, 0.000001])
         plot_plane(ax, plane_point, plane_normal)
-        while(len(self.raw_points) < 200):
+        while(len(self.raw_points) < 200 or True):
             with self.lock:
                 if(last_plot is not None): last_plot.remove()
                 if(last_points is not None):
                     for p in last_points: p.remove()
                 if(len(self.filtered_trajectories) == 0):
                     continue
-                if(len(self.raw_points) == 0):
-                    continue
+                #if(len(self.raw_points) == 0):
+                #    continue
 
                 last_traj = self.filtered_trajectories[-1]
                 t = np.linspace(- 1,  1, 1000)

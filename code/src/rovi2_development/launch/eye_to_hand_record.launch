@@ -1,0 +1,62 @@
+<launch>
+  <!-- Define machines -->
+	<machine name="Cell3" address="192.168.100.53" user="rovi2" password="student" />
+
+  <!-- use something like set_workcell:=0 (to disable setting a workcell using this launch script), or specify a specific workcell using workcell_path:=/path/to/the/workcell on the roslaunch commandline -->
+  <arg name="set_workcell" default="1" />
+  <group if="$(arg set_workcell)">
+    <arg name="workcell_path" default="$(env RW_ROOT)/example/ModelData/XMLScenes/RobotOnTable/Scene.xml" />
+    <param name="/caros/workcell" value="$(arg workcell_path)" />
+  </group>
+
+  <group>
+    <include file="$(find caros_universalrobot)/launch/caros_universalrobot_param.xml" ns="caros_universalrobot">
+      <!-- No parameters have to be set - relying on default values, but they are highly dependent on the workcell that is being used -->
+    </include>
+    <!-- The 'name' parameter has to match the 'ns' parameter used in the include tag above -->
+    <node pkg="caros_universalrobot" type="caros_universalrobot_node" name="caros_universalrobot">
+    </node>
+  </group>
+
+
+
+  <arg name="camera_name" default="camera" />
+  <arg name="bumblebee_serial" default="0" />
+  <arg name="calibrated" default="0" />
+
+  <group ns="$(arg camera_name)">
+    <node pkg="nodelet" type="nodelet" name="bumblebee_nodelet_manager" args="manager" />
+
+
+    <node pkg="nodelet" type="nodelet" name="bumblebee_nodelet" machine="Cell3"
+          args="load pointgrey_camera_driver/PointGreyStereoCameraNodelet bumblebee_nodelet_manager" >
+      <param name="frame_id" value="bumblebee" />
+      <param name="frame_rate" value="20" />
+      <param name="first_namespace" value="left" />
+      <param name="second_namespace" value="right" />
+      <param name="format7_color_coding" value="raw16" />
+      <param name="serial" value="$(arg bumblebee_serial)" />
+           
+
+
+      <!-- Use the camera_calibration package to create these files -->
+      <param name="camera_info_url" if="$(arg calibrated)"
+             value="file://$(env HOME)/.ros/camera_info/$(arg bumblebee_serial).yaml" />
+      <param name="second_info_url" if="$(arg calibrated)"
+             value="file://$(env HOME)/.ros/camera_info/$(arg bumblebee_serial)_right.yaml" />
+    </node>
+    <node pkg="nodelet" type="nodelet" name="image_proc_debayer_left"
+        args="load image_proc/debayer bumblebee_nodelet_manager">
+      <remap from="image_raw" to="left/image_raw"/>
+      <remap from="image_mono" to="left/image_mono"/>
+      <remap from="image_color" to="left/image_color"/>
+    </node>
+    <node pkg="nodelet" type="nodelet" name="image_proc_debayer_right"
+        args="load image_proc/debayer bumblebee_nodelet_manager">
+      <remap from="image_raw" to="right/image_raw"/>
+      <remap from="image_mono" to="right/image_mono"/>
+      <remap from="image_color" to="right/image_color"/>
+    </node>
+  </group>
+
+</launch>
