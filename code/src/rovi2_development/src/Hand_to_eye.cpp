@@ -28,7 +28,7 @@ Hand_to_eye_node::Hand_to_eye_node( int argc, char *argv[]){
     std::string FindFrame = "WSG50.TCP";
     TcpFrame = (rw::kinematics::MovableFrame*)_wc->findFrame(FindFrame);
     if(TcpFrame == NULL){
-      ROS_WARN("Frame %s not found!",FindFrame);
+      ROS_WARN("Frame %s not found!",FindFrame.c_str());
     }
 
     _state = _wc->getDefaultState();
