@@ -62,7 +62,7 @@ Hand_to_eye_node::Hand_to_eye_node( int argc, char *argv[]){
 
     ROS_INFO("Use rectification: %d", param_rectify_images);
     ROS_INFO("Save images: %d", param_save_images);
-    
+
     std::string abs_yaml_path_right = std::string(CALIBRATION_DIR) + param_yaml_path_left;
     std::string abs_yaml_path_left = std::string(CALIBRATION_DIR) + param_yaml_path_left;
 
@@ -90,13 +90,13 @@ Hand_to_eye_node::Hand_to_eye_node( int argc, char *argv[]){
     pub_point_right = nh.advertise<geometry_msgs::PointStamped>(param_point_right, 1);
     pub_transform = nh.advertise<geometry_msgs::TransformStamped>(param_robot_transform, 1);
 
-    message_filters::Subscriber<sensor_msgs::Image> sub_image_left(nh, param_image_left, 1);
-    message_filters::Subscriber<sensor_msgs::Image> sub_image_right(nh, param_image_right, 1);
+    sub_image_left =  new message_filters::Subscriber<sensor_msgs::Image>(nh, param_image_left, 1);
+    sub_image_right = new message_filters::Subscriber<sensor_msgs::Image>(nh, param_image_right, 1);
 
-    ros::Subscriber sub = nh.subscribe(param_robot_state_sub, 1, &Hand_to_eye_node::robot_state_q_callback, this);
+    sub_q_callback = nh.subscribe(param_robot_state_sub, 1, &Hand_to_eye_node::robot_state_q_callback, this);
 
-    message_filters::TimeSynchronizer<sensor_msgs::Image, sensor_msgs::Image> sync(sub_image_left, sub_image_right, 20);
-    sync.registerCallback(boost::bind(&Hand_to_eye_node::image_sync_callback,this, _1, _2));
+    sync_obj = new message_filters::TimeSynchronizer<sensor_msgs::Image, sensor_msgs::Image>(*sub_image_left, *sub_image_right, 20);
+    sync_obj->registerCallback(boost::bind(&Hand_to_eye_node::image_sync_callback,this, _1, _2));
 }
 
 

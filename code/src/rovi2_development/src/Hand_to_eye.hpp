@@ -74,6 +74,14 @@ private:
   ros::Publisher pub_point_right;
   ros::Publisher pub_transform;
 
+
+  ros::Subscriber sub_q_callback;
+  message_filters::Subscriber<sensor_msgs::Image>* sub_image_left;
+  message_filters::Subscriber<sensor_msgs::Image>* sub_image_right;
+
+
+  message_filters::TimeSynchronizer<sensor_msgs::Image, sensor_msgs::Image> *sync_obj;
+
   rw::models::WorkCell::Ptr _wc;
   rw::models::Device::Ptr _device;
   rw::kinematics::State _state;
