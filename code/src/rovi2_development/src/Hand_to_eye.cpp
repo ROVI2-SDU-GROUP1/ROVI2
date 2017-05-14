@@ -187,14 +187,12 @@ void Hand_to_eye_node::image_sync_callback(const sensor_msgs::Image::ConstPtr &i
   if(param_rectify_images){
     remap(tmp_l, img_l, map1Left, map2Left, cv::INTER_LINEAR);
     remap(tmp_r, img_r, map1Right, map2Right, cv::INTER_LINEAR);
-  } else {
-    img_l = Undistored(tmp_l, cameraMatrixLeft, distCoeffsLeft);
-    img_r = Undistored(tmp_r, cameraMatrixRight, distCoeffsRight);
   }
 
   // Left
   std::string filename = param_save_images_path_left + "/left-" + std::to_string(i) + ".png";
   if(param_show_images){
+      img_l = Undistored(tmp_l, cameraMatrixLeft, distCoeffsLeft);
       cv::imshow("Leftimage", img_l);
   }
   if(param_save_images){
@@ -204,6 +202,7 @@ void Hand_to_eye_node::image_sync_callback(const sensor_msgs::Image::ConstPtr &i
   // Right
   filename = param_save_images_path_right + "/right-" + std::to_string(i++) + ".png";
   if(param_show_images){
+      img_r = Undistored(tmp_r, cameraMatrixRight, distCoeffsRight);
       cv::imshow("Rightimage", img_r );
   }
   if(param_save_images){
