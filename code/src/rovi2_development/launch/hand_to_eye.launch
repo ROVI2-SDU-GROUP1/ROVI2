@@ -1,16 +1,26 @@
 <launch>
+	<arg name="param_calib_left"  value="back/left.yaml" />
+	<arg name="param_calib_right" value="back/right.yaml" />
+
 
 	<!-- Hand to eye calibration node -->
 	<node pkg="rovi2_development" type="hand_to_eye" name="hand_to_eye_calibration" output="screen">
 		<param name="image_left" value="/camera/left/image_raw" />
 		<param name="image_right" value="/camera/right/image_raw" />
 		<param name="sub_robot_state" value="/ur_simple_demo_node/caros_serial_device_service_interface/robot_state" />
-		<param name="calibration_yaml_path_left" value="left_front.yaml" />
-		<param name="calibration_yaml_path_right" value="right_front.yaml" />
+		<param name="calibration_yaml_path_left" value="$(arg param_calib_left)" />
+		<param name="calibration_yaml_path_right" value="$(arg param_calib_right)" />
 
 		<param name="pub_robot_transform" value="/q_state_processed" />
 		<param name="pub_point_left" value="/pose/2d_left" />
 		<param name="pub_point_right" value="/pose/2d_right" />
+
+		<param name="show_images" value="true"/>
+		<param name="save_images" value="false"/>
+		<param name="rectify_images" value="false"/>
+		<param name="save_images_path_left" value="/tmp/back/left"/>
+		<param name="save_images_path_right" value="/tmp/back/right"/>
+
 	</node>
 
 	<!-- Stereo node -->
@@ -18,8 +28,8 @@
 		<param name="point_sub_left" value="/pose/2d_left" />
 		<param name="point_sub_right" value="/pose/2d_right" />
 		<param name="point_pub" value="/pose/3d" />
-		<param name="calibration_yaml_path_left" value="left_front.yaml" />
-		<param name="calibration_yaml_path_right" value="right_front.yaml" />
+		<param name="calibration_yaml_path_left" value="$(arg param_calib_left)" />
+		<param name="calibration_yaml_path_right" value="$(arg param_calib_right)" />
 	</node>
 
 	<!-- Logger node -->

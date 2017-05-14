@@ -28,8 +28,6 @@ find_package(OpenCV)
    geometry_msgs
  )
 
-
-
 ########## RobWork ############
 # Used to resolve absolute path names
 SET(ROOT ${CMAKE_CURRENT_SOURCE_DIR})
@@ -89,10 +87,15 @@ add_executable(image_detector src/image_detector_node.cpp)
 add_dependencies(image_detector ${catkin_EXPORTED_TARGETS})
 target_link_libraries(image_detector ${OpenCV_LIBS} ${catkin_LIBRARIES} yaml-cpp)
 
+# YAML library
+add_library(YAML SHARED src/YAMLCalibration/YAMLCalibration.cpp)
+target_link_libraries(YAML ${OpenCV_LIBS} ${catkin_LIBRARIES} yaml-cpp)
+
+
 # Hand to eye
-add_executable(hand_to_eye src/hand_to_eye_calibration_node.cpp)
+add_executable(hand_to_eye src/hand_to_eye_calibration_node.cpp src/Hand_to_eye.cpp)
 add_dependencies(hand_to_eye ${catkin_EXPORTED_TARGETS})
-target_link_libraries(hand_to_eye ${OpenCV_LIBS} ${catkin_LIBRARIES} ${ROBWORK_LIBRARIES} yaml-cpp)
+target_link_libraries(hand_to_eye ${OpenCV_LIBS} ${catkin_LIBRARIES} ${ROBWORK_LIBRARIES} YAML)
 
 # Stereo node
 add_executable(stereo src/stereo_node.cpp)
@@ -103,6 +106,11 @@ target_link_libraries(stereo ${OpenCV_LIBS} ${catkin_LIBRARIES} yaml-cpp)
 add_executable(kalman_node src/kalman_estimator_node.cpp)
 add_dependencies(kalman_node ${catkin_EXPORTED_TARGETS})
 target_link_libraries(kalman_node ${OpenCV_LIBS} ${EIGEN3_LIBS} ${catkin_LIBRARIES})
+
+# Publish image node
+add_executable(publish_image_node src/image_publisher.cpp)
+add_dependencies(publish_image_node ${catkin_EXPORTED_TARGETS})
+target_link_libraries(publish_image_node ${OpenCV_LIBS} ${EIGEN3_LIBS} ${catkin_LIBRARIES})
 
 # Ball trajectory generator for testing kalman node
 add_executable(ball_traj_tester src/ball_traj_tester.cpp)

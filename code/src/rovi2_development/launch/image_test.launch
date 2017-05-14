@@ -1,16 +1,19 @@
 <launch>
+        <arg name="param_calib_left"  value="back/left.yaml" />
+        <arg name="param_calib_right" value="back/right.yaml" />
+
 	<!-- Left image detector node -->
 	<node pkg="rovi2_development" type="image_detector" name="image_detector_left" output="screen">
 		<param name="image_sub" value="/camera/left/image_raw" />
 		<param name="point_pub" value="/pose/2d_left" />
-		<param name="calibration_yaml_path" value="left_front.yaml" />
+		<param name="calibration_yaml_path" value="$(arg param_calib_left)" />
 	</node>
 
 	<!-- Right image detector node -->
 	<node pkg="rovi2_development" type="image_detector" name="image_detector_right" output="screen" >
 		<param name="image_sub" value="/camera/right/image_raw" />
 		<param name="point_pub" value="/pose/2d_right" />
-		<param name="calibration_yaml_path" value="right_front.yaml" />
+		<param name="calibration_yaml_path" value="$(arg param_calib_right)" />
 	</node>
 
 	<!-- Stereo node -->
@@ -18,5 +21,7 @@
 		<param name="point_sub_left" value="/pose/2d_left" />
 		<param name="point_sub_right" value="/pose/2d_right" />
 		<param name="point_pub" value="/pose/3d" />
+                <param name="calibration_yaml_path_left" value="$(arg param_calib_left)" />
+                <param name="calibration_yaml_path_right" value="$(arg param_calib_right)" />
 	</node>
 </launch>
