@@ -1,10 +1,14 @@
 clc; clear;
 
-data = csvread('~/TEST_hand_to_eye.csv');
+data = csvread('~/hte_back.csv');
 
-robot_points = data(:,1:3);
-camera_points = data(:,4:6);
 
+robot_points = data(:,4:6);
+camera_points = data(:,1:3)/1000;
+
+%%
+scatter3(camera_points(:,1),camera_points(:,2),camera_points(:,3));
+%%
 clc; 
 assert( length(robot_points) == length(camera_points) );
 
