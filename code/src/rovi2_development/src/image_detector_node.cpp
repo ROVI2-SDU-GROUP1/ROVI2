@@ -105,10 +105,13 @@ void find2DPose_CV(cv::Mat &img, const sensor_msgs::Image::ConstPtr& msg, bool o
     std::vector<cv::Vec4i> hier;
     cv::findContours(threshold, cont, hier, CV_RETR_LIST, CV_CHAIN_APPROX_SIMPLE, cv::Point(0, 0) );
     geometry_msgs::PointStamped point;
+    point.point.x = 0;
+    point.point.y = 0;
+    point.header.stamp = msg->header.stamp;
     if (!cont.size()){
       //cv::imshow("t2", imageBGR);
       //cv::waitKey(1);
-      point_pub.publish(point);
+      //point_pub.publish(point);
       return;
     }
     std::vector<cv::Point> largest_contour = cont[0];
