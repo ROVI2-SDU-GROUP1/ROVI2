@@ -1,6 +1,6 @@
 <launch>
-	<arg name="param_calib_left"  value="front/left.yaml" />
-	<arg name="param_calib_right" value="front/right.yaml" />
+	<arg name="param_calib_left"  value="back/left.yaml" />
+	<arg name="param_calib_right" value="back/right.yaml" />
 
 
 	<!-- Hand to eye calibration node -->
