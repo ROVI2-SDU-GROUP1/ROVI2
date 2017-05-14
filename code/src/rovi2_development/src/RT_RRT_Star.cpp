@@ -183,6 +183,7 @@ std::vector<RT_Node *> RT_RRT_Star::find_next_path(std::chrono::milliseconds rrt
     {
         return this->plan_path();
     }
+    std::cout << "attempting to find next path" << std::endl;
 
     auto clock_now = std::chrono::steady_clock::now();
     this->rewire_expand_deadline = clock_now + rrt_time;
@@ -192,11 +193,22 @@ std::vector<RT_Node *> RT_RRT_Star::find_next_path(std::chrono::milliseconds rrt
     while(std::chrono::steady_clock::now() < global_deadline and this->stop == false)
     {
         if(this->found_solution())
+        {
+            std::cout << "expanding and rewirering" << std::endl;
             this->expand_and_rewire();
+            std::cout << "expanding and rewirering done" << std::endl;
+
+        }
         else
+        {
+            std::cout << "rrt_connecting" << std::endl;
             this->connect_trees();
+            std::cout << "rrt_connecting done" << std::endl;
+        }
     }
+    std::cout << "creating path" << std::endl;
     std::vector<RT_Node *> path = this->plan_path();
+    std::cout << "creating path done" << std::endl;
     return path;
 }
 
@@ -534,7 +546,7 @@ std::vector<RT_Node *> RT_RRT_Star::plan_path()
     std::vector<RT_Node *> path;
     if(this->found_solution())
     {   //goal was found
-        std::cout << "We found the goal!" << std::endl;
+        //std::cout << "We found the goal!" << std::endl;
         RT_Node * cur_node = this->closest;
         do {
             path.push_back(cur_node);

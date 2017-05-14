@@ -25,7 +25,7 @@ int main(int argc, char  *argv[]) {
     ros::Publisher pub = nh.advertise<geometry_msgs::PointStamped>("/pose/3d",1);
     ros::Publisher pub_raw = nh.advertise<geometry_msgs::PointStamped>("/pose/3d_true",1);
     std::default_random_engine generator;
-    std::normal_distribution<double> distribution(0,.01);
+    std::normal_distribution<double> distribution(0,.000001);
     ros::Rate r(20); // 5 hz
     std::this_thread::sleep_for(std::chrono::milliseconds(5000));
     start_time = ros::Time::now() ;

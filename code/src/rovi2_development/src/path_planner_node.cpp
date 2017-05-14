@@ -204,6 +204,7 @@ last_goal_point(0,0,0)
 	this->ik_solver->setInterpolatorStep(0.001);
     this->current_q = device->getQ(this->state);
     this->next_goal = device->getQ(this->state);
+    this->SendQ(this->current_q);
     //We have not found a trajectory for the ball yet, start building a tree to 0,0,0.40 (x,y,z)
     rw::math::Vector3D<double> init_goal(0,-0.2, 0.6);
     rw::math::Rotation3D<double> init_rotation( 0,-1,0, 0,0,-1, 1,0,0 );
@@ -212,7 +213,6 @@ last_goal_point(0,0,0)
     std::cout << "trying to solve inverse kinematics" << std::endl;
     std::vector<rw::math::Q> solutions = force_find_ik(this->ik_solver, NewToolPosition, &this->state, this->device);
     std::cout << solutions[0] << std::endl;
-    this->SendQ(solutions[0]);
     std::cout << "solved" << std::endl;
 
     assert(solutions.size());
@@ -248,7 +248,6 @@ void RobotPlanner::rt_rrt_runner(void)
     while(true)
     {
         //Adjust goal and agent position if requested.
-        std::cout << "rrt_runner" << std::endl;
         if(this->update_goal == true)
         {
             std::cout << "updating the goal" << std::endl;
@@ -283,22 +282,24 @@ void RobotPlanner::rt_rrt_runner(void)
         }
 
         //We start the rrt now!
-        std::chrono::milliseconds time_to_solve{50};
+        std::chrono::milliseconds time_to_solve{10000000};
         auto new_path = this->rt_rrt_star_planner->find_next_path(time_to_solve, this->first_run);
-        for(auto node : new_path)
-        {
-            std::cout << node->getValue() << std::endl;
-        }
-        std::cout << std::endl;
 
         this->next_path_lock.lock();
         if(!compare_paths(this->next_path, new_path))
         {
+            for(auto node : new_path)
+            {
+                std::cout << node->getValue() << std::endl;
+            }
+            std::cout << std::endl;
+
             this->next_path = new_path;
             this->updated_path = true;
+            std::cout << "tree size: " << this->rt_rrt_star_planner->get_size()  <<  std::endl;
+
         }
         this->next_path_lock.unlock();
-        std::cout << "tree size: " << this->rt_rrt_star_planner->get_size()  <<  std::endl;
     }
 
 }
@@ -336,7 +337,7 @@ void RobotPlanner::rob_state_callback(const caros_control_msgs::RobotState::Cons
 
     //Check if we have reached the end of the current edge, and if so, choose the next.
     std::cout << (tmp_q - tmp_edge.second->getValue()).norm2() << std::endl;
-    if( (tmp_q - tmp_edge.second->getValue()).norm2() < 0.01)
+    if( (tmp_q - tmp_edge.second->getValue()).norm2() < 0.05)
     {
         for(size_t i = 0; i < this->cur_path.size(); i++)
         {
@@ -438,6 +439,7 @@ rw::math::Q RobotPlanner::find_new_goal(Plane3d intersect_plane, Trajectory3d tr
 
 int main(int argc, char **argv) {
     rw::math::Math::seed(time(NULL)); //seed robwork with current time
+    //std::this_thread::sleep_for(std::chrono::milliseconds(10000));
     ros::init(argc, argv, "rovi2_pathplanner");
     RobotPlanner planner;
     ros::spin();
