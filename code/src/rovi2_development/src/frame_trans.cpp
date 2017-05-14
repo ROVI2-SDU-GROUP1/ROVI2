@@ -7,8 +7,7 @@
 
 
 int main(){
-  std::vector< rwlibs::algorithms::PointPairsRegistration::PointPair > pointPairs;
-
+    std::vector< rwlibs::algorithms::PointPairsRegistration::PointPair > pointPairs;
 
     std::ifstream  data("/home/mneerup/hte_back.csv");
     if(!data.is_open()){
@@ -50,12 +49,15 @@ int main(){
   std::cout << "Num of pointPairs: " << pointPairs.size() << std::endl;
   rw::math::Transform3D<> Trans_camera_in_base = rwlibs::algorithms::PointPairsRegistration::pointPairRegistrationSVD(pointPairs);
 
+  // Write transformation to file
   YAMLCalibration::WriteToYaml(std::string(CALIBRATION_DIR) + "hte.yaml", Trans_camera_in_base);
 
+  // Read transformation from file
   YAMLCalibration hte_calibration(std::string(CALIBRATION_DIR) + "hte.yaml");
   cv::Mat translation_vector = hte_calibration.get_translation_vector();
   cv::Mat rotation_matrix = hte_calibration.get_rotation_matrix();
 
+  // output
   std::cout << translation_vector << std::endl;
   std::cout << rotation_matrix << std::endl;
 
