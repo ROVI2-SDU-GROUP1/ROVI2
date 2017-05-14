@@ -93,6 +93,26 @@ void Kalman_Estimator::update_transition_matrix(double time_step)
 
 }
 
+bool Kalman_Estimator::test_reset(Eigen::Vector3d &cur_speed, Eigen::Vector3d &acc)
+{   //This function tries to guestimatte if it is time for resetting the filter state.
+    if(this->prev_points[0].stamp_ < this->prev_points[1].stamp_)
+    {   //Reset if we have performed timetravel
+        return true;
+    }
+    if((this->prev_points[0].stamp_ - this->prev_points[1].stamp_).toSec() > 1)
+    {   //If there have been more than 1 second between the detections, we reset.
+        return true;
+    }
+    if((this->prev_points[0] -  this->prev_points[1]).norm() > 1.5)
+    {   //If the ball have moved more than 1.5 meter inbetween frames, give up
+        return true;
+    }
+    if(acc.norm() > 50) //If we have to violent acceration, reset
+    {   //If the ball have moved more than 1.5 meter inbetween frames, give up
+        return true;
+    }
+    return false;
+}
 void Kalman_Estimator::pose_callback( __attribute__((unused)) const geometry_msgs::PointStamped::ConstPtr &msg)
 {
   this->position_count++;
@@ -103,20 +123,22 @@ void Kalman_Estimator::pose_callback( __attribute__((unused)) const geometry_msg
   this->prev_points[0] = pointstamped_to_vector3d(this_pt);
   if(position_count < 3) return; //We don't have enough positions yet to estimate the parameters.
                                  //We could probably do a fallback after two samples to some default acceleration parameters
-  if(this->prev_points[0].stamp_ < this->prev_points[1].stamp_)
-  {
-      this->position_count = 1;
-      this->reset();
-      std::cout << "kalman state have been reset!" << std::endl;
-      return;
-  }
+
   //Compute speeds and accelerations
   Eigen::Vector3d cur_speed = (this->prev_points[0] - this->prev_points[1]) / (this->prev_points[0].stamp_ - this->prev_points[1].stamp_).toSec();
   Eigen::Vector3d last_speed = (this->prev_points[1] - this->prev_points[2]) / (this->prev_points[1].stamp_ - this->prev_points[2].stamp_).toSec();
   Eigen::Vector3d acc = (cur_speed - last_speed) / (this->prev_points[0].stamp_ - this->prev_points[1].stamp_).toSec();;
   Eigen::Vector3d pos = this->prev_points[0];
   Eigen::VectorXd measured_state(9);
-  std::cout << sqrt((cur_speed(0) * cur_speed(0) + cur_speed(1) * cur_speed(1) + cur_speed(2) * cur_speed(2))) << std::endl;
+  std::cout << "speed " << cur_speed.norm() << "\tmoved distance " <<  (this->prev_points[0] -  this->prev_points[1]).norm()  << "total acceleration " << acc.norm() <<  std::endl;
+  std::cout << acc << std::endl;
+  if(this->test_reset(cur_speed, acc))
+  {
+      this->position_count = 1;
+      this->reset();
+      std::cout << "kalman state have been reset!" << std::endl;
+      return;
+  }
   measured_state(0) = pos(0);
   measured_state(1) = pos(1);
   measured_state(2) = pos(2);

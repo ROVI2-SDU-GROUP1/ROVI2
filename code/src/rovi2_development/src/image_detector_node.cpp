@@ -142,9 +142,8 @@ void find2DPose_CV(cv::Mat &img, const sensor_msgs::Image::ConstPtr& msg, bool o
     cv::circle(imageUndistorted, imgCoord, 10, cv::Scalar(0, 255, 0), 2);
 
     //  cv::imshow("Distorted", imageBGR);
-    //  cv::imshow("Undistorted", imageUndistorted);
-    //cv::imshow("t1", imageUndistorted);
-    //cv::waitKey(1);
+    cv::imshow("t1", imageUndistorted);
+    cv::waitKey(1);
 
     point_pub.publish(point);
     //std::cout <<  std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - time_start).count()  << std::endl;

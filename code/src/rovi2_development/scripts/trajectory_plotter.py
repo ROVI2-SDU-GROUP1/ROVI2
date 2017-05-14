@@ -88,7 +88,7 @@ class Trajectory_Plotter:
         plt.show()
         last_plot = None
         last_points = None
-        plane_point  = np.array([0, -0.3, 0])
+        plane_point  = np.array([0, -0.5, 0])
         plane_normal = np.array([0.000001, 1, 0.000001])
         plot_plane(ax, plane_point, plane_normal)
         while(len(self.raw_points) < 200 or True):
