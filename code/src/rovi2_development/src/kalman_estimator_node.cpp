@@ -121,9 +121,9 @@ void Kalman_Estimator::pose_callback( __attribute__((unused)) const geometry_msg
   measured_state(7) = acc(1);
   measured_state(8) = acc(2);
 
-  measured_state(6) = 0;
-  measured_state(7) = 0;
-  measured_state(8) = -9.82;
+  //measured_state(6) = 0;
+  //measured_state(7) = 0;
+  //measured_state(8) = -9.82;
   rovi2_development::Trajectory3D traj;
   traj.header.stamp = this_pt.header.stamp;
   traj.t0 = this_pt.header.stamp;

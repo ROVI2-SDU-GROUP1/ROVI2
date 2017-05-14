@@ -132,9 +132,9 @@ void linearSolv(){
   Eigen::MatrixXd x(3, 1);
   x = (invA * A).inverse() * (invA * B);
 
-  pose3D.point.x = x(0, 0);
-  pose3D.point.y = x(1, 0);
-  pose3D.point.z = x(2, 0);
+  pose3D.point.x = x(0, 0) / 1000.;
+  pose3D.point.y = x(1, 0) / 1000.;
+  pose3D.point.z = x(2, 0) / 1000.;
 
   pose3D.header.stamp = pose2DLeft.header.stamp;
 
