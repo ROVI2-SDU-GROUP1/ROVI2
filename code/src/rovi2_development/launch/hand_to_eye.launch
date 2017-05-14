@@ -1,13 +1,13 @@
 <launch>
-	<arg name="param_calib_left"  value="back/left.yaml" />
-	<arg name="param_calib_right" value="back/right.yaml" />
+	<arg name="param_calib_left"  value="front/left.yaml" />
+	<arg name="param_calib_right" value="front/right.yaml" />
 
 
 	<!-- Hand to eye calibration node -->
 	<node pkg="rovi2_development" type="hand_to_eye" name="hand_to_eye_calibration" output="screen">
 		<param name="image_left" value="/camera/left/image_raw" />
 		<param name="image_right" value="/camera/right/image_raw" />
-		<param name="sub_robot_state" value="/ur_simple_demo_node/caros_serial_device_service_interface/robot_state" />
+		<param name="sub_robot_state" value="/caros_universalrobot/caros_serial_device_service_interface/robot_state" />
 		<param name="calibration_yaml_path_left" value="$(arg param_calib_left)" />
 		<param name="calibration_yaml_path_right" value="$(arg param_calib_right)" />
 

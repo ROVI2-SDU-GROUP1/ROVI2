@@ -25,7 +25,7 @@ Hand_to_eye_node::Hand_to_eye_node( int argc, char *argv[]){
      ROS_INFO("Loading workcell");
     }
 
-    std::string FindFrame = "WSG50.TCP";
+    std::string FindFrame = "WSG50.Marker";
     TcpFrame = (rw::kinematics::MovableFrame*)_wc->findFrame(FindFrame);
     if(TcpFrame == NULL){
       ROS_WARN("Frame %s not found!",FindFrame.c_str());
@@ -53,6 +53,7 @@ Hand_to_eye_node::Hand_to_eye_node( int argc, char *argv[]){
     nh.param<std::string>("image_left", param_image_left, "/camera/left/image_raw");
     nh.param<std::string>("image_right", param_image_right, "/camera/right/image_raw");
     nh.param<std::string>("sub_robot_state", param_robot_state_sub, "/ur_simple_demo_node/caros_serial_device_service_interface/robot_state");
+    nh.param<std::string>("pub_robot_transform", param_robot_transform, "/q_state_processed");
     nh.param<std::string>("pub_point_left", param_point_left, "/pose/2d_left");
     nh.param<std::string>("pub_point_right", param_point_right, "/pose/2d_right");
     nh.param<bool>("show_images", param_show_images, false);
@@ -64,6 +65,8 @@ Hand_to_eye_node::Hand_to_eye_node( int argc, char *argv[]){
     ROS_INFO("Use rectification: %d", param_rectify_images);
     ROS_INFO("Save images: %d", param_save_images);
     ROS_INFO("Show images: %d", param_show_images);
+
+    std::cout << "publish topic: " << param_robot_transform << std::endl;
 
     std::string abs_yaml_path_left = std::string(CALIBRATION_DIR) + param_yaml_path_left;
     std::string abs_yaml_path_right = std::string(CALIBRATION_DIR) + param_yaml_path_right;
