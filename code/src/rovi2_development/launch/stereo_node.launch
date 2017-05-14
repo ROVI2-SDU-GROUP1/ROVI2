@@ -1,0 +1,10 @@
+<launch>
+	<!-- Stereo node -->
+	<node pkg="rovi2_development" type="stereo" name="stereo_node" output="screen">
+		<param name="point_sub_left" value="/pose/2d_left" />
+		<param name="point_sub_right" value="/pose/2d_right" />
+		<param name="point_pub" value="/pose/3d" />
+		<param name="calibration_yaml_path_left" value="TEST_TEST_left_front_xXx.yaml" />
+		<param name="calibration_yaml_path_right" value="TEST_TEST_right_front_xXx.yaml" />
+	</node>
+</launch>

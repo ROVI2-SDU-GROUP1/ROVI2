@@ -4,4 +4,6 @@
 *.out
 **/robwork-release-*.cfg.xml
 *.tags
+*.tags1
 *.swp
+*.ICEauthority
