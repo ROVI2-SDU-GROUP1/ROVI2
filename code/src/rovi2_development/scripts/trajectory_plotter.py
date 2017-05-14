@@ -10,13 +10,15 @@ import time
 from rovi2_development.msg import Trajectory3D
 from geometry_msgs.msg import PointStamped
 import random
-
+from std_msgs.msg import Bool
 from mpl_toolkits.mplot3d import axes3d
 from matplotlib.patches import Circle, PathPatch
 import matplotlib.pyplot as plt
 from matplotlib.transforms import Affine2D
 from mpl_toolkits.mplot3d import art3d
 import numpy as np
+
+colors = "bgrcmykw"
 
 def plot_vector(fig, orig, v, color='blue'):
    ax = fig.gca(projection='3d')
@@ -80,6 +82,9 @@ class Trajectory_Plotter:
         self.filtered_trajectories = []
         self.noisy_points = []
         self.raw_points = []
+        self.noisy_color_index = 0
+        self.raw_color_index = 5
+        self.point_counter = 0
     def plotter(self):
         plt.ion()
         fig = plt.figure(figsize=(16, 8), dpi=100,)
@@ -88,14 +93,12 @@ class Trajectory_Plotter:
         plt.show()
         last_plot = None
         last_points = None
-        plane_point  = np.array([0, -0.3, 0])
+        plane_point  = np.array([0, -0.5, 0])
         plane_normal = np.array([0.000001, 1, 0.000001])
-        plot_plane(ax, plane_point, plane_normal)
-        while(len(self.raw_points) < 200 or True):
+        #plot_plane(ax, plane_point, plane_normal)
+        while(self.point_counter < 200 or True):
             with self.lock:
                 if(last_plot is not None): last_plot.remove()
-                if(last_points is not None):
-                    for p in last_points: p.remove()
                 if(len(self.filtered_trajectories) == 0):
                     continue
                 #if(len(self.raw_points) == 0):
@@ -110,28 +113,19 @@ class Trajectory_Plotter:
                 z = 0.5 * last_traj.acc.z * t * t + \
                     last_traj.vel.z * t + last_traj.pos.z
                 last_plot, = ax.plot(x, y, z, label = 'estimated trajectory')
-                last_points = []
                 tmp = ax.scatter( [point.point.x for point in self.raw_points], \
                             [point.point.y for point in self.raw_points], \
                             [point.point.z for point in self.raw_points],
-                             c = 'r',  marker = '^'
+                             c = colors[self.raw_color_index],  marker = '^'
                             )
-                last_points.append(tmp)
                 tmp = ax.scatter( [point.point.x for point in self.noisy_points], \
                             [point.point.y for point in self.noisy_points], \
                             [point.point.z for point in self.noisy_points],
-                             c = 'g',  marker = '*'
+                             c = colors[self.noisy_color_index],  marker = 'o', s = 15
                             )
-                last_points.append(tmp)
-                """ax.set_xlim(self.raw_points[-1].point.x - 20, \
-                    self.raw_points[-1].point.x + 20)
-                ax.set_ylim(self.raw_points[-1].point.y - 20, \
-                    self.raw_points[-1].point.y + 20)
-                ax.set_zlim(self.raw_points[-1].point.z - 20, \
-                    self.raw_points[-1].point.z + 20)"""
-
-
-            plt.pause(0.05)
+                self.raw_points = []
+                self.noisy_points = []
+            plt.pause(0.02)
         while(True):
             plt.pause(0.05)
     def raw_points_callback(self, the_point):
@@ -141,11 +135,15 @@ class Trajectory_Plotter:
     def noisy_points_callback(self, the_point):
         with self.lock:
             self.noisy_points.append(the_point)
-
+            self.point_counter += 1
     def trajectory_callback(self, the_traject):
         with self.lock:
             self.filtered_trajectories.append(the_traject)
 
+    def kalman_reset_callback(self, reset_data):
+        with self.lock:
+            self.noisy_color_index =  (self.noisy_color_index + 1) % len(colors)
+            self.raw_color =  (self.raw_color_index + 1) % len(colors)
 
 def __main__():
     t_plotter = Trajectory_Plotter()
@@ -153,6 +151,7 @@ def __main__():
     rospy.Subscriber("/pose/3d_true", PointStamped, t_plotter.raw_points_callback,)
     rospy.Subscriber("/pose/3d", PointStamped, t_plotter.noisy_points_callback)
     rospy.Subscriber("/pose/parameter", Trajectory3D, t_plotter.trajectory_callback)
+    rospy.Subscriber("/kalman/reset", Bool, t_plotter.kalman_reset_callback)
 
     rospy.spin()
 

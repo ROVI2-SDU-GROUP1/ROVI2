@@ -3,7 +3,8 @@
 #include <geometry_msgs/PointStamped.h>
 #include <rovi2_development/Trajectory3D.h>
 #include <kalman_estimator_node.hpp>
-
+#include <chrono>
+#include <std_msgs/Bool.h>
 
 tf2::Stamped<Eigen::Vector3d> pointstamped_to_vector3d(geometry_msgs::PointStamped &in)
 {
@@ -93,10 +94,29 @@ void Kalman_Estimator::update_transition_matrix(double time_step)
 
 }
 
+bool Kalman_Estimator::test_reset(Eigen::Vector3d &cur_speed, Eigen::Vector3d &acc)
+{   //This function tries to guestimatte if it is time for resetting the filter state.
+    if(this->prev_points[0].stamp_ < this->prev_points[1].stamp_)
+    {   //Reset if we have performed timetravel
+        return true;
+    }
+    if((this->prev_points[0].stamp_ - this->prev_points[1].stamp_).toSec() > 1)
+    {   //If there have been more than 1 second between the detections, we reset.
+        return true;
+    }
+    if((this->prev_points[0] -  this->prev_points[1]).norm() > 1.5)
+    {   //If the ball have moved more than 1.5 meter inbetween frames, give up
+        return true;
+    }
+    if(acc.norm() > 50) //If we have to violent acceration, reset
+    {   //If the ball have moved more than 1.5 meter inbetween frames, give up
+        return true;
+    }
+    return false;
+}
 void Kalman_Estimator::pose_callback( __attribute__((unused)) const geometry_msgs::PointStamped::ConstPtr &msg)
 {
-  position_count++;
-
+  this->position_count++;
   //Propegate the array of last positions
   geometry_msgs::PointStamped this_pt = *msg;
   this->prev_points[2] = std::move(this->prev_points[1]);
@@ -111,6 +131,18 @@ void Kalman_Estimator::pose_callback( __attribute__((unused)) const geometry_msg
   Eigen::Vector3d acc = (cur_speed - last_speed) / (this->prev_points[0].stamp_ - this->prev_points[1].stamp_).toSec();;
   Eigen::Vector3d pos = this->prev_points[0];
   Eigen::VectorXd measured_state(9);
+  std::cout << "speed " << cur_speed.norm() << "\tmoved distance " <<  (this->prev_points[0] -  this->prev_points[1]).norm()  << "total acceleration " << acc.norm() <<  std::endl;
+  std::cout << acc << std::endl;
+  if(this->test_reset(cur_speed, acc))
+  {
+      this->position_count = 1;
+      std_msgs::Bool reset_msg;
+      reset_msg.data = true;
+      this->pub_reset.publish(reset_msg);
+      this->reset();
+      std::cout << "kalman state have been reset!" << std::endl;
+      return;
+  }
   measured_state(0) = pos(0);
   measured_state(1) = pos(1);
   measured_state(2) = pos(2);
@@ -151,15 +183,20 @@ void Kalman_Estimator::pose_callback( __attribute__((unused)) const geometry_msg
   traj.vel = vector3d_to_point(cur_speed);
   traj.pos = vector3d_to_point(pos);
   this->pub_filtered.publish(traj); //publish filtered parameters.
-
 }
 
 Kalman_Estimator::Kalman_Estimator()
-: sub(nh.subscribe<geometry_msgs::PointStamped>("/pose/3d",1, &Kalman_Estimator::pose_callback, this)),
-  pub_filtered(nh.advertise<rovi2_development::Trajectory3D>("/pose/parameter",1)),
-  pub_raw(nh.advertise<rovi2_development::Trajectory3D>("/pose/parameter_raw",1)),
+: sub(nh.subscribe<geometry_msgs::PointStamped>("/pose/3d",5, &Kalman_Estimator::pose_callback, this)),
+  pub_filtered(nh.advertise<rovi2_development::Trajectory3D>("/pose/parameter",5)),
+  pub_raw(nh.advertise<rovi2_development::Trajectory3D>("/pose/parameter_raw",5)),
+  pub_reset(nh.advertise<std_msgs::Bool>("kalman/reset", 5)),
 
   cur_state(9)
+{
+    this->reset();
+}
+
+void Kalman_Estimator::reset()
 {
     //Initialise current state as 0 for all.
     this->cur_state.setZero();
@@ -183,7 +220,6 @@ Kalman_Estimator::Kalman_Estimator()
     this->transition_matrix = Eigen::MatrixXd::Identity(this->transition_matrix.rows(), this->transition_matrix.cols());
 
 }
-
 Kalman_Estimator::~Kalman_Estimator() {}
 
 
