@@ -190,14 +190,14 @@ void Hand_to_eye_node::image_sync_callback(const sensor_msgs::Image::ConstPtr &i
   }
 
   // Left
-  std::string filename = "/home/mneerup/Theis_2/stereo/imagesRawHack/left/" + std::to_string(i) + "left.png";
+  std::string filename = param_save_images_path_left + "/left-" + std::to_string(i) + ".png";
   cv::imshow("Leftimage", img_l);
   if(param_save_images){
     cv::imwrite( filename.c_str(), img_l );
   }
 
   // Right
-  filename = "/home/mneerup/Theis_2/stereo/imagesRawHack/right/" + std::to_string(i++) + "right.png";
+  filename = param_save_images_path_right + "/right-" + std::to_string(i++) + ".png";
   cv::imshow("Rightimage", img_r );
   if(param_save_images){
     cv::imwrite( filename.c_str(), img_r );

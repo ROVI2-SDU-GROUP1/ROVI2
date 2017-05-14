@@ -1,6 +1,6 @@
 <launch>
 
-y	<!-- Hand to eye calibration node -->
+	<!-- Hand to eye calibration node -->
 	<node pkg="rovi2_development" type="hand_to_eye" name="hand_to_eye_calibration" output="screen">
 		<param name="image_left" value="/camera/left/image_raw" />
 		<param name="image_right" value="/camera/right/image_raw" />
@@ -12,10 +12,10 @@ y	<!-- Hand to eye calibration node -->
 		<param name="pub_point_left" value="/pose/2d_left" />
 		<param name="pub_point_right" value="/pose/2d_right" />
 
-		<param name="save_images" value="false"/>
+		<param name="save_images" value="true"/>
 		<param name="rectify_images" value="false"/>
-		<param name="save_images_path_left" value="/tmp/"/>
-		<param name="save_images_path_right" value="/tmp/"/>
+		<param name="save_images_path_left" value="/tmp/back/left"/>
+		<param name="save_images_path_right" value="/tmp/back/right"/>
 
 	</node>
 
