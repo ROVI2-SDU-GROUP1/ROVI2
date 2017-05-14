@@ -1,11 +1,11 @@
 clear;clc
 %   Load the calibration file
-load('imagesRawHack/calibrationSession.mat')
+load('/home/mneerup/SDU/Skole/8.Semester/ROVI/code/src/rovi2_development/calibrations/back/calibrationSession.mat')
 stereoParams = stereoParameters(calibrationSession.CameraParameters.CameraParameters1,calibrationSession.CameraParameters.CameraParameters2,calibrationSession.CameraParameters.RotationOfCamera2,calibrationSession.CameraParameters.TranslationOfCamera2);
 
 %   Choose filenames
-filenameLeft = '/home/mneerup/SDU/Skole/8.Semester/ROVI/code/src/rovi2_development/calibrations/TEST_TEST_left_front_xXx.yaml';
-filenameRight = '/home/mneerup/SDU/Skole/8.Semester/ROVI/code/src/rovi2_development/calibrations/TEST_TEST_right_front_xXx.yaml';
+filenameLeft = '/home/mneerup/SDU/Skole/8.Semester/ROVI/code/src/rovi2_development/calibrations/back/left.yaml';
+filenameRight = '/home/mneerup/SDU/Skole/8.Semester/ROVI/code/src/rovi2_development/calibrations/back/right.yaml';
 
 %   Set width and height
 width = 1024;
@@ -97,17 +97,7 @@ for i = 1:2
     fprintf(fileID, '  data: [');
     commaSeperatedMatrix = sprintf('%f,' , rotationMatrix);
     fprintf(fileID, '%s ',commaSeperatedMatrix(1:end-1));
-    fprintf(fileID, ']\n');
-    
-    
-    fprintf(fileID, 'projection_rectified_matrix:\n');
-    fprintf(fileID, '  rows: 3\n');
-    fprintf(fileID, '  cols: 4\n');
-    fprintf(fileID, '  data: [');
-    commaSeperatedMatrix = sprintf('%f,' , projectionRecticied);
-    fprintf(fileID, '%s ',commaSeperatedMatrix(1:end-1));
-    fprintf(fileID, ']\n');
-   
+    fprintf(fileID, ']\n'); 
 
     fclose(fileID);
     
