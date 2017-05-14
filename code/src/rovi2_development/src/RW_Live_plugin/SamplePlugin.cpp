@@ -1,8 +1,8 @@
 #include "SamplePlugin.hpp"
-
-
+#include <QTimer>
+#include <boost/bind.hpp>
 #include <QPushButton>
-
+#include <QtPlugin>
 SamplePlugin::SamplePlugin():
     RobWorkStudioPlugin("SamplePluginUI", QIcon(":/pa_icon.png"))
 {
@@ -16,11 +16,6 @@ SamplePlugin::SamplePlugin():
 	connect(_btn1    ,SIGNAL(pressed()), this, SLOT(btnPressed()) );
 	connect(_spinBox  ,SIGNAL(valueChanged(int)), this, SLOT(btnPressed()) );
 
-	Image textureImage(300,300,Image::GRAY,Image::Depth8U);
-	_textureRender = new RenderImage(textureImage);
-	Image bgImage(0,0,Image::GRAY,Image::Depth8U);
-	_bgRender = new RenderImage(bgImage,2.5/1000.0);
-	_framegrabber = NULL;
 }
 
 SamplePlugin::~SamplePlugin()
@@ -36,6 +31,7 @@ void SamplePlugin::initialize() {
 
 	// Auto load workcell
 	WorkCell::Ptr wc = WorkCellLoader::Factory::load(SCENE_FILE);
+    std::cout << SCENE_FILE << std::endl;
 	getRobWorkStudio()->setWorkCell(wc);
 }
 
@@ -86,8 +82,8 @@ void SamplePlugin::btnPressed() {
 void SamplePlugin::timer() {
 }
 
-void SamplePlugin::stateChangedListener(const State& state) {
-	_state = state;
+void SamplePlugin::stateChangedListener(const State& state_) {
+	_state = state_;
 }
 
 Q_EXPORT_PLUGIN(SamplePlugin);

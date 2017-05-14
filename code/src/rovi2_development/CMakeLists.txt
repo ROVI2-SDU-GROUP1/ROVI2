@@ -1,7 +1,9 @@
 cmake_minimum_required(VERSION 3.0.0)
 project(rovi2_development)
 
-set(CMAKE_AUTOMOC ON)
+
+find_package(Qt4)
+include(${QT_USE_FILE})
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 find_package(catkin REQUIRED COMPONENTS
@@ -125,16 +127,18 @@ add_dependencies(path_planner_node ${catkin_EXPORTED_TARGETS})
 target_link_libraries(path_planner_node ${OpenCV_LIBS} ${EIGEN3_LIBS} ${catkin_LIBRARIES} ${ROBWORK_LIBRARIES})
 
 # If we want to use ui files add them here
-#QT4_WRAP_UI(UIS_OUT_H src/RW_Live_plugin/SamplePlugin.ui)
+QT4_WRAP_UI(UIS_OUT_H src/RW_Live_plugin/SamplePlugin.ui)
+
 # Moc
-#QT4_WRAP_CPP(MocSrcFiles src/RW_Live_plugin/SamplePlugin.hpp)
+QT4_WRAP_CPP(MocSrcFiles src/RW_Live_plugin/SamplePlugin.hpp)
+
 # Rcc the files:
-#QT4_ADD_RESOURCES(RccSrcFiles rc/RW_Live_plugin/resources.qrc)
+QT4_ADD_RESOURCES(RccSrcFiles src/RW_Live_plugin/resources.qrc)
 
 # Add the source files to build (besides the Qt generated source files)
-#ADD_LIBRARY(RW_Live_plugin src/RW_Live_plugin/SamplePlugin.cpp)
-#TARGET_LINK_LIBRARIES(RW_Live_plugin MODULE vision ${OpenCV_LIBS} ${ROBWORK_LIBRARIES} ${ROBWORKSTUDIO_LIBRARIES})
-#include_directories(${CMAKE_CURRENT_BINARY_DIR})
+ADD_LIBRARY(RW_Live_plugin MODULE src/RW_Live_plugin/SamplePlugin.cpp ${UIS_OUT_H} ${MocSrcFiles} ${RccSrcFiles})
+TARGET_LINK_LIBRARIES(RW_Live_plugin ${OpenCV_LIBS} ${ROBWORK_LIBRARIES} ${ROBWORKSTUDIO_LIBRARIES})
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 catkin_install_python(PROGRAMS scripts/trajectory_plotter.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})

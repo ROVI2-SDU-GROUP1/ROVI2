@@ -8,7 +8,7 @@ ros::Time start_time;
 
 double x_acc = 0.; double y_acc = 0.; double z_acc = -9.82;
 double x_v0 = -0.1; double y_v0 = 10.; double z_v0 = 9;
-double x_0 = 0; double y_0 = -0.3; double z_0 = 0.6;
+double x_0 = 0; double y_0 = -0.5; double z_0 = 0.6;
 
 
 double calc_pos(double acc, double v0, double p0, double ti)
@@ -25,9 +25,9 @@ int main(int argc, char  *argv[]) {
     ros::Publisher pub = nh.advertise<geometry_msgs::PointStamped>("/pose/3d",1);
     ros::Publisher pub_raw = nh.advertise<geometry_msgs::PointStamped>("/pose/3d_true",1);
     std::default_random_engine generator;
-    std::normal_distribution<double> distribution(0,.0000001);
+    std::normal_distribution<double> distribution(0,.0001);
     ros::Rate r(20); // 5 hz
-    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    std::this_thread::sleep_for(std::chrono::milliseconds(5000));
     start_time = ros::Time::now() ;
 
     while (ros::ok())

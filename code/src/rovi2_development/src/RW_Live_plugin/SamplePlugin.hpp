@@ -1,13 +1,13 @@
 #ifndef SAMPLEPLUGIN_HPP
 #define SAMPLEPLUGIN_HPP
 #include "ui_SamplePlugin.h"
-
 #include <opencv2/opencv.hpp>
-
 #include <rws/RobWorkStudioPlugin.hpp>
 #include <rws/RobWorkStudio.hpp>
 #include <rw/loaders/ImageLoader.hpp>
 #include <rw/loaders/WorkCellFactory.hpp>
+
+
 
 #include <rw/kinematics/State.hpp>
 #include <rwlibs/opengl/RenderImage.hpp>
@@ -61,6 +61,8 @@ private:
 	rw::kinematics::State _state;
     rw::models::Device::Ptr device;
     State state;
+    rwlibs::opengl::RenderImage *_textureRender, *_bgRender;
+
 };
 
 #endif /*RINGONHOOKPLUGIN_HPP_*/

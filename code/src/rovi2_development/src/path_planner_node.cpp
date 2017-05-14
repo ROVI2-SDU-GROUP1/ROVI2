@@ -1,12 +1,13 @@
 #include <RT_RRT_Star.hpp>
 #include <ros/ros.h>
 #include <rovi2_development/Trajectory3D.h>
-#include "caros_control_msgs/SerialDeviceMovePtp.h"
+#include "caros_control_msgs/SerialDeviceMoveServoQ.h"
 #include "caros_common_msgs/Q.h"
 #include "caros_control_msgs/RobotState.h"
 #include "RT_RRT_Star.hpp"
 #include <iostream>
 #include <rw/rw.hpp>
+#include <geometry_msgs/PointStamped.h>
 
 #include "rw/kinematics/Kinematics.hpp"
 #include "rw/math/MetricFactory.hpp"
@@ -21,6 +22,7 @@
 #include <thread>
 #include <mutex>
 #include <limits>
+
 
 bool compare_paths(std::vector<RT_Node *> path1, std::vector<RT_Node *> path2)
 { //Return false if the paths are different, true if equal
@@ -153,7 +155,8 @@ class RobotPlanner
 
         ros::NodeHandle nh;
         ros::Subscriber sub_filtered;
-        ros::ServiceClient ptp_publisher;
+        ros::Publisher goal_publisher;
+        ros::ServiceClient ur_service;
         ros::Subscriber sub_robot_state;
         std::thread *rt_rrt_thread;
         std::mutex cur_q_lock;
@@ -189,9 +192,9 @@ sampler(rw::pathplanning::QSampler::makeConstrained(rw::pathplanning::QSampler::
 
 //ROS stuff
 sub_filtered(nh.subscribe("/pose/parameter",1, &RobotPlanner::trajectory_callback, this)),
-ptp_publisher(nh.serviceClient<caros_control_msgs::SerialDeviceMovePtp>("/ur_simple_demo_node/caros_serial_device_service_interface/move_ptp")),
+goal_publisher(nh.advertise<geometry_msgs::PointStamped>("/pose/3d_goal",1)),
+ur_service(nh.serviceClient<caros_control_msgs::SerialDeviceMoveServoQ>("/ur_simple_demo_node/caros_serial_device_service_interface/move_servo_q")),
 sub_robot_state(nh.subscribe("/ur_simple_demo_node/caros_serial_device_service_interface/robot_state", 1, &RobotPlanner::rob_state_callback, this)),
-
 //Other stuff
 current_edge(nullptr, nullptr),
 last_goal_point(0,0,0)
@@ -221,28 +224,21 @@ last_goal_point(0,0,0)
 
 void RobotPlanner::SendQ(rw::math::Q q)
 {
-	//beginner_tutorials::AddTwoInts srv;
-	caros_control_msgs::SerialDeviceMovePtp srv;
-
-	caros_common_msgs::Q Q;
+    caros_control_msgs::SerialDeviceMoveServoQ srv;
+    caros_common_msgs::Q Q;
     Q.data.push_back( q[0] );
     Q.data.push_back( q[1] );
     Q.data.push_back( q[2] );
     Q.data.push_back( q[3] );
     Q.data.push_back( q[4] );
     Q.data.push_back( q[5] );
+    srv.request.targets.push_back(Q);
+    srv.request.speeds.push_back(999);
 
-    std::cout << srv.request.targets.size() << std::endl;
-	srv.request.targets.push_back(Q);
-
-	srv.request.speeds.push_back(0.5);
-
-	srv.request.blends.push_back(0.1);
-
-	if (this->ptp_publisher.call(srv)){
-		ROS_INFO("Sum: %ld", (long int)srv.response.success);
+	if (ur_service.call(srv)){
+		ROS_INFO("CAROS ROSPONSE: %d", srv.response.success);
 	} else	{
-		ROS_ERROR("Failed to call service add_two_ints");
+		ROS_ERROR("ERROR IN CAROS REQUEST");
 	}
 }
 
@@ -302,6 +298,7 @@ void RobotPlanner::rt_rrt_runner(void)
         this->next_path_lock.unlock();
         std::cout << "tree size: " << this->rt_rrt_star_planner->get_size()  <<  std::endl;
     }
+
 }
 
 void RobotPlanner::rob_state_callback(const caros_control_msgs::RobotState::ConstPtr& data)
@@ -338,11 +335,12 @@ void RobotPlanner::rob_state_callback(const caros_control_msgs::RobotState::Cons
         this->updated_path = false;
         this->cur_path = this->next_path;
         this->current_edge = {this->cur_path[0], this->cur_path[1]};
-        this->SendQ(this->current_edge.second->getValue());
+        //this->SendQ(this->current_edge.second->getValue());
     }
     this->next_path_lock.unlock();
 
     //Check if we have reached the end of the current edge, and if so, choose the next.
+    std::cout << (tmp_q - tmp_edge.second->getValue()).norm2() << std::endl;
     if( (tmp_q - tmp_edge.second->getValue()).norm2() < 0.01)
     {
         for(size_t i = 0; i < this->cur_path.size(); i++)
@@ -353,7 +351,7 @@ void RobotPlanner::rob_state_callback(const caros_control_msgs::RobotState::Cons
                 {
                     this->next_path_lock.lock();
                     this->current_edge = {this->cur_path[i], this->cur_path[i + 1]};
-                    this->SendQ(this->current_edge.second->getValue());
+                    //this->SendQ(this->current_edge.second->getValue());
                     this->next_path_lock.unlock();
                 }
             }
@@ -365,7 +363,7 @@ void RobotPlanner::trajectory_callback(const rovi2_development::Trajectory3D &pa
 {
     //The plane we want to intercept the ball in.
     Eigen::Vector3d plane_normal(0,1,0);
-    Eigen::Vector3d plane_point(0,-0.3,0);
+    Eigen::Vector3d plane_point(0,-0.5,0);
     Plane3d plane = {plane_normal, plane_point};
 
     //The trajectory as eigen matrix
@@ -377,8 +375,16 @@ void RobotPlanner::trajectory_callback(const rovi2_development::Trajectory3D &pa
     rw::math::Q _next_goal = this->find_new_goal(plane, trajectory, &new_goal);
     if(new_goal)
     {
+        this->SendQ(_next_goal);
         std::cout << "Next goal should be: " << _next_goal << std::endl;
         //Update the goal, agent, and force a replanning of the path
+        geometry_msgs::PointStamped pose3D;
+        pose3D.point.x = this->last_goal_point[0];
+        pose3D.point.y = this->last_goal_point[1];
+        pose3D.point.z = this->last_goal_point[2];
+        pose3D.header.stamp = parameters.header.stamp;
+
+        goal_publisher.publish(pose3D);
         this->cur_q_lock.lock();
         this->next_goal = _next_goal;
         this->update_goal = true;
