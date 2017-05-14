@@ -103,6 +103,11 @@ target_link_libraries(image_detector ${OpenCV_LIBS} ${catkin_LIBRARIES} yaml-cpp
 add_library(YAML SHARED src/YAMLCalibration/YAMLCalibration.cpp)
 target_link_libraries(YAML ${OpenCV_LIBS} ${catkin_LIBRARIES} yaml-cpp)
 
+# Frame transformation test using RobWork
+add_executable(frame_trans src/frame_trans.cpp)
+add_dependencies(frame_trans ${catkin_EXPORTED_TARGETS})
+target_link_libraries(frame_trans ${ROBWORK_LIBRARIES} YAML)
+
 
 # Hand to eye
 add_executable(hand_to_eye src/hand_to_eye_calibration_node.cpp src/Hand_to_eye.cpp)
