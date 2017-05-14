@@ -25,5 +25,5 @@ class Kalman_Estimator
         void do_predict_step();
         void do_update_step(Eigen::VectorXd measured_state);
         void update_transition_matrix(double time_step);
-
+        void reset();
 };
