@@ -29,15 +29,9 @@ typedef RT_RRTNode<rw::math::Q> RT_Node;
 void validate_path(std::vector<RT_Node *> &path, const rw::pathplanning::PlannerConstraint& constraint);
 
 
-bool operator>(const rw::math::Q &lhs, const rw::math::Q &rhs)
-{
-    return lhs.norm2() > rhs.norm2();
-}
+bool operator>(const rw::math::Q &lhs, const rw::math::Q &rhs);
 
-bool operator>=(const rw::math::Q &lhs, const rw::math::Q &rhs)
-{
-    return lhs.norm2() >= rhs.norm2();
-}
+bool operator>=(const rw::math::Q &lhs, const rw::math::Q &rhs);
 
 
 

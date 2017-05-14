@@ -9,6 +9,5 @@ LineSampler::LineSampler(rw::math::Q _q1, rw::math::Q _q2)
 rw::math::Q LineSampler::doSample()
 {
     double rand_point = this->distribution(generator);
-    //std::cout << "rand: " << rand_point;
     return this->q2 + rand_point * q_direction;
 }

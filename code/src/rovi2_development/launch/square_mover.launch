@@ -1,4 +1,6 @@
 <launch>
+  <!-- Start the caros nodes -->
+
   <!-- use something like set_workcell:=0 (to disable setting a workcell using this launch script), or specify a specific workcell using workcell_path:=/path/to/the/workcell on the roslaunch commandline -->
   <arg name="set_workcell" default="1" />
   <group if="$(arg set_workcell)">
@@ -14,5 +16,7 @@
     <node pkg="caros_universalrobot" type="caros_universalrobot_node" name="caros_universalrobot">
     </node>
   </group>
+
+
   <node name="square_mover" pkg="rovisquaremover" type="node"/>
 </launch>

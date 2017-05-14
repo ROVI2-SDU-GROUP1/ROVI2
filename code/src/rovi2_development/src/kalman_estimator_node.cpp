@@ -29,7 +29,7 @@ void Kalman_Estimator::do_predict_step()
     //Perform a state estimate
     this->cur_state = this->transition_matrix * this->cur_state;
     //Perform a covariance estimate
-    this->cur_covariance = this->transition_matrix * this->cur_covariance;
+    this->cur_covariance = this->transition_matrix * this->cur_covariance * this->transition_matrix.transpose();
 }
 
 void Kalman_Estimator::do_update_step(Eigen::VectorXd measured_state)
@@ -53,7 +53,7 @@ void Kalman_Estimator::do_update_step(Eigen::VectorXd measured_state)
 
     Eigen::Matrix<double, 9, 9> S_k = this->measurement_matrix * this->cur_covariance * this->measurement_matrix.transpose() + R_k;
     //Compute the optimal kalman gain from the different covariance matrix'
-    //std::cout << this->cur_covariance << " ... \n" << this->measurement_matrix <<  " ... \n" << R_k << std::endl;
+
 
     Eigen::MatrixXd K_gain = this->cur_covariance * this->measurement_matrix.transpose() * S_k.inverse();
     //Update state estimate.
@@ -121,9 +121,9 @@ void Kalman_Estimator::pose_callback( __attribute__((unused)) const geometry_msg
   measured_state(7) = acc(1);
   measured_state(8) = acc(2);
 
-  //measured_state(6) = 3;
-  //measured_state(7) = -3;
-  //measured_state(8) = -9.82;
+  measured_state(6) = 0;
+  measured_state(7) = 0;
+  measured_state(8) = -9.82;
   rovi2_development::Trajectory3D traj;
   traj.header.stamp = this_pt.header.stamp;
   traj.t0 = this_pt.header.stamp;
@@ -147,11 +147,11 @@ void Kalman_Estimator::pose_callback( __attribute__((unused)) const geometry_msg
   acc(0)        = this->cur_state(6);
   acc(1)        = this->cur_state(7);
   acc(2)        = this->cur_state(8);
-
   traj.acc = vector3d_to_point(acc);
   traj.vel = vector3d_to_point(cur_speed);
   traj.pos = vector3d_to_point(pos);
   this->pub_filtered.publish(traj); //publish filtered parameters.
+
 }
 
 Kalman_Estimator::Kalman_Estimator()
@@ -163,13 +163,16 @@ Kalman_Estimator::Kalman_Estimator()
 {
     //Initialise current state as 0 for all.
     this->cur_state.setZero();
+    this->cur_state(6) = 0;
+    this->cur_state(7) = 0;
+    this->cur_state(8) = -9.82;
 
     //Initialise co-variance matrix.
     this->cur_covariance.setZero();
 
     //We don't know where the ball is at all, so initialise extremly high)
     for(uint8_t i = 0; i < this->cur_covariance.rows(); i++)
-        this->cur_covariance(i, i) = 999999999.;
+        this->cur_covariance(i, i) = 999999999999999.;
 
     //Set the measurement matrix. This is easy, it's just identity.
     this->measurement_matrix = Eigen::MatrixXd::Identity(this->measurement_matrix.rows(), this->measurement_matrix.cols());

@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 3.0.0)
 project(rovi2_development)
 
+
+find_package(Qt4)
+include(${QT_USE_FILE})
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
@@ -34,7 +39,7 @@ SET(ROOT ${CMAKE_CURRENT_SOURCE_DIR})
 
 # Set the RobWork root (edit in .bashrc if necessary)
 SET(RW_ROOT $ENV{RW_ROOT})
-
+SET(RWSTUDIO_ROOT $ENV{RWS_ROOT})
 
 # Use RobWork
 MESSAGE("-- RobWork root: " ${RW_ROOT})
@@ -42,6 +47,13 @@ SET(RobWork_DIR ${RW_ROOT}/cmake)
 FIND_PACKAGE(RobWork REQUIRED)
 INCLUDE_DIRECTORIES( SYSTEM ${ROBWORK_INCLUDE_DIRS} )
 LINK_DIRECTORIES( ${ROBWORK_LIBRARY_DIRS} )
+
+# Use RobWorkStudio
+MESSAGE("-- RobWorkStudio root: " ${RWSTUDIO_ROOT})
+SET(RobWorkStudio_DIR ${RWSTUDIO_ROOT}/cmake)
+FIND_PACKAGE(RobWorkStudio REQUIRED)
+INCLUDE_DIRECTORIES( ${INCLUDE_DIRECTORIES} ${ROBWORKSTUDIO_INCLUDE_DIRS} )
+LINK_DIRECTORIES( ${ROBWORKSTUDIO_LIBRARY_DIRS} )
 
 catkin_package(CATKIN_DEPENDS message_runtime)
 
@@ -83,7 +95,7 @@ add_dependencies(opencv_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORT
 target_link_libraries(opencv_node ${OpenCV_LIBS} ${catkin_LIBRARIES})
 
 # Image detector node
-add_executable(image_detector src/image_detector_node.cpp)
+add_executable(image_detector src/image_detector_node.cpp src/HsvAdjust.cpp)
 add_dependencies(image_detector ${catkin_EXPORTED_TARGETS})
 target_link_libraries(image_detector ${OpenCV_LIBS} ${catkin_LIBRARIES} yaml-cpp)
 
@@ -118,9 +130,23 @@ add_dependencies(ball_traj_tester ${catkin_EXPORTED_TARGETS})
 target_link_libraries(ball_traj_tester ${OpenCV_LIBS} ${EIGEN3_LIBS} ${catkin_LIBRARIES})
 
 # Realtime RRT Star tests
-add_executable(rt_rrt_star src/RT_RRT_Star.cpp src/LineSampler.cpp src/UnitBallSampler.cpp src/ElipsisSampler.cpp)
-add_dependencies(rt_rrt_star ${catkin_EXPORTED_TARGETS})
-target_link_libraries(rt_rrt_star ${OpenCV_LIBS} ${EIGEN3_LIBS} ${catkin_LIBRARIES} ${ROBWORK_LIBRARIES})
+add_executable(path_planner_node src/path_planner_node.cpp src/RT_RRT_Star.cpp src/LineSampler.cpp src/UnitBallSampler.cpp src/ElipsisSampler.cpp)
+add_dependencies(path_planner_node ${catkin_EXPORTED_TARGETS})
+target_link_libraries(path_planner_node ${OpenCV_LIBS} ${EIGEN3_LIBS} ${catkin_LIBRARIES} ${ROBWORK_LIBRARIES})
+
+# If we want to use ui files add them here
+QT4_WRAP_UI(UIS_OUT_H src/RW_Live_plugin/SamplePlugin.ui)
+
+# Moc
+QT4_WRAP_CPP(MocSrcFiles src/RW_Live_plugin/SamplePlugin.hpp)
+
+# Rcc the files:
+QT4_ADD_RESOURCES(RccSrcFiles src/RW_Live_plugin/resources.qrc)
+
+# Add the source files to build (besides the Qt generated source files)
+ADD_LIBRARY(RW_Live_plugin MODULE src/RW_Live_plugin/SamplePlugin.cpp ${UIS_OUT_H} ${MocSrcFiles} ${RccSrcFiles})
+TARGET_LINK_LIBRARIES(RW_Live_plugin ${OpenCV_LIBS} ${ROBWORK_LIBRARIES} ${ROBWORKSTUDIO_LIBRARIES})
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 catkin_install_python(PROGRAMS scripts/trajectory_plotter.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})

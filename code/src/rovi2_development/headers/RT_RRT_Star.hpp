@@ -62,7 +62,7 @@ class RT_RRT_Star
         void rewire_random_nodes(double epsilon);
         void rewire_from_tree_root(double epsilon);
         bool add_nodes_to_tree(rw::math::Q &x_new, std::vector<RT_Node *> &X_near);
-        std::vector<RT_Node *> find_next_path(std::chrono::milliseconds rrt_time);
+        std::vector<RT_Node *> find_next_path(std::chrono::milliseconds rrt_time, bool force = false);
         std::vector<RT_Node *> plan_path();
         RT_Node *find_nearest_node(RT_Node &node) { return this->find_nearest_node(node.getValue()); };
         RT_Node *find_nearest_node(const rw::math::Q &x);
@@ -78,13 +78,18 @@ class RT_RRT_Star
         void mergeTrees();
         void propegate_new_agent(RT_Node * node, RT_Node *new_parent);
         RT_Node *get_random_node();
+        void force_stop() { this->stop = true;}
+        std::vector<RT_Node *> get_all_nodes() { return this->startTree._nodes; }
+        RT_Node *split_edge_with_point(rw::math::Q point, RT_Node *parent, RT_Node *child);
 
     private:
+        bool force = false;
         double alpha = 0.1;
         double beta = 3;
         double k_max = 10000;
         double r_s = 1;
-        double rrt_connect_epsilon = 0.01;
+        double rrt_connect_epsilon = 0.1;
+        bool stop = false;
         std::queue<RT_Node *> Q_r;
         std::queue<RT_Node *> Q_s;
         RRTStruct _rrt;

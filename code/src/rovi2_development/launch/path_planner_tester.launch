@@ -1,0 +1,33 @@
+<launch>
+  <!-- Define machines -->
+	<machine name="Cell3" address="192.168.100.53" user="rovi2" password="student" />
+
+  <!-- Start the caros nodes -->
+
+  <!-- Hardcoded workcell path... This should not be hardcoded, else the test should be CARO/MARVIN specific - the hardcoded q-configuration is also sort of scene specific... -->
+  <param name="/caros/workcell" value="$(find rovi2_development)/../../../WorkCell_scenes/WorkStation_3/WC3_Scene.wc.xml" />
+
+  <group>
+    <include file="$(find rovi2_development)/launch/caros_universalrobot_param.xml" ns="ur_simple_demo_node">
+      <arg name="device_name" value="UR1" />
+    </include>
+    <!-- The 'name' parameter has to match the 'ns' parameter used in the include tag above -->
+    <node pkg="caros_universalrobot" type="caros_universalrobot_node" name="ur_simple_demo_node" required="true" output="screen">
+      <!-- Nothing -->
+    </node>
+  </group>
+
+
+
+<!-- Start the kalman filter node -->
+  <node name="kalman_node" pkg="rovi2_development" type="kalman_node" output="screen" />
+<!--  <node name="ball_traj_tester" pkg="rovi2_development" type="ball_traj_tester" output="screen" /> -->
+
+<!-- Start planner node -->
+  <node name="planner_node" pkg="rovi2_development" type="path_planner_node" output="screen" />
+  <node name="ball_traj_tester" pkg="rovi2_development" type="ball_traj_tester" output="screen" />
+  <node name="trajectory_plotter" pkg="rovi2_development" type="trajectory_plotter.py" output="screen" /> 
+
+
+
+</launch>

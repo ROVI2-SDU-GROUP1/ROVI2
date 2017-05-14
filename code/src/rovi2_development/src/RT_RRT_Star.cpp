@@ -16,6 +16,20 @@
 static rw::pathplanning::PlannerConstraint *stat_constraint = nullptr;
 
 
+void validate_path(std::vector<RT_Node *> &path, const rw::pathplanning::PlannerConstraint& constraint);
+
+
+bool operator>(const rw::math::Q &lhs, const rw::math::Q &rhs)
+{
+    return lhs.norm2() > rhs.norm2();
+}
+
+bool operator>=(const rw::math::Q &lhs, const rw::math::Q &rhs)
+{
+    return lhs.norm2() >= rhs.norm2();
+}
+
+
 bool inBounds(rw::models::CompositeDevice::QBox bounds, rw::math::Q q)
 {
     for(uint8_t i = 0; i < q.size(); i++)
@@ -161,9 +175,11 @@ RT_RRT_Star::RT_RRT_Star(rw::math::Q _q_start, rw::math::Q _q_goal, const rw::pa
 
 }
 
-std::vector<RT_Node *> RT_RRT_Star::find_next_path(std::chrono::milliseconds rrt_time)
+std::vector<RT_Node *> RT_RRT_Star::find_next_path(std::chrono::milliseconds rrt_time, bool _force)
 {   //Algorithm 1
-    if(this->goal->get_cost() <= (this->goal->getValue() - this->agent->getValue()).norm2() )
+    this->stop = false;
+    this->force = _force;
+    if(this->goal->get_cost() <= (this->goal->getValue() - this->agent->getValue()).norm2() and this->force == false)
     {
         return this->plan_path();
     }
@@ -173,7 +189,7 @@ std::vector<RT_Node *> RT_RRT_Star::find_next_path(std::chrono::milliseconds rrt
     this->rewire_from_root_deadline = clock_now + rrt_time;
     std::chrono::steady_clock::time_point &global_deadline = this->rewire_from_root_deadline;
 
-    while(std::chrono::steady_clock::now() < global_deadline)
+    while(std::chrono::steady_clock::now() < global_deadline and this->stop == false)
     {
         if(this->found_solution())
             this->expand_and_rewire();
@@ -343,11 +359,22 @@ void RT_RRT_Star::expand_and_rewire()
     }
     return;
 }
+RT_Node *RT_RRT_Star::split_edge_with_point(rw::math::Q point, RT_Node *parent, RT_Node *child)
+{ //Force parent->child relationship between the given points.
+    if( (parent->getValue() - point).norm2() < 0.001) return parent;
+    if( (child->getValue() - point).norm2() < 0.001) return child;
+
+    this->startTree.add(point, parent);
+    child->setParent(this->startTree.getLastPtr());
+    this->Q_r.push(this->startTree.getLastPtr());
+    return this->startTree.getLastPtr();
+}
 
 void RT_RRT_Star::set_new_goal(rw::math::Q q_newgoal)
 {
     assert(!inCollision(this->_rrt.constraint, q_newgoal));
-    if (!inCollision(this->_rrt.constraint, this->agent->getValue(), q_newgoal)) {
+    if (!inCollision(this->_rrt.constraint, this->agent->getValue(), q_newgoal))
+    {
         this->startTree.add(q_newgoal, this->agent);
         this->closest = this->startTree.getLastPtr();
         this->goal = this->startTree.getLastPtr();
@@ -428,7 +455,7 @@ bool RT_RRT_Star::add_nodes_to_tree(rw::math::Q &x_new, std::vector<RT_Node *> &
 
 void RT_RRT_Star::rewire_random_nodes(double epsilon)
 {
-    while(std::chrono::steady_clock::now() < this->rewire_expand_deadline and this->Q_r.size())
+    while(std::chrono::steady_clock::now() < this->rewire_expand_deadline and this->Q_r.size() and this->stop == false)
     {
         RT_Node *x_r = this->Q_r.front();
         this->Q_r.pop();
@@ -472,7 +499,7 @@ void RT_RRT_Star::rewire_from_tree_root(double epsilon)
     {
         this->Q_s.push(this->agent);
     }
-    while(std::chrono::steady_clock::now() < this->rewire_from_root_deadline and this->Q_s.size())
+    while(std::chrono::steady_clock::now() < this->rewire_from_root_deadline and this->Q_s.size() and this->stop == false)
     {
         RT_Node *x_s = this->Q_s.front();
         //printf("x_s: %p\n", x_s);
@@ -557,15 +584,27 @@ rw::math::Q RT_RRT_Star::create_random_node()
     }
     else*/
     {   //Do elipsis sampling
-        ElipsisSampler e_sampler(this->agent->getValue(), this->goal->getValue(), this->goal->get_cost());
-        while(true)
+        if(this->force == false)
         {
-            auto q_rand_elipsis = e_sampler.doSample();
-            if(inBounds(this->device->getBounds(), q_rand_elipsis)) return q_rand_elipsis;
+            ElipsisSampler e_sampler(this->agent->getValue(), this->goal->getValue(), this->goal->get_cost());
+            while(true)
+            {
+                auto q_rand_elipsis = e_sampler.doSample();
+                if(inBounds(this->device->getBounds(), q_rand_elipsis)) return q_rand_elipsis;
+            }
+        }
+        else
+        {   //We expand the elipsis somewhat
+            ElipsisSampler e_sampler(this->agent->getValue(), this->goal->getValue(), this->goal->get_cost() * 1.5);
+            while(true)
+            {
+                auto q_rand_elipsis = e_sampler.doSample();
+                if(inBounds(this->device->getBounds(), q_rand_elipsis)) return q_rand_elipsis;
+            }
+
         }
     }
 }
-
 
 size_t RT_RRT_Star::get_size()
 {
@@ -625,7 +664,7 @@ RT_Node *RT_RRT_Star::get_random_node()
 }
 
 
-int main(__attribute__((unused)) int argc, __attribute__((unused)) char const *argv[]) {
+__attribute__((weak)) int main(__attribute__((unused)) int argc, __attribute__((unused)) char const *argv[]) {
     rw::math::Math::seed(time(NULL));
     //printf("Wow, it works!\n");
     //printf("Compile info: GCC %u.%u.%u\t", __GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__);

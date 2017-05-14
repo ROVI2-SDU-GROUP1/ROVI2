@@ -1,5 +1,7 @@
 #include <UnitBallSampler.hpp>
 
+UnitBallSampler *UnitBallSampler::instance;
+
 UnitBallSampler::UnitBallSampler()
 : distribution(-1,1)
 {

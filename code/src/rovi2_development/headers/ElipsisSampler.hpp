@@ -5,7 +5,6 @@
 #include <rw/proximity/CollisionDetector.hpp>
 #include <rw/math/Q.hpp>
 #include <random>
-#include <UnitBallSampler.hpp>
 
 class ElipsisSampler;
 
@@ -19,6 +18,5 @@ class ElipsisSampler: public rw::pathplanning::QSampler {
         rw::math::Q x_start;
         rw::math::Q x_goal;
         double c_max;
-        UnitBallSampler u_sampler;
 
 };
