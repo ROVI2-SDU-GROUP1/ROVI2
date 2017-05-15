@@ -95,7 +95,7 @@ class Trajectory_Plotter:
         last_points = None
         plane_point  = np.array([0, -0.5, 0])
         plane_normal = np.array([0.000001, 1, 0.000001])
-        #plot_plane(ax, plane_point, plane_normal)
+        plot_plane(ax, plane_point, plane_normal)
         while(self.point_counter < 200 or True):
             with self.lock:
                 if(last_plot is not None): last_plot.remove()

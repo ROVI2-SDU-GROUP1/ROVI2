@@ -117,7 +117,7 @@ target_link_libraries(hand_to_eye ${OpenCV_LIBS} ${catkin_LIBRARIES} ${ROBWORK_L
 # Stereo node
 add_executable(stereo src/stereo_node.cpp)
 add_dependencies(stereo ${catkin_EXPORTED_TARGETS})
-target_link_libraries(stereo ${OpenCV_LIBS} ${catkin_LIBRARIES} yaml-cpp)
+target_link_libraries(stereo ${OpenCV_LIBS} ${catkin_LIBRARIES} ${ROBWORK_LIBRARIES} YAML)
 
 # Kalman node
 add_executable(kalman_node src/kalman_estimator_node.cpp)

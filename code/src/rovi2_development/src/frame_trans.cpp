@@ -3,13 +3,13 @@
 #include <opencv2/core/mat.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
+#include <iostream>
 
 
-
-int main(){
+int main(int argc, char **argv){
     std::vector< rwlibs::algorithms::PointPairsRegistration::PointPair > pointPairs;
-
-    std::ifstream  data("/home/mneerup/hte_back.csv");
+    std::cout <<  "loading from " << argv[1] << std::endl;
+    std::ifstream  data(argv[1]);
     if(!data.is_open()){
         std::cout << "File not found!\n";
         return 1;

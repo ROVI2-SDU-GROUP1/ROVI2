@@ -6,5 +6,6 @@
 		<param name="point_pub" value="/pose/3d" />
 		<param name="calibration_yaml_path_left" value="TEST_TEST_left_front_xXx.yaml" />
 		<param name="calibration_yaml_path_right" value="TEST_TEST_right_front_xXx.yaml" />
+		<param name="param_hte_path" value="/back/hte_back.yaml" />
 	</node>
 </launch>

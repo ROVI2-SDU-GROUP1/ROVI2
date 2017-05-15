@@ -399,6 +399,8 @@ rw::math::Q RobotPlanner::find_new_goal(Plane3d intersect_plane, Trajectory3d tr
     std::cout << "We need to catch the ball in " << catch_time << " seconds!" << std::endl;
 
     Eigen::Vector3d p = predict_point(traj, catch_time);
+    std::cout << catch_time << std::endl;
+    std::cout << p << std::endl;
     /*std::cout << "goal" << std::endl;
     std::cout << p << std::endl;
     std::cout << "cur_point" << std::endl;
