@@ -25,5 +25,6 @@
                 <param name="calibration_yaml_path_left" value="$(arg param_calib_left)" />
                 <param name="calibration_yaml_path_right" value="$(arg param_calib_right)" />
 		<param name="param_hte_path" value="$(arg param_hte_path)" />
+		<param name="flip_z" value="true" />
 	</node>
 </launch>
