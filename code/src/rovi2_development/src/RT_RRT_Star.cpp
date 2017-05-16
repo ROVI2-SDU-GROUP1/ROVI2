@@ -183,7 +183,7 @@ std::vector<RT_Node *> RT_RRT_Star::find_next_path(std::chrono::milliseconds rrt
     {
         return this->plan_path();
     }
-    std::cout << "attempting to find next path" << std::endl;
+    //std::cout << "attempting to find next path" << std::endl;
 
     auto clock_now = std::chrono::steady_clock::now();
     this->rewire_expand_deadline = clock_now + rrt_time;
@@ -194,21 +194,21 @@ std::vector<RT_Node *> RT_RRT_Star::find_next_path(std::chrono::milliseconds rrt
     {
         if(this->found_solution())
         {
-            std::cout << "expanding and rewirering" << std::endl;
+        //    std::cout << "expanding and rewirering" << std::endl;
             this->expand_and_rewire();
-            std::cout << "expanding and rewirering done" << std::endl;
+        //    std::cout << "expanding and rewirering done" << std::endl;
 
         }
         else
         {
-            std::cout << "rrt_connecting" << std::endl;
+        //    std::cout << "rrt_connecting" << std::endl;
             this->connect_trees();
-            std::cout << "rrt_connecting done" << std::endl;
+        //    std::cout << "rrt_connecting done" << std::endl;
         }
     }
-    std::cout << "creating path" << std::endl;
+    //std::cout << "creating path" << std::endl;
     std::vector<RT_Node *> path = this->plan_path();
-    std::cout << "creating path done" << std::endl;
+    //std::cout << "creating path done" << std::endl;
     return path;
 }
 
@@ -411,6 +411,8 @@ void RT_RRT_Star::move_agent(RT_Node *_agent_node)
     //If this is not done, the planner may return suboptimal solutions
     //#warning "MOVE AGENT NOT IMPLEMENTED!"
     //We Set the new node to have 0 parents, and a cost of 0. Also, we propegate this as the new tree root
+    std::cout << "Moving the agent to " << _agent_node->getValue() << std::endl;
+
     this->propegate_new_agent(_agent_node->getParent(), _agent_node);
     //printf("Propegation done\n");
     _agent_node->set_cost(0);

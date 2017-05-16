@@ -1,6 +1,6 @@
 <launch>
-	<!--remap from="/front/pose/3d" to="/pose/3d"/-->
-	<!--remap from="/back/pose/3d" to="/pose/3d"/-->
+	<remap from="/front/pose/3d" to="/pose/3d" />
+	<remap from="/back/pose/3d" to="/pose/3d" />
 
 	<!-- Left image detector node -->
 	<node pkg="rovi2_development" type="image_detector" name="image_detector_left_back" output="screen">

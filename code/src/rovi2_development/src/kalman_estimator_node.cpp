@@ -133,7 +133,7 @@ void Kalman_Estimator::pose_callback( __attribute__((unused)) const geometry_msg
   Eigen::VectorXd measured_state(9);
   std::cout << "speed " << cur_speed.norm() << "\tmoved distance " <<  (this->prev_points[0] -  this->prev_points[1]).norm()  << "total acceleration " << acc.norm() <<  std::endl;
   std::cout << acc << std::endl;
-  if(this->test_reset(cur_speed, acc) and false)
+  if(this->test_reset(cur_speed, acc) /*and false*/)
   {
       this->position_count = 1;
       std_msgs::Bool reset_msg;
