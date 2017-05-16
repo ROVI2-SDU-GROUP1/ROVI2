@@ -1,0 +1,29 @@
+<launch>
+        <arg name="param_calib_left"  value="front/left.yaml" />
+        <arg name="param_calib_right" value="front/right.yaml" />
+	<arg name="param_hte_path" value="/front/hte_front.yaml" />
+	<!-- Left image detector node -->
+
+	<node pkg="rovi2_development" type="image_detector" name="image_detector_left_front" output="screen">
+		<param name="image_sub" value="/front/camera/left/image_raw" />
+		<param name="point_pub" value="/front/pose/2d_left" />
+		<param name="calibration_yaml_path" value="$(arg param_calib_left)" />
+	</node>
+
+	<!-- Right image detector node -->
+	<node pkg="rovi2_development" type="image_detector" name="image_detector_right_front" output="screen" >
+		<param name="image_sub" value="/front/camera/right/image_raw" />
+		<param name="point_pub" value="/front/pose/2d_right" />
+		<param name="calibration_yaml_path" value="$(arg param_calib_right)" />
+	</node>
+
+	<!-- Stereo node -->
+	<node pkg="rovi2_development" type="stereo" name="stereo_node_front" output="screen">
+		<param name="point_sub_left" value="/front/pose/2d_left" />
+		<param name="point_sub_right" value="/front/pose/2d_right" />
+		<param name="point_pub" value="/front/pose/3d" />
+                <param name="calibration_yaml_path_left" value="$(arg param_calib_left)" />
+                <param name="calibration_yaml_path_right" value="$(arg param_calib_right)" />
+		<param name="param_hte_path" value="$(arg param_hte_path)" />
+	</node>
+</launch>

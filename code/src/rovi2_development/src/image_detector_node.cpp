@@ -251,16 +251,11 @@ int main(int argc, char **argv){
 
   image_sub = nh.subscribe<sensor_msgs::Image>(image_sub_name, 5, find2DPose);
   point_pub = nh.advertise<geometry_msgs::PointStamped>(point_pub_name, 1);
-  image_fake_pub = nh.advertise<sensor_msgs::Image>("/camera/left/image_raw_faker", 1);
-  ros::Subscriber image_sub2 = nh.subscribe<sensor_msgs::Image>("/camera/left/image_raw_faker", 1, find2DPose_fake);
+  // image_fake_pub = nh.advertise<sensor_msgs::Image>("/camera/left/image_raw_faker", 1);
+  // ros::Subscriber image_sub2 = nh.subscribe<sensor_msgs::Image>("/camera/left/image_raw_faker", 1, find2DPose_fake);
 
-  ros::Time last = ros::Time::now();
   std::thread t1(exit_tester);
-  while (ros::ok()){
-    last = ros::Time::now();
-    ros::spinOnce();
-		rate.sleep();
-  }
+  ros::spin();
 
   return 0;
 }

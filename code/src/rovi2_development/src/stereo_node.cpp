@@ -159,18 +159,24 @@ int main(int argc, char **argv){
     std::string param_yaml_path_left;
     std::string param_yaml_path_right;
     std::string param_hte_path;
+    std::string param_point_sub_left;
+    std::string param_point_sub_right;
+
 
     nh.param<std::string>("calibration_yaml_path_left", param_yaml_path_left, "default.yaml");
     nh.param<std::string>("calibration_yaml_path_right", param_yaml_path_right, "default.yaml");
+    nh.param<std::string>("point_sub_left", param_point_sub_left, "/pose/");
+    nh.param<std::string>("point_sub_right", param_point_sub_right, "/pose/");
     nh.param<std::string>("param_hte_path", param_hte_path, "default.yaml");
+
 
     calL = loadCalibration(param_yaml_path_left);
     calR = loadCalibration(param_yaml_path_right);
     Trans_camera_in_base = get_cam_to_base(param_hte_path);
     pub3D = nh.advertise<geometry_msgs::PointStamped>("/pose/3d", 1);
 
-    message_filters::Subscriber<geometry_msgs::PointStamped> image_left(nh, "/pose/2d_left", 1);
-    message_filters::Subscriber<geometry_msgs::PointStamped> image_right(nh,"/pose/2d_right", 1);
+    message_filters::Subscriber<geometry_msgs::PointStamped> image_left(nh, param_point_sub_left, 1);
+    message_filters::Subscriber<geometry_msgs::PointStamped> image_right(nh,param_point_sub_right, 1);
     message_filters::TimeSynchronizer<geometry_msgs::PointStamped, geometry_msgs::PointStamped> sync(image_left, image_right, 10);
     sync.registerCallback(boost::bind(&image_sync_callback, _1, _2));
 
