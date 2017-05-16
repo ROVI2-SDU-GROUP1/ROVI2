@@ -245,6 +245,8 @@ void RobotPlanner::SendQ(rw::math::Q q)
 
 void RobotPlanner::rt_rrt_runner(void)
 {
+    std::chrono::milliseconds time_to_solve{10000000};
+
     while(true)
     {
         //Adjust goal and agent position if requested.
@@ -261,6 +263,7 @@ void RobotPlanner::rt_rrt_runner(void)
         }
         if(this->update_agent)
         {
+            time_to_solve = std::chrono::milliseconds(50);
             this->update_agent = false;
             this->cur_q_lock.lock();
             this->next_path_lock.lock();
@@ -282,7 +285,6 @@ void RobotPlanner::rt_rrt_runner(void)
         }
 
         //We start the rrt now!
-        std::chrono::milliseconds time_to_solve{10000000};
         auto new_path = this->rt_rrt_star_planner->find_next_path(time_to_solve, this->first_run);
 
         this->next_path_lock.lock();
