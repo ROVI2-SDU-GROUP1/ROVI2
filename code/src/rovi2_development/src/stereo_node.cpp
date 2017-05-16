@@ -67,7 +67,9 @@ rw::math::Transform3D<double> get_cam_to_base(std::string filename)
                                       rotation_matrix.at<double>(2,0), rotation_matrix.at<double>(2,1), rotation_matrix.at<double>(2,2));
 
     //std::cout << rot << std::endl << rotation_matrix << std::endl;
+    std::cout << "Rot determinant: " << rot.e().determinant() << std::endl;
     rw::math::Transform3D<double> cam_to_base(trans, rot);
+
     return cam_to_base;
 
 }
@@ -127,13 +129,14 @@ void linearSolv(){
 
   Eigen::MatrixXd x(3, 1);
   x = (invA * A).inverse() * (invA * B);
-  rw::math::Vector3D<double> rw_x(x);
+
+  rw::math::Vector3D<double> rw_x(x / 1000.);
   rw_x = Trans_camera_in_base * rw_x;
   std::cout << rw_x << std::endl;
   std::cout << x << std::endl;
-  pose3D.point.x = rw_x(0) / 1000.;
-  pose3D.point.y = rw_x(1) / 1000.;
-  pose3D.point.z = rw_x(2) / 1000.;
+  pose3D.point.x = rw_x(0);
+  pose3D.point.y = rw_x(1);
+  pose3D.point.z = rw_x(2);
 
   pose3D.header.stamp = pose2DLeft.header.stamp;
 
@@ -167,6 +170,7 @@ int main(int argc, char **argv){
     calL = loadCalibration(param_yaml_path_left);
     calR = loadCalibration(param_yaml_path_right);
     Trans_camera_in_base = get_cam_to_base(param_hte_path);
+    std::cout << Trans_camera_in_base << std::endl;
     pub3D = nh.advertise<geometry_msgs::PointStamped>("/pose/3d", 1);
 
     message_filters::Subscriber<geometry_msgs::PointStamped> image_left(nh, "/pose/2d_left", 1);
