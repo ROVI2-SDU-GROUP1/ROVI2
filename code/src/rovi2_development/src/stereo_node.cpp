@@ -54,6 +54,7 @@ bool is_file_exist(std::string fileName){
 }
 rw::math::Transform3D<double> get_cam_to_base(std::string filename)
 {
+    std::cout << "loading cam to base from " << filename << std::endl;
     YAMLCalibration hte_calibration( std::string(CALIBRATION_DIR) + filename);
     cv::Mat translation_vector = hte_calibration.get_translation_vector();
     cv::Mat rotation_matrix = hte_calibration.get_rotation_matrix();
@@ -129,7 +130,7 @@ void linearSolv(){
   rw::math::Vector3D<double> rw_x(x);
   rw_x = Trans_camera_in_base * rw_x;
   std::cout << rw_x << std::endl;
-
+  std::cout << x << std::endl;
   pose3D.point.x = rw_x(0) / 1000.;
   pose3D.point.y = rw_x(1) / 1000.;
   pose3D.point.z = rw_x(2) / 1000.;
