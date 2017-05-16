@@ -21,13 +21,13 @@ int main(int argc, char **argv){
         std::string cell;
 
         std::getline(lineStream,cell,',');
-        cam_x = std::stod(cell)/1000;
+        cam_x = std::stod(cell);
 
         std::getline(lineStream,cell,',');
-        cam_y = std::stod(cell)/1000;
+        cam_y = std::stod(cell);
 
         std::getline(lineStream,cell,',');
-        cam_z = std::stod(cell)/1000;
+        cam_z = std::stod(cell);
 
         std::getline(lineStream,cell,',');
         robot_x = std::stod(cell);
@@ -41,7 +41,8 @@ int main(int argc, char **argv){
         rw::math::Vector3D<> cam_vec(cam_x, cam_y, cam_z);
         rw::math::Vector3D<> robot_vec(robot_x, robot_y, robot_z);
 
-        std::cout << robot_vec << std::endl;
+        std::cout << cam_vec << std::endl;
+        std::cout << robot_vec << std::endl << std::endl;
 
         pointPairs.push_back(std::make_pair(cam_vec,robot_vec));
     }

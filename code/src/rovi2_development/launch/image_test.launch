@@ -1,7 +1,7 @@
 <launch>
-        <arg name="param_calib_left"  value="front/left.yaml" />
-        <arg name="param_calib_right" value="front/right.yaml" />
-	<arg name="param_hte_path" value="/front/hte_front.yaml" />
+        <arg name="param_calib_left"  value="back/left.yaml" />
+        <arg name="param_calib_right" value="back/right.yaml" />
+	<arg name="param_hte_path" value="/back/hte_back.yaml" />
 	<!-- Left image detector node -->
 	<node pkg="rovi2_development" type="image_detector" name="image_detector_left" output="screen">
 		<param name="image_sub" value="/camera/left/image_raw" />
