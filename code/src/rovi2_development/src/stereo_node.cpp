@@ -169,6 +169,7 @@ int main(int argc, char **argv){
     std::string param_hte_path;
     std::string param_point_sub_left;
     std::string param_point_sub_right;
+    std::string param_pose_3d;
 
 
     nh.param<std::string>("calibration_yaml_path_left", param_yaml_path_left, "default.yaml");
@@ -176,13 +177,15 @@ int main(int argc, char **argv){
     nh.param<std::string>("point_sub_left", param_point_sub_left, "/pose/");
     nh.param<std::string>("point_sub_right", param_point_sub_right, "/pose/");
     nh.param<std::string>("param_hte_path", param_hte_path, "default.yaml");
+    nh.param<std::string>("point_pub", param_pose_3d, "/pose/");
+
 
 
     calL = loadCalibration(param_yaml_path_left);
     calR = loadCalibration(param_yaml_path_right);
     Trans_camera_in_base = get_cam_to_base(param_hte_path);
     std::cout << Trans_camera_in_base << std::endl;
-    pub3D = nh.advertise<geometry_msgs::PointStamped>("/pose/3d", 1);
+    pub3D = nh.advertise<geometry_msgs::PointStamped>(param_pose_3d, 1);
 
     message_filters::Subscriber<geometry_msgs::PointStamped> image_left(nh, param_point_sub_left, 1);
     message_filters::Subscriber<geometry_msgs::PointStamped> image_right(nh,param_point_sub_right, 1);
