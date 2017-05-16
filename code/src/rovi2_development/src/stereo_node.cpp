@@ -27,6 +27,8 @@ static geometry_msgs::PointStamped pose2DLeft;
 static geometry_msgs::PointStamped pose2DRight;
 static geometry_msgs::PointStamped pose3D;
 static rw::math::Transform3D<double> Trans_camera_in_base;
+static bool flip_z = 0;
+
 
 template<typename _Matrix_Type_>_Matrix_Type_ pseudoInverse(const _Matrix_Type_ &a, double epsilon = std::numeric_limits<double>::epsilon()){
     Eigen::JacobiSVD< _Matrix_Type_ > svd(a ,Eigen::ComputeThinU | Eigen::ComputeThinV);
@@ -134,7 +136,7 @@ void linearSolv(){
   rw::math::Vector3D<double> rw_x(x / 1000.);
 
   auto rpy = rw::math::RPY<>(Trans_camera_in_base.R());
-  rpy[2] = -rpy[2];
+  if(flip_z) rpy[2] = -rpy[2];
 
   rw_x = rw::math::Transform3D<double>(Trans_camera_in_base.P(), rpy.toRotation3D()) * rw_x;
   std::cout << rw_x << std::endl;
@@ -170,13 +172,13 @@ int main(int argc, char **argv){
     std::string param_point_sub_left;
     std::string param_point_sub_right;
 
-
     nh.param<std::string>("calibration_yaml_path_left", param_yaml_path_left, "default.yaml");
     nh.param<std::string>("calibration_yaml_path_right", param_yaml_path_right, "default.yaml");
     nh.param<std::string>("point_sub_left", param_point_sub_left, "/pose/");
     nh.param<std::string>("point_sub_right", param_point_sub_right, "/pose/");
     nh.param<std::string>("param_hte_path", param_hte_path, "default.yaml");
-
+    nh.param<bool>("flip_z", flip_z, 0);
+    std::cout << "Are we flipping z?: " << flip_z << std::endl;
 
     calL = loadCalibration(param_yaml_path_left);
     calR = loadCalibration(param_yaml_path_right);
