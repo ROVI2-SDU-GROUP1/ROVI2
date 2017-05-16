@@ -36,7 +36,7 @@ int main(int argc, char **argv){
 
     std::cout << "in:  " << trans.R() << std::endl;
     auto rpy = rw::math::RPY<>(trans.R());
-
+    rpy[0] = -rpy[0];
     std::cout << "out: " << rpy.toRotation3D() << std::endl;
 
     return  0;

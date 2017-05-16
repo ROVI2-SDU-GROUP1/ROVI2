@@ -7,6 +7,7 @@
 #include <eigen3/Eigen/SVD>
 #include <cassert>
 #include <fstream>
+#include "rw/math/RPY.hpp"
 
 #include "yaml-cpp/yaml.h"
 
@@ -131,7 +132,11 @@ void linearSolv(){
   x = (invA * A).inverse() * (invA * B);
 
   rw::math::Vector3D<double> rw_x(x / 1000.);
-  rw_x = Trans_camera_in_base * rw_x;
+
+  auto rpy = rw::math::RPY<>(Trans_camera_in_base.R());
+  rpy[2] = -rpy[2];
+
+  rw_x = rw::math::Transform3D<double>(Trans_camera_in_base.P(), rpy.toRotation3D()) * rw_x;
   std::cout << rw_x << std::endl;
   std::cout << x << std::endl;
   pose3D.point.x = rw_x(0);
