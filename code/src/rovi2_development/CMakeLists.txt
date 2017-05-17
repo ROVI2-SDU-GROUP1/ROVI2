@@ -114,6 +114,14 @@ add_executable(hand_to_eye src/hand_to_eye_calibration_node.cpp src/Hand_to_eye.
 add_dependencies(hand_to_eye ${catkin_EXPORTED_TARGETS})
 target_link_libraries(hand_to_eye ${OpenCV_LIBS} ${catkin_LIBRARIES} ${ROBWORK_LIBRARIES} YAML)
 
+
+# Forward kinematics node used for plotting Robots endpoint :>
+add_executable(ForwardKinematics_node src/ForwardKinematics.cpp src/ForwardKinematics_node.cpp)
+add_dependencies(ForwardKinematics_node ${catkin_EXPORTED_TARGETS})
+target_link_libraries(ForwardKinematics_node ${catkin_LIBRARIES} ${ROBWORK_LIBRARIES})
+
+
+
 # Stereo node
 add_executable(stereo src/stereo_node.cpp)
 add_dependencies(stereo ${catkin_EXPORTED_TARGETS})
