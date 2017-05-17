@@ -254,6 +254,7 @@ void RobotPlanner::rt_rrt_runner(void)
         //Adjust goal and agent position if requested.
         if(this->update_goal == true)
         {
+             time_to_solve = std::chrono::milliseconds(5);
             this->first_run = false;
             //Update the goal
             std::cout << "updating the goal" << std::endl;
@@ -265,7 +266,7 @@ void RobotPlanner::rt_rrt_runner(void)
 
             //Update the agent
             if(this->reached_next_node == true and this->next_path.size() > 1)
-            {   time_to_solve = std::chrono::milliseconds(0);
+            {   time_to_solve = std::chrono::milliseconds(5);
                 this->next_path_lock.lock();
                 this->rt_rrt_star_planner->move_agent(this->next_path[1]);
                 this->next_path_lock.unlock();
@@ -284,7 +285,7 @@ void RobotPlanner::rt_rrt_runner(void)
         }
         else if(this->reached_next_node == true and this->next_path.size() > 1)
         {
-            time_to_solve = std::chrono::milliseconds(0);
+            time_to_solve = std::chrono::milliseconds(5);
             this->next_path_lock.lock();
             this->rt_rrt_star_planner->move_agent(this->next_path[1]);
             this->next_path_lock.unlock();
@@ -321,7 +322,7 @@ void RobotPlanner::rob_state_callback(const caros_control_msgs::RobotState::Cons
     this->device->setQ(this->current_q, this->state);
     this->cur_q_lock.unlock();
 
-    if(this->reached_next_node == false and this->next_path.size() > 1 and (this->next_path[1]->getValue() - tmp_q).norm2() < 0.1)
+    if(this->reached_next_node == false and this->next_path.size() > 1 and (this->next_path[1]->getValue() - tmp_q).norm2() < 0.05)
     {
         //We have reached the next node.
         this->reached_next_node = true;
@@ -359,7 +360,7 @@ void RobotPlanner::trajectory_callback(const rovi2_development::Trajectory3D &pa
         this->next_goal = _next_goal;
         this->update_goal = true;
         this->update_agent = true;
-        this->rt_rrt_star_planner->force_stop();
+        //this->rt_rrt_star_planner->force_stop();
         this->cur_q_lock.unlock();
     }
 }

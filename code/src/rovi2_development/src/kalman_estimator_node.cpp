@@ -122,6 +122,7 @@ void Kalman_Estimator::pose_callback( __attribute__((unused)) const geometry_msg
   this->prev_points[2] = std::move(this->prev_points[1]);
   this->prev_points[1] = std::move(this->prev_points[0]);
   this->prev_points[0] = pointstamped_to_vector3d(this_pt);
+  this->prev_points[0](1) += 0.5;
   if(position_count < 3) return; //We don't have enough positions yet to estimate the parameters.
                                  //We could probably do a fallback after two samples to some default acceleration parameters
 
