@@ -1,0 +1,144 @@
+---
+    header: {seq: 1, stamp: {secs: 1, nsecs: 1}, frame_id: ""}
+    point: {x: 356.75, y: 125.41, z: 1}
+---
+    header: {seq: 2, stamp: {secs: 2, nsecs: 2}, frame_id: ""}
+    point: {x: 357.39, y: 148.52, z: 2}
+---
+    header: {seq: 3, stamp: {secs: 3, nsecs: 3}, frame_id: ""}
+    point: {x: 358.07, y: 171.74, z: 3}
+---
+    header: {seq: 4, stamp: {secs: 4, nsecs: 4}, frame_id: ""}
+    point: {x: 358.77, y: 194.68, z: 4}
+---
+    header: {seq: 5, stamp: {secs: 5, nsecs: 5}, frame_id: ""}
+    point: {x: 359.35, y: 217.93, z: 5}
+---
+    header: {seq: 6, stamp: {secs: 6, nsecs: 6}, frame_id: ""}
+    point: {x: 359.98, y: 240.78, z: 6}
+---
+    header: {seq: 7, stamp: {secs: 7, nsecs: 7}, frame_id: ""}
+    point: {x: 380.97, y: 124.8, z: 7}
+---
+    header: {seq: 8, stamp: {secs: 8, nsecs: 8}, frame_id: ""}
+    point: {x: 381.4, y: 148.12, z: 8}
+---
+    header: {seq: 9, stamp: {secs: 9, nsecs: 9}, frame_id: ""}
+    point: {x: 382.18, y: 171.26, z: 9}
+---
+    header: {seq: 10, stamp: {secs: 10, nsecs: 10}, frame_id: ""}
+    point: {x: 382.76, y: 194.28, z: 10}
+---
+    header: {seq: 11, stamp: {secs: 11, nsecs: 11}, frame_id: ""}
+    point: {x: 383.17, y: 217.73, z: 11}
+---
+    header: {seq: 12, stamp: {secs: 12, nsecs: 12}, frame_id: ""}
+    point: {x: 383.83, y: 240.35, z: 12}
+---
+    header: {seq: 13, stamp: {secs: 13, nsecs: 13}, frame_id: ""}
+    point: {x: 405.32, y: 124.44, z: 13}
+---
+    header: {seq: 14, stamp: {secs: 14, nsecs: 14}, frame_id: ""}
+    point: {x: 405.8, y: 147.83, z: 14}
+---
+    header: {seq: 15, stamp: {secs: 15, nsecs: 15}, frame_id: ""}
+    point: {x: 406.26, y: 171.04, z: 15}
+---
+    header: {seq: 16, stamp: {secs: 16, nsecs: 16}, frame_id: ""}
+    point: {x: 406.76, y: 194.2, z: 16}
+---
+    header: {seq: 17, stamp: {secs: 17, nsecs: 17}, frame_id: ""}
+    point: {x: 407.1, y: 217.24, z: 17}
+---
+    header: {seq: 18, stamp: {secs: 18, nsecs: 18}, frame_id: ""}
+    point: {x: 407.61, y: 240.13, z: 18}
+---
+    header: {seq: 19, stamp: {secs: 19, nsecs: 19}, frame_id: ""}
+    point: {x: 429.75, y: 124.16, z: 19}
+---
+    header: {seq: 20, stamp: {secs: 20, nsecs: 20}, frame_id: ""}
+    point: {x: 430.13, y: 147.69, z: 20}
+---
+    header: {seq: 21, stamp: {secs: 21, nsecs: 21}, frame_id: ""}
+    point: {x: 430.48, y: 170.83, z: 21}
+---
+    header: {seq: 22, stamp: {secs: 22, nsecs: 22}, frame_id: ""}
+    point: {x: 430.83, y: 193.98, z: 22}
+---
+    header: {seq: 23, stamp: {secs: 23, nsecs: 23}, frame_id: ""}
+    point: {x: 431.16, y: 217.2, z: 23}
+---
+    header: {seq: 24, stamp: {secs: 24, nsecs: 24}, frame_id: ""}
+    point: {x: 431.41, y: 240.03, z: 24}
+---
+    header: {seq: 25, stamp: {secs: 25, nsecs: 25}, frame_id: ""}
+    point: {x: 454.41, y: 123.9, z: 25}
+---
+    header: {seq: 26, stamp: {secs: 26, nsecs: 26}, frame_id: ""}
+    point: {x: 454.71, y: 147.45, z: 26}
+---
+    header: {seq: 27, stamp: {secs: 27, nsecs: 27}, frame_id: ""}
+    point: {x: 454.86, y: 170.72, z: 27}
+---
+    header: {seq: 28, stamp: {secs: 28, nsecs: 28}, frame_id: ""}
+    point: {x: 455.07, y: 194.01, z: 28}
+---
+    header: {seq: 29, stamp: {secs: 29, nsecs: 29}, frame_id: ""}
+    point: {x: 455.22, y: 217.09, z: 29}
+---
+    header: {seq: 30, stamp: {secs: 30, nsecs: 30}, frame_id: ""}
+    point: {x: 455.34, y: 239.88, z: 30}
+---
+    header: {seq: 31, stamp: {secs: 31, nsecs: 31}, frame_id: ""}
+    point: {x: 478.9, y: 123.84, z: 31}
+---
+    header: {seq: 32, stamp: {secs: 32, nsecs: 32}, frame_id: ""}
+    point: {x: 479.11, y: 147.35, z: 32}
+---
+    header: {seq: 33, stamp: {secs: 33, nsecs: 33}, frame_id: ""}
+    point: {x: 479.23, y: 170.69, z: 33}
+---
+    header: {seq: 34, stamp: {secs: 34, nsecs: 34}, frame_id: ""}
+    point: {x: 479.27, y: 193.82, z: 34}
+---
+    header: {seq: 35, stamp: {secs: 35, nsecs: 35}, frame_id: ""}
+    point: {x: 479.31, y: 216.76, z: 35}
+---
+    header: {seq: 36, stamp: {secs: 36, nsecs: 36}, frame_id: ""}
+    point: {x: 479.55, y: 239.67, z: 36}
+---
+    header: {seq: 37, stamp: {secs: 37, nsecs: 37}, frame_id: ""}
+    point: {x: 503.55, y: 123.81, z: 37}
+---
+    header: {seq: 38, stamp: {secs: 38, nsecs: 38}, frame_id: ""}
+    point: {x: 503.59, y: 147.2, z: 38}
+---
+    header: {seq: 39, stamp: {secs: 39, nsecs: 39}, frame_id: ""}
+    point: {x: 503.46, y: 170.34, z: 39}
+---
+    header: {seq: 40, stamp: {secs: 40, nsecs: 40}, frame_id: ""}
+    point: {x: 503.52, y: 193.49, z: 40}
+---
+    header: {seq: 41, stamp: {secs: 41, nsecs: 41}, frame_id: ""}
+    point: {x: 503.42, y: 216.38, z: 41}
+---
+    header: {seq: 42, stamp: {secs: 42, nsecs: 42}, frame_id: ""}
+    point: {x: 503.54, y: 239.11, z: 42}
+---
+    header: {seq: 43, stamp: {secs: 43, nsecs: 43}, frame_id: ""}
+    point: {x: 528.08, y: 123.48, z: 43}
+---
+    header: {seq: 44, stamp: {secs: 44, nsecs: 44}, frame_id: ""}
+    point: {x: 527.98, y: 146.89, z: 44}
+---
+    header: {seq: 45, stamp: {secs: 45, nsecs: 45}, frame_id: ""}
+    point: {x: 527.87, y: 170.13, z: 45}
+---
+    header: {seq: 46, stamp: {secs: 46, nsecs: 46}, frame_id: ""}
+    point: {x: 527.75, y: 193, z: 46}
+---
+    header: {seq: 47, stamp: {secs: 47, nsecs: 47}, frame_id: ""}
+    point: {x: 527.64, y: 216, z: 47}
+---
+    header: {seq: 48, stamp: {secs: 48, nsecs: 48}, frame_id: ""}
+    point: {x: 527.51, y: 238.65, z: 48}
