@@ -141,6 +141,15 @@ void linearSolv(){
   rw_x = rw::math::Transform3D<double>(Trans_camera_in_base.P(), rpy.toRotation3D()) * rw_x;
   std::cout << rw_x << std::endl;
   std::cout << x << std::endl;
+
+  if(flip_z)
+  {
+      //This is the front camera. We add the measured offset
+      rw_x(0) += 0.037;
+      rw_x(1) -= 0.084;
+      rw_x(2) -= 0.050;
+  }
+
   pose3D.point.x = rw_x(0);
   pose3D.point.y = rw_x(1);
   pose3D.point.z = rw_x(2);

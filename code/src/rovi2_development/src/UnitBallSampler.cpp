@@ -17,7 +17,7 @@ rw::math::Q UnitBallSampler::doSample()
                                             this->distribution(generator),
                                             this->distribution(generator),
                                             this->distribution(generator));
-        if(q_rand.norm2() < 1)
+        if(q_rand.norm2() <= 1.)
         {
             return q_rand;
         }

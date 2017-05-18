@@ -715,16 +715,16 @@ __attribute__((weak)) int main(__attribute__((unused)) int argc, __attribute__((
 
     rw::kinematics::State state = wc->getDefaultState();;
 
-    rw::math::Q q_1(6, 0, -1.5, -0.298, -0.341, 0, 0);
+    rw::math::Q q_1(6, 1.2, 1.3, -0.298, -0.341, 0, 0);
     rw::math::Q q_2(6, 4.52282, -3.22411, 5.80915, 3.47969, -0.552745, 4.30143);
     //std::cout << q_2 << std::endl;
-    /*ElipsisSampler e_sampler(q_1, q_2, (q_2 - q_1).norm2() * 1.1 );
-    for(uint64_t i = 0; i < 10000; i++)
+    ElipsisSampler e_sampler(q_1, q_2, (q_2 - q_1).norm2() * 1.0005 );
+    for(uint64_t i = 0; i < 30000; i++)
     {
         auto q_rand = e_sampler.doSample();
-        std::cout << q_rand(0) << "," << q_rand(1)  << std::endl;
+        std::cout << q_rand(0) << "," << q_rand(1)  <<  "," << q_rand(2) << "," << q_rand(3) << "," << q_rand(4) << "," << q_rand(5)  << std::endl;
     }
-    return 0;*/
+    return 0;
 
 
     device->setQ(q_1, state);

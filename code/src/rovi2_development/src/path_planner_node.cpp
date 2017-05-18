@@ -203,7 +203,7 @@ last_goal_point(0,0,0)
     this->ik_solver = new rw::invkin::JacobianIKSolver(this->device, this->state);
     this->ik_solver->setEnableInterpolation(true);
 	this->ik_solver->setInterpolatorStep(0.001);
-    this->current_q = rw::math::Q(6, 0, -1.5, -0.298, -0.341, 0, 0);
+    this->current_q = rw::math::Q(6, -0.36, 0, 1.3, -1.5, 0, 0);
     this->SendQ(this->current_q);
     device->setQ(this->current_q, this->state);
     this->next_goal = device->getQ(this->state);
@@ -334,7 +334,7 @@ void RobotPlanner::trajectory_callback(const rovi2_development::Trajectory3D &pa
 {
     //The plane we want to intercept the ball in.
     Eigen::Vector3d plane_normal(0,1,0);
-    Eigen::Vector3d plane_point(0,-0.5,0);
+    Eigen::Vector3d plane_point(0,0.5,0);
     Plane3d plane = {plane_normal, plane_point};
 
     //The trajectory as eigen matrix
