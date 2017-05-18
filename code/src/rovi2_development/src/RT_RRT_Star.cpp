@@ -170,7 +170,9 @@ RT_RRT_Star::RT_RRT_Star(rw::math::Q _q_start, rw::math::Q _q_goal, const rw::pa
 
     if (!inCollision(this->_rrt.constraint, _q_start, _q_goal)) {
         this->startTree.add(this->goal->getValue(), this->agent);
+        this->goalTree.clear_unsafe();
         this->closest = this->startTree.getLastPtr();
+        this->goal = this->closest;
     }
 
 }
@@ -183,7 +185,7 @@ std::vector<RT_Node *> RT_RRT_Star::find_next_path(std::chrono::milliseconds rrt
     {
         return this->plan_path();
     }
-    std::cout << "attempting to find next path" << std::endl;
+    //std::cout << "attempting to find next path" << std::endl;
 
     auto clock_now = std::chrono::steady_clock::now();
     this->rewire_expand_deadline = clock_now + rrt_time;
@@ -194,21 +196,21 @@ std::vector<RT_Node *> RT_RRT_Star::find_next_path(std::chrono::milliseconds rrt
     {
         if(this->found_solution())
         {
-            std::cout << "expanding and rewirering" << std::endl;
+        //    std::cout << "expanding and rewirering" << std::endl;
             this->expand_and_rewire();
-            std::cout << "expanding and rewirering done" << std::endl;
+        //    std::cout << "expanding and rewirering done" << std::endl;
 
         }
         else
         {
-            std::cout << "rrt_connecting" << std::endl;
+        //    std::cout << "rrt_connecting" << std::endl;
             this->connect_trees();
-            std::cout << "rrt_connecting done" << std::endl;
+        //    std::cout << "rrt_connecting done" << std::endl;
         }
     }
-    std::cout << "creating path" << std::endl;
+    //std::cout << "creating path" << std::endl;
     std::vector<RT_Node *> path = this->plan_path();
-    std::cout << "creating path done" << std::endl;
+    //std::cout << "creating path done" << std::endl;
     return path;
 }
 
@@ -411,6 +413,8 @@ void RT_RRT_Star::move_agent(RT_Node *_agent_node)
     //If this is not done, the planner may return suboptimal solutions
     //#warning "MOVE AGENT NOT IMPLEMENTED!"
     //We Set the new node to have 0 parents, and a cost of 0. Also, we propegate this as the new tree root
+    std::cout << "Moving the agent to " << _agent_node->getValue() << std::endl;
+
     this->propegate_new_agent(_agent_node->getParent(), _agent_node);
     //printf("Propegation done\n");
     _agent_node->set_cost(0);
@@ -423,6 +427,24 @@ void RT_RRT_Star::move_agent(RT_Node *_agent_node)
     }
     //Clear Q_s
     std::queue<RT_Node *>().swap(this->Q_s);
+    //Attempt to connect the agent to the goal
+    if (!inCollision(this->_rrt.constraint, this->agent->getValue(), this->goal->getValue() )) {
+        std::cout << "connecting goal to agent" << std::endl;
+        if(this->goalTree.size() == 0)
+        {
+            if( this->agent != this->goal)
+                this->goal->setParent(this->agent);
+        }
+        else
+        {
+            std::cout << "Goal is not in starttree" << std::endl;
+            this->startTree.add(this->goal->getValue(), this->agent);
+            this->closest = this->startTree.getLastPtr();
+            this->goal = this->closest;
+            this->goalTree.clear_unsafe();
+        }
+    }
+
 }
 
 void RT_RRT_Star::propegate_new_agent(RT_Node * node, RT_Node *new_parent)
@@ -547,7 +569,7 @@ std::vector<RT_Node *> RT_RRT_Star::plan_path()
     if(this->found_solution())
     {   //goal was found
         //std::cout << "We found the goal!" << std::endl;
-        RT_Node * cur_node = this->closest;
+        RT_Node * cur_node = this->goal;
         do {
             path.push_back(cur_node);
             cur_node = cur_node->getParent();
@@ -565,12 +587,13 @@ std::vector<RT_Node *> RT_RRT_Star::plan_path()
             double cheapest = std::numeric_limits<double>::max();
             for(RT_Node * child : cur_node->get_childs())
             {
-                if(child->get_cost() + child->get_heuristic(this->goal) < cheapest)
+                if(child->get_cost() + child->get_heuristic(this->goal) < cheapest and child->get_heuristic(this->goal) < cur_node->get_heuristic(this->goal))
                 {
                     cheapest = child->get_cost();
                     next_node = child;
                 }
             }
+            if(next_node == nullptr) break;
             cur_node = next_node;
         }
     }
@@ -582,6 +605,8 @@ std::vector<RT_Node *> RT_RRT_Star::plan_path()
 
 rw::math::Q RT_RRT_Star::create_random_node()
 {
+    static uint64_t created_nodes = 0;
+    std::cout << created_nodes++ << std::endl;
     //printf("Created Random node\n");
     /*double P_r = this->unit_distribution(this->generator);
     if(P_r > 1 - this->alpha and !this->found_solution())

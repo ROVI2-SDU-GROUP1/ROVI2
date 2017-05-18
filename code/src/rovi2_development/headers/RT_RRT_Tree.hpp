@@ -112,6 +112,7 @@ namespace rwlibs { namespace pathplanners {
 
         void add(const value_type& value, node_type* parent)
         {
+            std::cout << "Tree size: " << _nodes.size() << std::endl;
             auto tmp_node = new node_type(value, parent);
             //printf("Adding node with address %p and parent address %p to the tree..!\n", tmp_node, tmp_node->getParent());
             //validate_path(this->_nodes);

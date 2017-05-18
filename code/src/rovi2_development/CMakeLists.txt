@@ -147,6 +147,11 @@ add_executable(path_planner_node src/path_planner_node.cpp src/RT_RRT_Star.cpp s
 add_dependencies(path_planner_node ${catkin_EXPORTED_TARGETS})
 target_link_libraries(path_planner_node ${OpenCV_LIBS} ${EIGEN3_LIBS} ${catkin_LIBRARIES} ${ROBWORK_LIBRARIES})
 
+# posefollower
+add_executable(pose_follower src/PoseFollower.cpp)
+add_dependencies(pose_follower ${catkin_EXPORTED_TARGETS} )
+target_link_libraries(pose_follower ${OpenCV_LIBS} ${EIGEN3_LIBS} ${catkin_LIBRARIES} ${ROBWORK_LIBRARIES})
+
 # If we want to use ui files add them here
 #QT4_WRAP_UI(UIS_OUT_H src/RW_Live_plugin/SamplePlugin.ui)
 
