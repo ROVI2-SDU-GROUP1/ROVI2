@@ -191,7 +191,6 @@ Kalman_Estimator::Kalman_Estimator()
   pub_filtered(nh.advertise<rovi2_development::Trajectory3D>("/pose/parameter",5)),
   pub_raw(nh.advertise<rovi2_development::Trajectory3D>("/pose/parameter_raw",5)),
   pub_reset(nh.advertise<std_msgs::Bool>("kalman/reset", 5)),
-
   cur_state(9)
 {
     this->reset();
