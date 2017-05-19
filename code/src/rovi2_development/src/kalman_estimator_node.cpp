@@ -5,6 +5,11 @@
 #include <kalman_estimator_node.hpp>
 #include <chrono>
 #include <std_msgs/Bool.h>
+#include <fstream>
+
+std::fstream outputFileRaw;
+std::fstream outputFileKalman;
+std::fstream outputFilePoint;
 
 tf2::Stamped<Eigen::Vector3d> pointstamped_to_vector3d(geometry_msgs::PointStamped &in)
 {
@@ -123,6 +128,15 @@ void Kalman_Estimator::pose_callback( __attribute__((unused)) const geometry_msg
   this->prev_points[2] = std::move(this->prev_points[1]);
   this->prev_points[1] = std::move(this->prev_points[0]);
   this->prev_points[0] = pointstamped_to_vector3d(this_pt);
+
+  Eigen::Vector3d tmp = this->prev_points[0];
+  if(!outputFilePoint.is_open()){
+      outputFilePoint.open("/tmp/stuffPoint.csv", std::fstream::out | std::fstream::app);
+      outputFilePoint << tmp(0) << "," << tmp(1) << "," << tmp(2) << std::endl;
+  }else{
+      outputFilePoint << tmp(0) << "," << tmp(1) << "," << tmp(2) << std::endl;
+  }
+
   if(position_count < 3) return; //We don't have enough positions yet to estimate the parameters.
                                  //We could probably do a fallback after two samples to some default acceleration parameters
 
@@ -132,8 +146,8 @@ void Kalman_Estimator::pose_callback( __attribute__((unused)) const geometry_msg
   Eigen::Vector3d acc = (cur_speed - last_speed) / (this->prev_points[0].stamp_ - this->prev_points[1].stamp_).toSec();;
   Eigen::Vector3d pos = this->prev_points[0];
   Eigen::VectorXd measured_state(9);
-  std::cout << "speed " << cur_speed.norm() << "\tmoved distance " <<  (this->prev_points[0] -  this->prev_points[1]).norm()  << "total acceleration " << acc.norm() <<  std::endl;
-  std::cout << acc << std::endl;
+  //std::cout << "speed " << cur_speed.norm() << "\tmoved distance " <<  (this->prev_points[0] -  this->prev_points[1]).norm()  << "total acceleration " << acc.norm() <<  std::endl;
+  //std::cout << acc << std::endl;
   if(this->test_reset(cur_speed, acc) /*and false*/)
   {
       this->position_count = 1;
@@ -163,8 +177,14 @@ void Kalman_Estimator::pose_callback( __attribute__((unused)) const geometry_msg
   traj.acc = vector3d_to_point(acc);
   traj.vel = vector3d_to_point(cur_speed);
   traj.pos = vector3d_to_point(pos);
-  this->pub_raw.publish(traj); //Publish nonfiltered parameters
 
+  if(!outputFileRaw.is_open()){
+      outputFileRaw.open("/tmp/stuffRaw.csv", std::fstream::out | std::fstream::app);
+      outputFileRaw << traj.acc.x << "," << traj.acc.y << "," << traj.acc.z << "," << traj.vel.x << "," << traj.vel.y << "," << traj.vel.z << "," << traj.pos.x << "," << traj.pos.y << "," << traj.pos.z << std::endl;
+  }else{
+      outputFileRaw << traj.acc.x << "," << traj.acc.y << "," << traj.acc.z << "," << traj.vel.x << "," << traj.vel.y << "," << traj.vel.z << "," << traj.pos.x << "," << traj.pos.y << "," << traj.pos.z << std::endl;
+  }
+  this->pub_raw.publish(traj); //Publish nonfiltered parameters
 
   this->update_transition_matrix((this->prev_points[0].stamp_ - this->prev_points[1].stamp_).toSec());
   this->do_predict_step();
@@ -183,6 +203,14 @@ void Kalman_Estimator::pose_callback( __attribute__((unused)) const geometry_msg
   traj.acc = vector3d_to_point(acc);
   traj.vel = vector3d_to_point(cur_speed);
   traj.pos = vector3d_to_point(pos);
+
+  if(!outputFileKalman.is_open()){
+      outputFileKalman.open("/tmp/stuffKalman.csv", std::fstream::out | std::fstream::app);
+      outputFileKalman << traj.acc.x << "," << traj.acc.y << "," << traj.acc.z << "," << traj.vel.x << "," << traj.vel.y << "," << traj.vel.z << "," << traj.pos.x << "," << traj.pos.y << "," << traj.pos.z << std::endl;
+  }else{
+      outputFileKalman << traj.acc.x << "," << traj.acc.y << "," << traj.acc.z << "," << traj.vel.x << "," << traj.vel.y << "," << traj.vel.z << "," << traj.pos.x << "," << traj.pos.y << "," << traj.pos.z << std::endl;
+  }
+
   this->pub_filtered.publish(traj); //publish filtered parameters.
 }
 
