@@ -151,14 +151,12 @@ void Kalman_Estimator::pose_callback( __attribute__((unused)) const geometry_msg
   traj.vel = vector3d_to_point(cur_speed);
   traj.pos = vector3d_to_point(pos);
   this->pub_filtered.publish(traj); //publish filtered parameters.
-
 }
 
 Kalman_Estimator::Kalman_Estimator()
 : sub(nh.subscribe<geometry_msgs::PointStamped>("/pose/3d",1, &Kalman_Estimator::pose_callback, this)),
   pub_filtered(nh.advertise<rovi2_development::Trajectory3D>("/pose/parameter",1)),
-  pub_raw(nh.advertise<rovi2_development::Trajectory3D>("/pose/parameter_raw",1)),
-
+  pub_raw(nh.advertise<rovi2_development::Trajeccur_statetory3D>("/pose/parameter_raw",1)),
   cur_state(9)
 {
     //Initialise current state as 0 for all.
