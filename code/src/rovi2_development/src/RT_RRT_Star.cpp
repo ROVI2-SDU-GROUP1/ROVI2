@@ -190,16 +190,15 @@ RT_RRT_Star::RT_RRT_Star(rw::math::Q _q_start, rw::math::Q _q_goal, const rw::pa
     this->agent = this->startTree.getLastPtr();
     this->agent->set_cost(0.);
     this->goal = goalTree.getLastPtr();
-    this->startTree.add(this->goal);
     this->goal->set_cost(std::numeric_limits<double>::max());
     this->closest = this->agent;
 
-    /*if (!inCollision(this->_rrt.constraint, _q_start, _q_goal)) {
+    if (!inCollision(this->_rrt.constraint, _q_start, _q_goal)) {
         this->startTree.add(this->goal->getValue(), this->agent);
         this->goalTree.clear_unsafe();
         this->closest = this->startTree.getLastPtr();
         this->goal = this->closest;
-    }*/
+    }
 
 }
 
@@ -220,7 +219,7 @@ std::vector<RT_Node *> RT_RRT_Star::find_next_path(std::chrono::milliseconds rrt
 
     while(std::chrono::steady_clock::now() < global_deadline and this->stop == false)
     {
-        if(this->found_solution() or true)
+        if(this->found_solution())
         {
         //    std::cout << "expanding and rewirering" << std::endl;
             this->expand_and_rewire();
@@ -371,7 +370,6 @@ void RT_RRT_Star::expand_and_rewire()
 
     double epsilon = this->getEpsilon();
     rw::math::Q x_rand = this->create_random_node();
-    //std::cout << x_rand << std::endl;
     //std::cout << "Distance from rand to goal: " << (x_rand - this->goal->getValue()).norm2() << " rand:" << x_rand << " closest: " << this->closest->getValue() << std::endl;
     //for(uint8_t i = 2; i < x_rand.size(); i++ ) x_rand[i] = 0.;
     if(!inCollision(this->_rrt.constraint, x_rand))
@@ -414,21 +412,21 @@ RT_Node *RT_RRT_Star::split_edge_with_point(rw::math::Q point, RT_Node *parent, 
 void RT_RRT_Star::set_new_goal(rw::math::Q q_newgoal)
 {
     assert(!inCollision(this->_rrt.constraint, q_newgoal));
-    /*if (!inCollision(this->_rrt.constraint, this->agent->getValue(), q_newgoal))
+    if (!inCollision(this->_rrt.constraint, this->agent->getValue(), q_newgoal))
     {
         this->startTree.add(q_newgoal, this->agent);
         this->closest = this->startTree.getLastPtr();
         this->goal = this->startTree.getLastPtr();
     }
-    else*/
+    else
     {
-        //this->goalTree.clear();
-        this->startTree.add(q_newgoal, nullptr);
-        this->goal = this->startTree.getLastPtr();
+        this->goalTree.clear();
+        this->goalTree.add(q_newgoal, nullptr);
+        this->goal = this->goalTree.getLastPtr();
         this->goal->set_cost(std::numeric_limits<double>::max());
-        //this->TreeA = &this->goalTree;
-        //this->TreeB = &this->startTree;
-        this->closest = this->startTree.get_n_nearest(q_newgoal, 2)[1];
+        this->TreeA = &this->goalTree;
+        this->TreeB = &this->startTree;
+        this->closest = this->startTree.get_nearest(q_newgoal);
     }
     return;
 
@@ -457,18 +455,18 @@ void RT_RRT_Star::move_agent(RT_Node *_agent_node)
     //Attempt to connect the agent to the goal
     if (!inCollision(this->_rrt.constraint, this->agent->getValue(), this->goal->getValue() )) {
         std::cout << "connecting goal to agent" << std::endl;
-        /*if(this->goalTree.size() == 0)
+        if(this->goalTree.size() == 0)
         {
             if( this->agent != this->goal)
                 this->goal->setParent(this->agent);
         }
-        else*/
+        else
         {
             std::cout << "Goal is not in starttree" << std::endl;
             this->startTree.add(this->goal->getValue(), this->agent);
             this->closest = this->startTree.getLastPtr();
             this->goal = this->closest;
-            //this->goalTree.clear_unsafe();
+            this->goalTree.clear_unsafe();
         }
     }
 
@@ -502,14 +500,12 @@ bool RT_RRT_Star::add_nodes_to_tree(rw::math::Q &x_new, std::vector<RT_Node *> &
     //validate_path(this->startTree._nodes, this->_rrt.constraint);
     //printf("Adding %p\n", x_min);
     this->startTree.add(x_new, x_min);
-    //std::cout << x_min << ", " << this->goal << "," << this->goal->get_cost() <<std::endl;
     //validate_path(this->startTree._nodes, this->_rrt.constraint);
     //printf("%p added without issues\n", x_min);
     this->startTree.getLastPtr()->set_cost(c_min);
     if( (this->startTree.getLastPtr()->getValue() - this->goal->getValue()).norm2() < (this->closest->getValue() - this->goal->getValue()).norm2() )
     {
         this->closest = this->startTree.getLastPtr();
-
         //std::cout << "closest node is now: " << this->closest->getValue() << " with cost" << this->closest->get_cost()
         //    << " There was " << X_near.size() << " nodes in X_near. dist to goal: "  << (this->closest->getValue() - this->goal->getValue()).norm2() <<  std::endl;
     }
@@ -637,18 +633,18 @@ rw::math::Q RT_RRT_Star::create_random_node()
     static uint64_t created_nodes = 0;
     //std::cout << created_nodes++ << std::endl;
     //printf("Created Random node\n");
-    double P_r = this->unit_distribution(this->generator);
+    /*double P_r = this->unit_distribution(this->generator);
     if(P_r > 1 - this->alpha and !this->found_solution())
     {
         LineSampler *l_sampler = LineSampler::get_instance(this->closest->getValue(), this->goal->getValue());
         //std::cout << "Sampling from " << closest->getValue() << " to " << this->goal->getValue() << std::endl;
         return l_sampler->doSample();
     }
-    else if(P_r <= (1 - this->alpha) / this->beta || !this->found_solution())
+    else if(P_r <= (1 - this->alpha) / this->beta || this->found_solution())
     {
         return this->_rrt.sampler->sample();
     }
-    else
+    else*/
     {   //Do elipsis sampling
         if(this->force == false)
         {
@@ -679,7 +675,6 @@ size_t RT_RRT_Star::get_size()
 
 bool RT_RRT_Star::found_solution()
 {
-    if(this->goal->get_cost() != std::numeric_limits<double>::max() ) this->closest = this->goal;
     return this->goal == this->closest;
 }
 
@@ -808,28 +803,33 @@ __attribute__((weak)) int main(__attribute__((unused)) int argc, __attribute__((
         std::cout << itterations << "," <<  get_path_length(new_path) << "," << new_path.size() << ","  << rt_rrt_star.get_size() << "," << rt_rrt_star.found_solution() << std::endl;
         if(rt_rrt_star.found_solution())
         {
-            if(itterations == 200)
+            while(true)
             {
-                auto next_agent = rt_rrt_star.get_goal();
-                rt_rrt_star.set_new_goal(goals[2]);
-                rt_rrt_star.move_agent(next_agent);
-                //std::cout << "New goal is "  << std::endl;
-            }
-            else if(itterations == 400)
-            {
-                auto next_agent = rt_rrt_star.get_goal();
-                rt_rrt_star.set_new_goal(goals[3]);
-                rt_rrt_star.move_agent(next_agent);
-            }
-            else if(itterations == 600)
-            {
-                auto next_agent = rt_rrt_star.get_goal();
-                rt_rrt_star.set_new_goal(goals[4]);
-                rt_rrt_star.move_agent(next_agent);
-            }
-            else if(itterations == 800)
-            {
-                return 0;
+                if(itterations == 200)
+                {
+                    auto next_agent = rt_rrt_star.get_goal();
+                    rt_rrt_star.set_new_goal(goals[2]);
+                    rt_rrt_star.move_agent(next_agent);
+                    //std::cout << "New goal is " << tmp_q << std::endl;
+                }
+                else if(itterations == 400)
+                {
+                    auto next_agent = rt_rrt_star.get_goal();
+                    rt_rrt_star.set_new_goal(goals[3]);
+                    rt_rrt_star.move_agent(next_agent);
+                }
+                else if(itterations == 600)
+                {
+                    auto next_agent = rt_rrt_star.get_goal();
+                    rt_rrt_star.set_new_goal(goals[4]);
+                    rt_rrt_star.move_agent(next_agent);
+                }
+                else if(itterations == 800)
+                {
+                    return 0;
+                }
+
+                break;
             }
         }
         saveTreePlot(rt_rrt_star, new_path);
@@ -868,5 +868,6 @@ __attribute__((weak)) int main(__attribute__((unused)) int argc, __attribute__((
     {
         std::cout << node->getValue() << " " << (node->getValue() - q_1).norm2() << std::endl;
     }
+
     return 0;
 }
