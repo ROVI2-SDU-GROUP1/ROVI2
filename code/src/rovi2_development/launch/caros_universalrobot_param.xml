@@ -2,8 +2,11 @@
 <launch>
   <!-- Define the parameterisation of the ROS parameters -->
   <arg name="device_name" default="UR-6-85-5-A" />
+  <!--arg name="device_ip" default="192.168.100.4" /-->
   <arg name="device_ip" default="127.0.0.1" />
+
   <arg name="callback_port" default="33333" />
+  <!--arg name="callback_ip" default="192.168.100.100" /-->
   <arg name="callback_ip" default="127.0.0.1" />
 
   <!-- Set the ROS parameters -->

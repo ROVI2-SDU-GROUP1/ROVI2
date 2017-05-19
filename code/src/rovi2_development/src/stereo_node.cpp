@@ -7,21 +7,28 @@
 #include <eigen3/Eigen/SVD>
 #include <cassert>
 #include <fstream>
+#include "rw/math/RPY.hpp"
 
 #include "yaml-cpp/yaml.h"
 
 #include <opencv2/core/mat.hpp>
 #include <opencv2/calib3d.hpp>
 #include <opencv2/video/tracking.hpp>
+#include "YAMLCalibration/YAMLCalibration.hpp"
 
-ros::Time leftTime;
-ros::Time rightTime;
 
-ros::Publisher pub3D;
 
-geometry_msgs::PointStamped pose2DLeft;
-geometry_msgs::PointStamped pose2DRight;
-geometry_msgs::PointStamped pose3D;
+static ros::Time leftTime;
+static ros::Time rightTime;
+
+static ros::Publisher pub3D;
+
+static geometry_msgs::PointStamped pose2DLeft;
+static geometry_msgs::PointStamped pose2DRight;
+static geometry_msgs::PointStamped pose3D;
+static rw::math::Transform3D<double> Trans_camera_in_base;
+static bool flip_z = 0;
+
 
 template<typename _Matrix_Type_>_Matrix_Type_ pseudoInverse(const _Matrix_Type_ &a, double epsilon = std::numeric_limits<double>::epsilon()){
     Eigen::JacobiSVD< _Matrix_Type_ > svd(a ,Eigen::ComputeThinU | Eigen::ComputeThinV);
@@ -48,7 +55,27 @@ bool is_file_exist(std::string fileName){
     std::ifstream infile(fileName.c_str());
     return infile.good();
 }
+rw::math::Transform3D<double> get_cam_to_base(std::string filename)
+{
+    std::cout << "loading cam to base from " << filename << std::endl;
+    YAMLCalibration hte_calibration( std::string(CALIBRATION_DIR) + filename);
+    cv::Mat translation_vector = hte_calibration.get_translation_vector();
+    cv::Mat rotation_matrix = hte_calibration.get_rotation_matrix();
+    rw::math::Vector3D<double> trans(   translation_vector.at<double>(0,0),
+                                        translation_vector.at<double>(1,0),
+                                        translation_vector.at<double>(2,0));
 
+    rw::math::Rotation3D<double> rot( rotation_matrix.at<double>(0,0), rotation_matrix.at<double>(0,1), rotation_matrix.at<double>(0,2),
+                                      rotation_matrix.at<double>(1,0), rotation_matrix.at<double>(1,1), rotation_matrix.at<double>(1,2),
+                                      rotation_matrix.at<double>(2,0), rotation_matrix.at<double>(2,1), rotation_matrix.at<double>(2,2));
+
+    //std::cout << rot << std::endl << rotation_matrix << std::endl;
+    std::cout << "Rot determinant: " << rot.e().determinant() << std::endl;
+    rw::math::Transform3D<double> cam_to_base(trans, rot);
+
+    return cam_to_base;
+
+}
 
 Intrinsic loadCalibration(std::string fileName){
   std::string yaml_filename = std::string(CALIBRATION_DIR) + fileName;
@@ -85,32 +112,6 @@ Intrinsic loadCalibration(std::string fileName){
   return cal;
 }
 
-void openCVMethod(){
-
-  cv::Mat center_right(2, 1, CV_64FC1);
-  cv::Mat center_left(2, 1, CV_64FC1);
-
-  center_left.at<double>(0,0) = pose2DLeft.point.x;
-  center_left.at<double>(0,1) = pose2DLeft.point.y;
-
-  center_right.at<double>(0,0) = pose2DRight.point.x;
-  center_right.at<double>(0,1) = pose2DRight.point.y;
-
-  cv::Mat proj_left = ( cv::Mat_<float>(3, 4) << calL.P(0,0), calL.P(0,1), calL.P(0,2), calL.P(0,3), calL.P(1,0), calL.P(1,1), calL.P(1,2),calL.P(1,3), calL.P(2,0), calL.P(2,1), calL.P(2,2),calL.P(2,3) );
-  cv::Mat proj_right = ( cv::Mat_<float>(3, 4) << calR.P(0,0), calR.P(0,1), calR.P(0,2), calR.P(0,3), calR.P(1,0), calR.P(1,1), calR.P(1,2),calR.P(1,3), calR.P(2,0), calR.P(2,1), calR.P(2,2),calR.P(2,3) );
-
-  cv::Mat point4D;
-
-  cv::triangulatePoints(proj_left, proj_right, center_left, center_right, point4D);
-
-  pose3D.point.x = point4D.at<double>(0,0);
-  pose3D.point.y = point4D.at<double>(1,0);
-  pose3D.point.z = point4D.at<double>(2,0);
-
-  pose3D.header.stamp = pose2DLeft.header.stamp;
-  ROS_INFO("Point out");
-  pub3D.publish(pose3D);
-}
 
 void linearSolv(){
 
@@ -132,9 +133,26 @@ void linearSolv(){
   Eigen::MatrixXd x(3, 1);
   x = (invA * A).inverse() * (invA * B);
 
-  pose3D.point.x = x(0, 0) / 1000.;
-  pose3D.point.y = x(1, 0) / 1000.;
-  pose3D.point.z = x(2, 0) / 1000.;
+  rw::math::Vector3D<double> rw_x(x / 1000.);
+
+  auto rpy = rw::math::RPY<>(Trans_camera_in_base.R());
+  if(flip_z) rpy[2] = -rpy[2];
+
+  rw_x = rw::math::Transform3D<double>(Trans_camera_in_base.P(), rpy.toRotation3D()) * rw_x;
+  std::cout << rw_x << std::endl;
+  std::cout << x << std::endl;
+
+  if(flip_z)
+  {
+      //This is the front camera. We add the measured offset
+      rw_x(0) += 0.037;
+      rw_x(1) -= 0.084;
+      rw_x(2) -= 0.050;
+  }
+
+  pose3D.point.x = rw_x(0);
+  pose3D.point.y = rw_x(1);
+  pose3D.point.z = rw_x(2);
 
   pose3D.header.stamp = pose2DLeft.header.stamp;
 
@@ -159,17 +177,29 @@ int main(int argc, char **argv){
 
     std::string param_yaml_path_left;
     std::string param_yaml_path_right;
+    std::string param_hte_path;
+    std::string param_point_sub_left;
+    std::string param_point_sub_right;
+    std::string param_pose_3d;
 
     nh.param<std::string>("calibration_yaml_path_left", param_yaml_path_left, "default.yaml");
     nh.param<std::string>("calibration_yaml_path_right", param_yaml_path_right, "default.yaml");
+    nh.param<std::string>("point_sub_left", param_point_sub_left, "/pose/");
+    nh.param<std::string>("point_sub_right", param_point_sub_right, "/pose/");
+    nh.param<std::string>("param_hte_path", param_hte_path, "default.yaml");
+    nh.param<std::string>("point_pub", param_pose_3d, "/pose/");
+    nh.param<bool>("flip_z", flip_z, 0);
+
+    std::cout << "Are we flipping z?: " << flip_z << std::endl;
 
     calL = loadCalibration(param_yaml_path_left);
     calR = loadCalibration(param_yaml_path_right);
+    Trans_camera_in_base = get_cam_to_base(param_hte_path);
+    std::cout << Trans_camera_in_base << std::endl;
+    pub3D = nh.advertise<geometry_msgs::PointStamped>(param_pose_3d, 1);
 
-    pub3D = nh.advertise<geometry_msgs::PointStamped>("/pose/3d", 1);
-
-    message_filters::Subscriber<geometry_msgs::PointStamped> image_left(nh, "/pose/2d_left", 1);
-    message_filters::Subscriber<geometry_msgs::PointStamped> image_right(nh,"/pose/2d_right", 1);
+    message_filters::Subscriber<geometry_msgs::PointStamped> image_left(nh, param_point_sub_left, 1);
+    message_filters::Subscriber<geometry_msgs::PointStamped> image_right(nh,param_point_sub_right, 1);
     message_filters::TimeSynchronizer<geometry_msgs::PointStamped, geometry_msgs::PointStamped> sync(image_left, image_right, 10);
     sync.registerCallback(boost::bind(&image_sync_callback, _1, _2));
 

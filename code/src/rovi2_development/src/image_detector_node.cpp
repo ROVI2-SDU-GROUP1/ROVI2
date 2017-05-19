@@ -21,7 +21,6 @@ static cv::Mat *cameraMatrix;
 static cv::Mat *distCoeffs;
 static cv::Mat tmp_img;
 static std::thread *faker_thread = nullptr;
-static mutex mtx;
 //static HsvAdjust hsv_adjust;
 static ros::Subscriber image_sub;
 static ros::Publisher point_pub;
@@ -69,17 +68,22 @@ void opening(cv::Mat &src){
   cv::dilate(dst, src, elementDilate);
 }
 
-cv::Mat Undistored(cv::Mat input){
-  cv::Mat undistorted;
+void Undistored(cv::Mat &input, cv::Mat &undistorted){
   cv::undistort(input, undistorted, *cameraMatrix, *distCoeffs);
-
-  return undistorted;
 }
 
-// state subscriber
-void find2DPose_CV(cv::Mat &img, const sensor_msgs::Image::ConstPtr& msg, bool overwrite = true)
+std::vector<cv::Point2f> fast_undistort(std::vector<cv::Point2f> &input_points)
 {
-    cv::Mat imageUndistorted = Undistored(img);
+    std::vector<cv::Point2f> output_points(input_points.size());
+    cv::undistortPoints(input_points, output_points, *cameraMatrix, *distCoeffs, cv::noArray(), *cameraMatrix);
+    return output_points;
+}
+// state subscriber
+void find2DPose_CV(cv::Mat &img, const sensor_msgs::Image::ConstPtr& msg, __attribute__((unused)) bool overwrite = true)
+{
+    //auto time_start = std::chrono::high_resolution_clock::now();
+    cv::Mat &imageUndistorted = img;
+    //Undistored(img,imageUndistorted);
 
     cv::Mat imageHSV;
     cv::cvtColor(imageUndistorted, imageHSV, CV_BGR2HSV);
@@ -97,9 +101,13 @@ void find2DPose_CV(cv::Mat &img, const sensor_msgs::Image::ConstPtr& msg, bool o
     cv::inRange(imageHSV, cv::Scalar(130, 130, 20), cv::Scalar(255, 255, 255), thresholdHigh);
 
     cv::Mat threshold = thresholdLow + thresholdHigh;
+    //cv::imshow("thres", threshold);
 
     opening(threshold);
+    //cv::imshow("thres_open", threshold);
+
     closing(threshold);
+    //cv::imshow("thres_close", threshold);
 
     std::vector<std::vector<cv::Point> > cont;
     std::vector<cv::Vec4i> hier;
@@ -121,8 +129,14 @@ void find2DPose_CV(cv::Mat &img, const sensor_msgs::Image::ConstPtr& msg, bool o
             largest_contour = tmp;
     }
 
-
-      cv::Moments moments = cv::moments(largest_contour, false);
+    //Undistort the contour
+    std::vector<cv::Point2f> contour;
+    for(uint64_t i = 0; i < largest_contour.size(); i++)
+    {
+        contour.push_back(largest_contour[i]);
+    }
+    std::vector<cv::Point2f> undistorted_contour = fast_undistort(contour);
+      cv::Moments moments = cv::moments(undistorted_contour, false);
       cv::Point2f imgCoord = cv::Point2f(moments.m10 / moments.m00, moments.m01 / moments.m00);
 
     point.point.x = imgCoord.x;
@@ -132,11 +146,12 @@ void find2DPose_CV(cv::Mat &img, const sensor_msgs::Image::ConstPtr& msg, bool o
     cv::circle(imageUndistorted, imgCoord, 10, cv::Scalar(0, 255, 0), 2);
 
     //  cv::imshow("Distorted", imageBGR);
-    //  cv::imshow("Undistorted", imageUndistorted);
     //cv::imshow("t1", imageUndistorted);
     //cv::waitKey(1);
 
     point_pub.publish(point);
+    //std::cout <<  std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - time_start).count()  << std::endl;
+
 }
 
 void find2DPose(const sensor_msgs::Image::ConstPtr& msg){
@@ -237,18 +252,13 @@ int main(int argc, char **argv){
     distCoeffs->at<double>(i) = distortion_coefficients["data"][i].as<double>();
   }
 
-  image_sub = nh.subscribe<sensor_msgs::Image>(image_sub_name, 1, find2DPose);
+  image_sub = nh.subscribe<sensor_msgs::Image>(image_sub_name, 5, find2DPose);
   point_pub = nh.advertise<geometry_msgs::PointStamped>(point_pub_name, 1);
-  image_fake_pub = nh.advertise<sensor_msgs::Image>("/camera/left/image_raw_faker", 1);
-  ros::Subscriber image_sub2 = nh.subscribe<sensor_msgs::Image>("/camera/left/image_raw_faker", 1, find2DPose_fake);
+  // image_fake_pub = nh.advertise<sensor_msgs::Image>("/camera/left/image_raw_faker", 1);
+  // ros::Subscriber image_sub2 = nh.subscribe<sensor_msgs::Image>("/camera/left/image_raw_faker", 1, find2DPose_fake);
 
-  ros::Time last = ros::Time::now();
   std::thread t1(exit_tester);
-  while (ros::ok()){
-    last = ros::Time::now();
-    ros::spinOnce();
-		rate.sleep();
-  }
+  ros::spin();
 
   return 0;
 }

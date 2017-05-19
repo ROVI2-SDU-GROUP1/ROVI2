@@ -71,7 +71,7 @@ include_directories("headers")
 
 #Add NAZI compiler arguments..
 set(CMAKE_CXX_FLAGS "-std=c++11 \
- -O2 \
+ -Ofast \
  -Wall \
  -Wextra \
  -Wshadow \
@@ -103,16 +103,29 @@ target_link_libraries(image_detector ${OpenCV_LIBS} ${catkin_LIBRARIES} yaml-cpp
 add_library(YAML SHARED src/YAMLCalibration/YAMLCalibration.cpp)
 target_link_libraries(YAML ${OpenCV_LIBS} ${catkin_LIBRARIES} yaml-cpp)
 
+# Frame transformation test using RobWork
+add_executable(frame_trans src/frame_trans.cpp)
+add_dependencies(frame_trans ${catkin_EXPORTED_TARGETS})
+target_link_libraries(frame_trans ${ROBWORK_LIBRARIES} YAML)
+
 
 # Hand to eye
 add_executable(hand_to_eye src/hand_to_eye_calibration_node.cpp src/Hand_to_eye.cpp)
 add_dependencies(hand_to_eye ${catkin_EXPORTED_TARGETS})
 target_link_libraries(hand_to_eye ${OpenCV_LIBS} ${catkin_LIBRARIES} ${ROBWORK_LIBRARIES} YAML)
 
+
+# Forward kinematics node used for plotting Robots endpoint :>
+add_executable(ForwardKinematics_node src/ForwardKinematics.cpp src/ForwardKinematics_node.cpp)
+add_dependencies(ForwardKinematics_node ${catkin_EXPORTED_TARGETS})
+target_link_libraries(ForwardKinematics_node ${catkin_LIBRARIES} ${ROBWORK_LIBRARIES})
+
+
+
 # Stereo node
 add_executable(stereo src/stereo_node.cpp)
 add_dependencies(stereo ${catkin_EXPORTED_TARGETS})
-target_link_libraries(stereo ${OpenCV_LIBS} ${catkin_LIBRARIES} yaml-cpp)
+target_link_libraries(stereo ${OpenCV_LIBS} ${catkin_LIBRARIES} ${ROBWORK_LIBRARIES} YAML)
 
 # Kalman node
 add_executable(kalman_node src/kalman_estimator_node.cpp)
@@ -129,10 +142,20 @@ add_executable(ball_traj_tester src/ball_traj_tester.cpp)
 add_dependencies(ball_traj_tester ${catkin_EXPORTED_TARGETS})
 target_link_libraries(ball_traj_tester ${OpenCV_LIBS} ${EIGEN3_LIBS} ${catkin_LIBRARIES})
 
-# Realtime RRT Star tests
+# path planner tests
 add_executable(path_planner_node src/path_planner_node.cpp src/RT_RRT_Star.cpp src/LineSampler.cpp src/UnitBallSampler.cpp src/ElipsisSampler.cpp)
 add_dependencies(path_planner_node ${catkin_EXPORTED_TARGETS})
 target_link_libraries(path_planner_node ${OpenCV_LIBS} ${EIGEN3_LIBS} ${catkin_LIBRARIES} ${ROBWORK_LIBRARIES})
+
+# Realtime RRT Star tests
+add_executable(rt_rrt_star src/RT_RRT_Star.cpp src/LineSampler.cpp src/UnitBallSampler.cpp src/ElipsisSampler.cpp)
+add_dependencies(rt_rrt_star ${catkin_EXPORTED_TARGETS})
+target_link_libraries(rt_rrt_star ${OpenCV_LIBS} ${EIGEN3_LIBS} ${catkin_LIBRARIES} ${ROBWORK_LIBRARIES})
+
+# posefollower
+add_executable(pose_follower src/PoseFollower.cpp)
+add_dependencies(pose_follower ${catkin_EXPORTED_TARGETS} )
+target_link_libraries(pose_follower ${OpenCV_LIBS} ${EIGEN3_LIBS} ${catkin_LIBRARIES} ${ROBWORK_LIBRARIES})
 
 # If we want to use ui files add them here
 #QT4_WRAP_UI(UIS_OUT_H src/RW_Live_plugin/SamplePlugin.ui)

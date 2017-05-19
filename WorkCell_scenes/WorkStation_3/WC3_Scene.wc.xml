@@ -70,6 +70,30 @@
   </Drawable>
   </Frame>
 
+	<Frame name="Camera_front" refframe="UR1.Base" type="Movable" daf="true">
+	<RPY>  -0.757065 2.1993 119.729 </RPY><Pos> 0.0489806 -1.7849 1.35243</Pos>
+	<Drawable name="Bottle" refframe="Camera_front">
+		<RPY> 0 0 90</RPY> <Pos>0 0 0</Pos>
+		<Polytope file="Geometry/bumblebee2.stl"/>
+	</Drawable>
+	</Frame>
+
+	<Frame name="Camera_back" refframe="UR1.Base" type="Movable" daf="true">
+	<RPY> 168.388 14.0063 -124.789 </RPY><Pos> 0.399429 0.669234 1.38672</Pos>
+	<Drawable name="Bottle" refframe="Camera_front">
+		<RPY> 0 0 90</RPY> <Pos>0 0 0</Pos>
+		<Polytope file="Geometry/bumblebee2.stl"/>
+	</Drawable>
+	</Frame>
+
+	<Frame name="Ball" refframe="UR1.Base" type="Movable" daf="true">
+	<RPY> 0 0 0 </RPY><Pos> 1 1 1</Pos>
+	<Drawable name="Ball_" refframe="Ball">
+		<RPY> 0 0 90</RPY><Pos>0 0 0</Pos>
+		<Polytope file="Geometry/ball.stl"/>
+	</Drawable>
+	</Frame>
+
 <CollisionSetup file="CollisionSetup.xml"/>
 
 </WorkCell>

@@ -13,7 +13,8 @@ class Kalman_Estimator
         ros::Subscriber sub;
         ros::Publisher pub_filtered;
         ros::Publisher pub_raw;
-
+        ros::Publisher pub_reset;
+        bool test_reset(Eigen::Vector3d &cur_speed, Eigen::Vector3d &acc);
         tf2::Stamped<Eigen::Vector3d> prev_points[3]; //The three previosly recieved points
         Eigen::VectorXd cur_state;
         Eigen::Matrix<double, 9, 9> cur_covariance;
@@ -25,5 +26,5 @@ class Kalman_Estimator
         void do_predict_step();
         void do_update_step(Eigen::VectorXd measured_state);
         void update_transition_matrix(double time_step);
-
+        void reset();
 };

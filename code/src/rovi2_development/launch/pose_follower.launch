@@ -1,0 +1,25 @@
+<launch>
+  <!-- Define machines -->
+	<machine name="Cell3" address="192.168.100.53" user="rovi2" password="student" />
+
+  <!-- Start the caros nodes -->
+
+  <!-- Hardcoded workcell path... This should not be hardcoded, else the test should be CARO/MARVIN specific - the hardcoded q-configuration is also sort of scene specific... -->
+  <param name="/caros/workcell" value="$(find rovi2_development)/../../../WorkCell_scenes/WorkStation_3/WC3_Scene.wc.xml" />
+
+  <group>
+    <include file="$(find rovi2_development)/launch/caros_universalrobot_param.xml" ns="ur_simple_demo_node">
+      <arg name="device_name" value="UR1" />
+    </include>
+    <!-- The 'name' parameter has to match the 'ns' parameter used in the include tag above -->
+    <node pkg="caros_universalrobot" type="caros_universalrobot_node" name="ur_simple_demo_node" required="true" output="screen">
+      <!-- Nothing -->
+    </node>
+  </group>
+
+<!-- pose follower node -->
+  <node name="follow_pose" pkg="rovi2_development" type="pose_follower" output="screen" />
+<!-- stereo stuff... -->
+<include file="$(find rovi2_development)/launch/stereo_run.launch" />
+
+</launch>
