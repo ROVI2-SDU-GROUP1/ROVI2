@@ -1,25 +1,19 @@
 <launch>
-	<arg name="param_calib_left"  value="front/left.yaml" />
-	<arg name="param_calib_right" value="front/right.yaml" />
+	<arg name="param_calib_left"  value="back/left.yaml" />
+	<arg name="param_calib_right" value="back/right.yaml" />
 
-	<!-- Hand to eye calibration node -->
-	<node pkg="rovi2_development" type="hand_to_eye" name="hand_to_eye_calibration" output="screen">
-		<param name="image_left" value="/camera/left/image_raw" />
-		<param name="image_right" value="/camera/right/image_raw" />
-		<param name="sub_robot_state" value="/caros_universalrobot/caros_serial_device_service_interface/robot_state" />
-		<param name="calibration_yaml_path_left" value="$(arg param_calib_left)" />
-		<param name="calibration_yaml_path_right" value="$(arg param_calib_right)" />
+  <!-- Left image detector node -->
+	<node pkg="rovi2_development" type="image_detector" name="image_detector_left" output="screen">
+		<param name="image_sub" value="/camera/left/image_raw" />
+		<param name="point_pub" value="/pose/2d_left" />
+		<param name="calibration_yaml_path" value="$(arg param_calib_left)" />
+	</node>
 
-		<param name="pub_robot_transform" value="/q_state_processed" />
-		<param name="pub_point_left" value="/pose/2d_left" />
-		<param name="pub_point_right" value="/pose/2d_right" />
-
-		<param name="show_images" value="false"/>
-		<param name="save_images" value="false"/>
-		<param name="rectify_images" value="false"/>
-		<param name="save_images_path_left" value="/tmp/back/left"/>
-		<param name="save_images_path_right" value="/tmp/back/right"/>
-
+	<!-- Right image detector node -->
+	<node pkg="rovi2_development" type="image_detector" name="image_detector_right" output="screen" >
+		<param name="image_sub" value="/camera/right/image_raw" />
+		<param name="point_pub" value="/pose/2d_right" />
+		<param name="calibration_yaml_path" value="$(arg param_calib_right)" />
 	</node>
 
 	<!-- Stereo node -->
@@ -29,6 +23,8 @@
 		<param name="point_pub" value="/pose/3d" />
 		<param name="calibration_yaml_path_left" value="$(arg param_calib_left)" />
 		<param name="calibration_yaml_path_right" value="$(arg param_calib_right)" />
+		<param name="param_hte_path" value="/back/hte_back.yaml" />
+		<param name="flip_z" value="false" />
 	</node>
 
   <!-- Kalman node -->

@@ -20,7 +20,6 @@
 		<param name="rectify_images" value="false"/>
 		<param name="save_images_path_left" value="/tmp/back/left"/>
 		<param name="save_images_path_right" value="/tmp/back/right"/>
-
 	</node>
 
 	<!-- Stereo node -->
