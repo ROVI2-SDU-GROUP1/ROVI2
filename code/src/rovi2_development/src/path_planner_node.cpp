@@ -22,6 +22,8 @@
 #include <thread>
 #include <mutex>
 #include <limits>
+#include <TreePlotter.hpp>
+
 
 bool compare_paths(std::vector<RT_Node *> path1, std::vector<RT_Node *> path2)
 { //Return false if the paths are different, true if equal
@@ -292,6 +294,9 @@ void RobotPlanner::rt_rrt_runner(void)
         }
         //We start the rrt now!
         auto new_path = this->rt_rrt_star_planner->find_next_path(time_to_solve, this->first_run);
+
+        saveTreePlot(*this->rt_rrt_star_planner);
+
         this->next_path_lock.lock();
         if(!compare_paths(this->next_path, new_path))
         {

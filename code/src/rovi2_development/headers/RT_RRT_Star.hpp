@@ -81,6 +81,8 @@ class RT_RRT_Star
         void force_stop() { this->stop = true;}
         std::vector<RT_Node *> get_all_nodes() { return this->startTree._nodes; }
         RT_Node *split_edge_with_point(rw::math::Q point, RT_Node *parent, RT_Node *child);
+        RT_Node *get_agent(){return this->agent;}
+        RT_Node *get_goal(){return this->goal;}
 
     private:
         bool force = false;
@@ -88,7 +90,7 @@ class RT_RRT_Star
         double beta = 3;
         double k_max = 10000;
         double r_s = 1;
-        double rrt_connect_epsilon = 0.5;
+        double rrt_connect_epsilon = 1;
         bool stop = false;
         std::queue<RT_Node *> Q_r;
         std::queue<RT_Node *> Q_s;
@@ -111,3 +113,5 @@ class RT_RRT_Star
         RT_Node *closest = nullptr;
         double u_X;
 };
+
+void saveTreePlot(RT_RRT_Star &rt, std::vector<RT_Node *> goal_path = std::vector<RT_Node *>());

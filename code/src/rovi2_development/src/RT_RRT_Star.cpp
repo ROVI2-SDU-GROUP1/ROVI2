@@ -12,8 +12,32 @@
 #include <cstdlib>
 #include <cmath>
 #include <ElipsisSampler.hpp>
-
+#include <TreePlotter.hpp>
 static rw::pathplanning::PlannerConstraint *stat_constraint = nullptr;
+
+void saveTreePlot(RT_RRT_Star &rt, std::vector<RT_Node *> goal_path)
+{
+    static uint32_t plot_num = 0;
+    plot_num++;
+    if(plot_num % 10 != 1) return;
+
+    std::string filename = std::string("treeplot_") + std::to_string(plot_num);
+    std::string f12 = filename + "_12.png";
+    std::string f34 = filename + "_34.png";
+    std::string f56 = filename + "_56.png";
+
+    cv::Mat img12(600, 600, CV_8UC3);
+    cv::Mat img34(600, 600, CV_8UC3);
+    cv::Mat img56(600, 600, CV_8UC3);
+
+    plotTree(rt.get_agent(), img12, 0, 1, goal_path);
+    plotTree(rt.get_agent(), img34, 2, 3, goal_path);
+    plotTree(rt.get_agent(), img56, 4, 5, goal_path);
+    imwrite( f12, img12 );
+    imwrite( f34, img34 );
+    imwrite( f56, img56 );
+
+}
 
 
 void validate_path(std::vector<RT_Node *> &path, const rw::pathplanning::PlannerConstraint& constraint);
@@ -62,6 +86,7 @@ double get_dist(rw::math::Q &q1, rw::math::Q &q2)
 
 double get_path_length(rw::trajectory::QPath &path)
 {
+    if(path.size() <= 1) return 0;
     double length = 0;
     for(size_t i = 1; i < path.size(); i++)
     {   double tmp = get_dist(path[i - 1], path[i]);
@@ -165,15 +190,16 @@ RT_RRT_Star::RT_RRT_Star(rw::math::Q _q_start, rw::math::Q _q_goal, const rw::pa
     this->agent = this->startTree.getLastPtr();
     this->agent->set_cost(0.);
     this->goal = goalTree.getLastPtr();
+    this->startTree.add(this->goal);
     this->goal->set_cost(std::numeric_limits<double>::max());
     this->closest = this->agent;
 
-    if (!inCollision(this->_rrt.constraint, _q_start, _q_goal)) {
+    /*if (!inCollision(this->_rrt.constraint, _q_start, _q_goal)) {
         this->startTree.add(this->goal->getValue(), this->agent);
         this->goalTree.clear_unsafe();
         this->closest = this->startTree.getLastPtr();
         this->goal = this->closest;
-    }
+    }*/
 
 }
 
@@ -194,7 +220,7 @@ std::vector<RT_Node *> RT_RRT_Star::find_next_path(std::chrono::milliseconds rrt
 
     while(std::chrono::steady_clock::now() < global_deadline and this->stop == false)
     {
-        if(this->found_solution())
+        if(this->found_solution() or true)
         {
         //    std::cout << "expanding and rewirering" << std::endl;
             this->expand_and_rewire();
@@ -345,6 +371,7 @@ void RT_RRT_Star::expand_and_rewire()
 
     double epsilon = this->getEpsilon();
     rw::math::Q x_rand = this->create_random_node();
+    //std::cout << x_rand << std::endl;
     //std::cout << "Distance from rand to goal: " << (x_rand - this->goal->getValue()).norm2() << " rand:" << x_rand << " closest: " << this->closest->getValue() << std::endl;
     //for(uint8_t i = 2; i < x_rand.size(); i++ ) x_rand[i] = 0.;
     if(!inCollision(this->_rrt.constraint, x_rand))
@@ -387,21 +414,21 @@ RT_Node *RT_RRT_Star::split_edge_with_point(rw::math::Q point, RT_Node *parent, 
 void RT_RRT_Star::set_new_goal(rw::math::Q q_newgoal)
 {
     assert(!inCollision(this->_rrt.constraint, q_newgoal));
-    if (!inCollision(this->_rrt.constraint, this->agent->getValue(), q_newgoal))
+    /*if (!inCollision(this->_rrt.constraint, this->agent->getValue(), q_newgoal))
     {
         this->startTree.add(q_newgoal, this->agent);
         this->closest = this->startTree.getLastPtr();
         this->goal = this->startTree.getLastPtr();
     }
-    else
+    else*/
     {
-        this->goalTree.clear();
-        this->goalTree.add(q_newgoal, nullptr);
-        this->goal = this->goalTree.getLastPtr();
+        //this->goalTree.clear();
+        this->startTree.add(q_newgoal, nullptr);
+        this->goal = this->startTree.getLastPtr();
         this->goal->set_cost(std::numeric_limits<double>::max());
-        this->TreeA = &this->goalTree;
-        this->TreeB = &this->startTree;
-        this->closest = this->startTree.get_nearest(q_newgoal);
+        //this->TreeA = &this->goalTree;
+        //this->TreeB = &this->startTree;
+        this->closest = this->startTree.get_n_nearest(q_newgoal, 2)[1];
     }
     return;
 
@@ -430,18 +457,18 @@ void RT_RRT_Star::move_agent(RT_Node *_agent_node)
     //Attempt to connect the agent to the goal
     if (!inCollision(this->_rrt.constraint, this->agent->getValue(), this->goal->getValue() )) {
         std::cout << "connecting goal to agent" << std::endl;
-        if(this->goalTree.size() == 0)
+        /*if(this->goalTree.size() == 0)
         {
             if( this->agent != this->goal)
                 this->goal->setParent(this->agent);
         }
-        else
+        else*/
         {
             std::cout << "Goal is not in starttree" << std::endl;
             this->startTree.add(this->goal->getValue(), this->agent);
             this->closest = this->startTree.getLastPtr();
             this->goal = this->closest;
-            this->goalTree.clear_unsafe();
+            //this->goalTree.clear_unsafe();
         }
     }
 
@@ -475,12 +502,14 @@ bool RT_RRT_Star::add_nodes_to_tree(rw::math::Q &x_new, std::vector<RT_Node *> &
     //validate_path(this->startTree._nodes, this->_rrt.constraint);
     //printf("Adding %p\n", x_min);
     this->startTree.add(x_new, x_min);
+    //std::cout << x_min << ", " << this->goal << "," << this->goal->get_cost() <<std::endl;
     //validate_path(this->startTree._nodes, this->_rrt.constraint);
     //printf("%p added without issues\n", x_min);
     this->startTree.getLastPtr()->set_cost(c_min);
     if( (this->startTree.getLastPtr()->getValue() - this->goal->getValue()).norm2() < (this->closest->getValue() - this->goal->getValue()).norm2() )
     {
         this->closest = this->startTree.getLastPtr();
+
         //std::cout << "closest node is now: " << this->closest->getValue() << " with cost" << this->closest->get_cost()
         //    << " There was " << X_near.size() << " nodes in X_near. dist to goal: "  << (this->closest->getValue() - this->goal->getValue()).norm2() <<  std::endl;
     }
@@ -606,20 +635,20 @@ std::vector<RT_Node *> RT_RRT_Star::plan_path()
 rw::math::Q RT_RRT_Star::create_random_node()
 {
     static uint64_t created_nodes = 0;
-    std::cout << created_nodes++ << std::endl;
+    //std::cout << created_nodes++ << std::endl;
     //printf("Created Random node\n");
-    /*double P_r = this->unit_distribution(this->generator);
+    double P_r = this->unit_distribution(this->generator);
     if(P_r > 1 - this->alpha and !this->found_solution())
     {
         LineSampler *l_sampler = LineSampler::get_instance(this->closest->getValue(), this->goal->getValue());
         //std::cout << "Sampling from " << closest->getValue() << " to " << this->goal->getValue() << std::endl;
         return l_sampler->doSample();
     }
-    else if(P_r <= (1 - this->alpha) / this->beta || this->found_solution())
+    else if(P_r <= (1 - this->alpha) / this->beta || !this->found_solution())
     {
         return this->_rrt.sampler->sample();
     }
-    else*/
+    else
     {   //Do elipsis sampling
         if(this->force == false)
         {
@@ -650,6 +679,7 @@ size_t RT_RRT_Star::get_size()
 
 bool RT_RRT_Star::found_solution()
 {
+    if(this->goal->get_cost() != std::numeric_limits<double>::max() ) this->closest = this->goal;
     return this->goal == this->closest;
 }
 
@@ -715,17 +745,28 @@ __attribute__((weak)) int main(__attribute__((unused)) int argc, __attribute__((
 
     rw::kinematics::State state = wc->getDefaultState();;
 
-    rw::math::Q q_1(6, 1.2, 1.3, -0.298, -0.341, 0, 0);
-    rw::math::Q q_2(6, 4.52282, -3.22411, 5.80915, 3.47969, -0.552745, 4.30143);
+    rw::math::Q q_1(6, -0.36, 0, 1.3, -1.5, 0, 0);
+    rw::math::Q q_2(6, -1.042, -3.007, -0.281, -1.934, 0, 0);
+    rw::math::Q q_3(6, -1.541, -2.979, -1.745, -5.855, -1.335, 1.952);
+    rw::math::Q q_4(6, -4.201, 0.191, 1.087, -2.159, -4., 1.673);
+    rw::math::Q q_5(6, -4.490, -0.66, 1.293, 6.266, 0.103, -0.103);
+
+    std::vector<rw::math::Q> goals;
+    goals.push_back(q_1);
+    goals.push_back(q_2);
+    goals.push_back(q_3);
+    goals.push_back(q_4);
+    goals.push_back(q_5);
+
     //std::cout << q_2 << std::endl;
     ElipsisSampler e_sampler(q_1, q_2, (q_2 - q_1).norm2() * 1.0005 );
-    for(uint64_t i = 0; i < 30000; i++)
+    /*for(uint64_t i = 0; i < 30000; i++)
     {
         auto q_rand = e_sampler.doSample();
         std::cout << q_rand(0) << "," << q_rand(1)  <<  "," << q_rand(2) << "," << q_rand(3) << "," << q_rand(4) << "," << q_rand(5)  << std::endl;
     }
     return 0;
-
+    */
 
     device->setQ(q_1, state);
     rw::pathplanning::QConstraint::Ptr constraint = rw::pathplanning::QConstraint::make(detector, device, state);
@@ -743,43 +784,57 @@ __attribute__((weak)) int main(__attribute__((unused)) int argc, __attribute__((
     rw::trajectory::QPath path;
     #define MAXTIME 1000.
 
-    /*planner->query(q_1,q_2,path,MAXTIME);
+    planner->query(q_1,q_2,path,MAXTIME);
     for(auto q_ : path)
     {
         std::cout << q_ << std::endl;
-    }*/
+    }
     //return 0;
-    RT_RRT_Star rt_rrt_star(q_1, q_2, p_constraint, sampler, metric, device);
-    std::chrono::milliseconds time_to_solve{1000};
-    for(uint64_t itterations = 0; rt_rrt_star.found_solution() == false || itterations < 2000; itterations++)
+    RT_RRT_Star rt_rrt_star(goals[0], goals[1], p_constraint, sampler, metric, device);
+    std::chrono::milliseconds time_to_solve{200};
+    for(uint64_t itterations = 1; rt_rrt_star.found_solution() == false || itterations < 2000; itterations++)
     {
         auto new_path = rt_rrt_star.find_next_path(time_to_solve);
-        for(auto node : new_path)
+        /*for(auto node : new_path)
         {
             std::cout << node->getValue() << std::endl;
-        }
+        }*/
         //validate_path(new_path, p_constraint);
 
-        std::cout << "End of itteration " << itterations << " Tree size: " << rt_rrt_star.get_size() << std::endl;
-        rt_rrt_star.nodes_without_parents();
-        rt_rrt_star.validate_tree_structure();
-        std::cout << get_path_length(new_path) << std::endl;
-        std::cout << rt_rrt_star.found_solution() << std::endl;
+        //std::cout << "End of itteration " << itterations << " Tree size: " << rt_rrt_star.get_size() << std::endl;
+        //rt_rrt_star.nodes_without_parents();
+        //rt_rrt_star.validate_tree_structure();
+        //std::cout << get_path_length(new_path) << std::endl;
+        std::cout << itterations << "," <<  get_path_length(new_path) << "," << new_path.size() << ","  << rt_rrt_star.get_size() << "," << rt_rrt_star.found_solution() << std::endl;
         if(rt_rrt_star.found_solution())
         {
-            while(true)
+            if(itterations == 200)
             {
-                auto tmp_q = sampler->sample();
-                if(p_constraint.getQConstraint().inCollision(tmp_q)) continue;
-                assert(!inCollision(p_constraint, tmp_q));
-                rt_rrt_star.set_new_goal(tmp_q);
-                std::cout << "New goal is " << tmp_q << std::endl;
-                break;
+                auto next_agent = rt_rrt_star.get_goal();
+                rt_rrt_star.set_new_goal(goals[2]);
+                rt_rrt_star.move_agent(next_agent);
+                //std::cout << "New goal is "  << std::endl;
+            }
+            else if(itterations == 400)
+            {
+                auto next_agent = rt_rrt_star.get_goal();
+                rt_rrt_star.set_new_goal(goals[3]);
+                rt_rrt_star.move_agent(next_agent);
+            }
+            else if(itterations == 600)
+            {
+                auto next_agent = rt_rrt_star.get_goal();
+                rt_rrt_star.set_new_goal(goals[4]);
+                rt_rrt_star.move_agent(next_agent);
+            }
+            else if(itterations == 800)
+            {
+                return 0;
             }
         }
+        saveTreePlot(rt_rrt_star, new_path);
     }
     std::cout << "Tree size at exit: " << rt_rrt_star.get_size() << std::endl;
-
     return 0;
 
 
@@ -813,6 +868,5 @@ __attribute__((weak)) int main(__attribute__((unused)) int argc, __attribute__((
     {
         std::cout << node->getValue() << " " << (node->getValue() - q_1).norm2() << std::endl;
     }
-
     return 0;
 }

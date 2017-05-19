@@ -135,7 +135,7 @@ class RT_RRTNode
         {
             return this->_value.norm2();
         }*/
-        std::vector<RT_RRTNode<T> *> &get_childs()
+        const std::vector<RT_RRTNode<T> *> &get_childs() const
         {
             return this->childs;
         }
