@@ -295,7 +295,7 @@ void RobotPlanner::rt_rrt_runner(void)
         //We start the rrt now!
         auto new_path = this->rt_rrt_star_planner->find_next_path(time_to_solve, this->first_run);
 
-        saveTreePlot(*this->rt_rrt_star_planner);
+        //saveTreePlot(*this->rt_rrt_star_planner);
 
         this->next_path_lock.lock();
         if(!compare_paths(this->next_path, new_path))
@@ -388,7 +388,7 @@ rw::math::Q RobotPlanner::find_new_goal(Plane3d intersect_plane, Trajectory3d tr
     std::cout << (p - this->last_goal_point).norm() << std::endl;
     if( (p - this->last_goal_point).norm() < 0.05) return rw::math::Q(); //Return if goal have not changed by much.
     //Find the point closest to this where there is a collision free poisition.
-    for(double t_offset = 0; t_offset < 2; t_offset += 0.01)
+    for(double t_offset = 0; t_offset < 0.5; t_offset += 0.01)
     {
         double t = catch_time + t_offset;
         p = predict_point(traj, t);

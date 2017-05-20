@@ -88,7 +88,7 @@ class RT_RRT_Star
         bool force = false;
         double alpha = 0.1;
         double beta = 3;
-        double k_max = 10000;
+        double k_max = 1000;
         double r_s = 1;
         double rrt_connect_epsilon = 1;
         bool stop = false;

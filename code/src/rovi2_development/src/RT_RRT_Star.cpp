@@ -767,7 +767,7 @@ __attribute__((weak)) int main(__attribute__((unused)) int argc, __attribute__((
     rw::pathplanning::QConstraint::Ptr constraint = rw::pathplanning::QConstraint::make(detector, device, state);
     rw::math::QMetric::Ptr norm_metric = rw::pathplanning::PlannerUtil::normalizingInfinityMetric(device->getBounds());
 
-    rw::pathplanning::QEdgeConstraint::Ptr edge_constraint = rw::pathplanning::QEdgeConstraint::make(constraint, norm_metric, 0.02);
+    rw::pathplanning::QEdgeConstraint::Ptr edge_constraint = rw::pathplanning::QEdgeConstraint::make(constraint, norm_metric, 0.01);
 
     rw::pathplanning::PlannerConstraint p_constraint = rw::pathplanning::PlannerConstraint::make(constraint, edge_constraint);
     stat_constraint = &p_constraint;
@@ -778,8 +778,10 @@ __attribute__((weak)) int main(__attribute__((unused)) int argc, __attribute__((
     rw::pathplanning::QToQPlanner::Ptr planner = rwlibs::pathplanners::RRTPlanner::makeQToQPlanner(p_constraint, sampler, metric, 1, rwlibs::pathplanners::RRTPlanner::RRTConnect);
     rw::trajectory::QPath path;
     #define MAXTIME 1000.
-
+    auto time_start = std::chrono::high_resolution_clock::now();
     planner->query(q_1,q_2,path,MAXTIME);
+    std::cout <<  std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - time_start).count()  << std::endl;
+
     for(auto q_ : path)
     {
         std::cout << q_ << std::endl;
