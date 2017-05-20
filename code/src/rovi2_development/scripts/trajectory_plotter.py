@@ -148,7 +148,6 @@ class Trajectory_Plotter:
 def __main__():
     t_plotter = Trajectory_Plotter()
 
-
     rospy.init_node('node_name')
 
     sub_parameter = rospy.get_param("~sub_parameter", "/pose/parameter")
