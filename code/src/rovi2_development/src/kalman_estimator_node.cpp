@@ -55,7 +55,7 @@ void Kalman_Estimator::do_update_step(Eigen::VectorXd measured_state)
     R_k(5,5) = 1000; //Not too sure about velocity.
     R_k(6,6) = 10000; //Very unsure about acceleration.
     R_k(7,7) = 10000; //Very unsure about acceleration.
-    R_k(8,8) = 100; //Very unsure about acceleration.
+    R_k(8,8) = 10000; //Very unsure about acceleration.
 
     Eigen::Matrix<double, 9, 9> S_k = this->measurement_matrix * this->cur_covariance * this->measurement_matrix.transpose() + R_k;
     //Compute the optimal kalman gain from the different covariance matrix'
@@ -131,7 +131,7 @@ void Kalman_Estimator::pose_callback( __attribute__((unused)) const geometry_msg
 
   Eigen::Vector3d tmp = this->prev_points[0];
   if(!outputFilePoint.is_open()){
-      outputFilePoint.open("/tmp/stuffPoint.csv", std::fstream::out | std::fstream::app);
+      outputFilePoint.open("/tmp/stuffPoint.csv", std::fstream::out );
       outputFilePoint << tmp(0) << "," << tmp(1) << "," << tmp(2) << std::endl;
   }else{
       outputFilePoint << tmp(0) << "," << tmp(1) << "," << tmp(2) << std::endl;
@@ -170,7 +170,7 @@ void Kalman_Estimator::pose_callback( __attribute__((unused)) const geometry_msg
 
   //measured_state(6) = 0;
   //measured_state(7) = 0;
-  measured_state(8) = -9.82;
+  //measured_state(8) = -9.82;
   rovi2_development::Trajectory3D traj;
   traj.header.stamp = this_pt.header.stamp;
   traj.t0 = this_pt.header.stamp;
@@ -179,7 +179,7 @@ void Kalman_Estimator::pose_callback( __attribute__((unused)) const geometry_msg
   traj.pos = vector3d_to_point(pos);
 
   if(!outputFileRaw.is_open()){
-      outputFileRaw.open("/tmp/stuffRaw.csv", std::fstream::out | std::fstream::app);
+      outputFileRaw.open("/tmp/stuffRaw.csv", std::fstream::out );
       outputFileRaw << traj.acc.x << "," << traj.acc.y << "," << traj.acc.z << "," << traj.vel.x << "," << traj.vel.y << "," << traj.vel.z << "," << traj.pos.x << "," << traj.pos.y << "," << traj.pos.z << std::endl;
   }else{
       outputFileRaw << traj.acc.x << "," << traj.acc.y << "," << traj.acc.z << "," << traj.vel.x << "," << traj.vel.y << "," << traj.vel.z << "," << traj.pos.x << "," << traj.pos.y << "," << traj.pos.z << std::endl;
@@ -205,7 +205,7 @@ void Kalman_Estimator::pose_callback( __attribute__((unused)) const geometry_msg
   traj.pos = vector3d_to_point(pos);
 
   if(!outputFileKalman.is_open()){
-      outputFileKalman.open("/tmp/stuffKalman.csv", std::fstream::out | std::fstream::app);
+      outputFileKalman.open("/tmp/stuffKalman.csv", std::fstream::out );
       outputFileKalman << traj.acc.x << "," << traj.acc.y << "," << traj.acc.z << "," << traj.vel.x << "," << traj.vel.y << "," << traj.vel.z << "," << traj.pos.x << "," << traj.pos.y << "," << traj.pos.z << std::endl;
   }else{
       outputFileKalman << traj.acc.x << "," << traj.acc.y << "," << traj.acc.z << "," << traj.vel.x << "," << traj.vel.y << "," << traj.vel.z << "," << traj.pos.x << "," << traj.pos.y << "," << traj.pos.z << std::endl;
