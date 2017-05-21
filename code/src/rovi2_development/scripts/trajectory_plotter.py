@@ -147,16 +147,18 @@ class Trajectory_Plotter:
 
 def __main__():
     t_plotter = Trajectory_Plotter()
+
     rospy.init_node('node_name')
+
+    sub_parameter = rospy.get_param("~sub_parameter", "/pose/parameter")
+    rospy.loginfo(sub_parameter)
+
     rospy.Subscriber("/pose/3d_true", PointStamped, t_plotter.raw_points_callback,)
     rospy.Subscriber("/pose/3d", PointStamped, t_plotter.noisy_points_callback)
-    rospy.Subscriber("/pose/parameter", Trajectory3D, t_plotter.trajectory_callback)
+    rospy.Subscriber(sub_parameter, Trajectory3D, t_plotter.trajectory_callback)
     rospy.Subscriber("/kalman/reset", Bool, t_plotter.kalman_reset_callback)
 
     rospy.spin()
-
-
-
 
 if __name__ == "__main__":
     __main__()
