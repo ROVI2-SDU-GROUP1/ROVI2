@@ -1,5 +1,8 @@
 #pragma once
-//Implementation of the Real-time RRT Star algorithm
+//Implementation of the Real-time RRT Star algorithm, with modifications for a faster initial solution.
+//Much of the RRT-Connect code is heavily inspired by the Implementation in Robwork
+
+//Paper for RT-RRT-Star:
 //https://mediatech.aalto.fi/~phamalainen/FutureGameAnimation/p113-naderi.pdf
 
 
